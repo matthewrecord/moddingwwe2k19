@@ -22,6 +22,11 @@ not obfuscated; disassembled with `dnfile`+`dncil`, script `/tools/exe/cildump.p
 | 14 | filecount | 1 | |
 | 15 | size | 0x7000 | rewritten by rePac at offset 60 |
 
+File-table `size` field: rePac reads each file up to the **next file's offset** (not by size). SuperString's
+`string_win.pac` has an English table that overruns the next file's start (a latent bug in that mod, harmless in
+English). Our writer therefore never re-lays out: `HSPC.replace_append` appends the modified file and repoints one
+entry; verified: every other byte identical.
+
 - Directory entry (20 bytes): u64 name hash, u32 0, u32 file-table offset, u32 0xFFFFFFFF.
 - File-table entry (12 bytes): **offset in 2048-byte sectors, size in 256-byte units, extension tag** (e.g. 0xC0000).
 - Files are 2048-aligned. Trailing zlib blocks (`ZLIB`, u32 ?, u32 compressed, u32 uncompressed, stream) hold the
@@ -30,7 +35,8 @@ not obfuscated; disassembled with `dnfile`+`dncil`, script `/tools/exe/cildump.p
 ## SHDC (inner container; also the decoded `_startup_*` scripts)
 
 Same 64-byte header layout (alignment 1, offsets in bytes): data1 = hashed directory (20-byte entries),
-data2 = file table of 16-byte entries **(id, offset, size, 0)**, word 14 = file count, word 15 = total size.
+data2 = file table of 16-byte entries **(id, offset, size, 0)**, word 14 = file count, word 15 = open (not the size;
+SuperString's oversized English table keeps another language's value and works; our writer leaves it unchanged).
 Example: decoded `_startup_audio_p30` = 8 files (10, 11, 12, 13, 100, 101, …).
 
 ## String table (file #0 of each language SHDC in `string_win.pac`)

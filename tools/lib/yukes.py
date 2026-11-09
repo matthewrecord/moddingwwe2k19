@@ -74,7 +74,8 @@ class SHDC:
 
     def build(self):
         """Keep header/dir/table area as is up to the first file; append files in original offset order, 4-aligned
-        like the originals; rewrite table offsets/sizes and total size (word 15)."""
+        like the originals; rewrite table offsets/sizes. Word 15 is NOT the total size (its meaning is open; SuperString's
+        English table carries another language's value and works), so it is left unchanged."""
         first = min(f['off'] for f in self.files)
         b = bytearray(self.raw[:first])
         for i in sorted(range(len(self.files)), key=lambda i: self.files[i]['off']):
@@ -82,7 +83,6 @@ class SHDC:
             off = len(b)
             struct.pack_into('<4I', b, self.h[7] + 16 * i, f['id'], off, len(f['data']), f['z'])
             b += f['data']
-        struct.pack_into('<I', b, 60, len(b))
         return bytes(b)
 
 def string_table_parse(d):
