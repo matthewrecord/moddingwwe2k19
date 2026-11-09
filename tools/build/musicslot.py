@@ -176,7 +176,7 @@ def add_string(pac, sid, text, file_index=0):
     else:
         ents.insert(bisect.bisect(ids, sid), (sid, s))
     S.files[0]['data'] = string_table_build(pre, ents)
-    return H.replace_append(file_index, S.build()), len(ents)
+    return H.replace(file_index, S.build()), len(ents)
 
 # ---------- Create-an-Entrance music menu (BGM.lsd = SHDC file id 2 in pac/menu/cae_item_pNN.pac) ----------
 def add_bgm_entry(pac, mid):
@@ -193,7 +193,7 @@ def add_bgm_entry(pac, mid):
     ents.append(new)
     # both header u16s +1, exactly as CAE Item Adder 0.2.1 does ('<2h' read, +1 each)
     f['data'] = struct.pack('<HH', n + 1, total + 1) + b''.join(struct.pack('<10I', *e) for e in ents)
-    return H.replace_append(0, S.build()), {'entries': n + 1, 'total': total + 1, 'entry': list(new)}
+    return H.replace(0, S.build()), {'entries': n + 1, 'total': total + 1, 'entry': list(new)}
 
 def main():
     ap = argparse.ArgumentParser()

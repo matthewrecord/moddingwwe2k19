@@ -29,10 +29,16 @@ class HSPC:
         self.tail_off = (last + 2047) // 2048 * 2048
         self.tail = bytes(b[self.tail_off:])
 
+    def replace(self, i, data):
+        """Pac Editor-style edit: swap file i's data and re-lay out (see build)."""
+        self.files[i]['data'] = data
+        return self.build()[0]
+
     def replace_append(self, i, data):
         """Safest write: keep every original byte; append `data` (2048-aligned) at the end of the file and repoint
         file-table entry i (sector, size in 256-byte units). Unchanged files, directory and tail stay byte-identical.
-        Note: some community pacs (SuperString) already have overlapping entries; this never touches them."""
+        WARNING (2026-11-09): the game ignores data past header word 15's region, so this edit is INVISIBLE in game.
+        Kept only for analysis. Use replace()."""
         b = bytearray(self.raw)
         b += b'\0' * ((-len(b)) % 2048)
         sector = len(b) // 2048
@@ -43,8 +49,10 @@ class HSPC:
         return bytes(b)
 
     def build(self):
-        """Re-lay out files (2048-aligned, in original sector order), keep directory, tail and header words.
-        Only byte-identical for well-formed pacs; prefer replace_append for edits."""
+        """Re-lay out like Pac Editor (the community tool whose output the game accepts): files contiguous in original
+        sector order, each 2048-aligned, size field updated, tail (zlib name blocks) moved after the last file, header
+        word 15 = data-region size (first file start -> tail start). Words 9/11 (old tail sectors) are left as is,
+        exactly as Pac Editor leaves them. replace_append() is NOT safe: the game reads only word 15's region."""
         b = bytearray(self.raw[:min(f['sector'] for f in self.files) * 2048])
         order = sorted(range(len(self.files)), key=lambda i: self.files[i]['sector'])
         for i in order:
@@ -55,6 +63,8 @@ class HSPC:
             b += d + b'\0' * pad
             b += b'\0' * ((-len(b)) % 2048)
         tail_shift = len(b) - self.tail_off
+        first = min(f['sector'] for f in self.files) * 2048
+        struct.pack_into('<I', b, 60, len(b) - first)
         b += self.tail
         return bytes(b), tail_shift
 
