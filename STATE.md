@@ -15,6 +15,10 @@
   the exe tries levels 01,10,11,20,21,30,31,40,41, so **p40 is free: a new audio patch needs no exe change**. Music
   table: highest `/MusicAndVideoList/PATCHnn` wins. CCT uses a dropdown (Matthew). Next: runtime patch list for the
   music table, BPE/HSPC re-pack, bank authoring, string table.
-- **Latest handoff:** `handoff/003_music_loader_2026-11-09.md`.
+- **2026-11-09 night (handoff 004):** route mapped end to end. Runtime patch list = `observe_info.csv` (data).
+  DLC track anatomy decoded (Event -> Play -> RanSeq -> Vorbis streamed Sound). Names = string 13000+id. Test slot
+  **109** (blank in Data Editor/CCT list, free in game). No checksum on the music table. Remaining: GCOM list record
+  format + BPE encoder, HSPC writer for the string table, bank writer, then build.
+- **Latest handoff:** `handoff/004_music_names_2026-11-09.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.

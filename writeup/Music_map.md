@@ -116,13 +116,48 @@ clrjit hook; only 17 plain user strings, none about music). Asked Matthew how CC
 a number). If it reads the game's in-memory table, a new VMUM row is enough for CCT too; if it is a number field, any
 ID works once the game knows it.
 
+## 6b. Bank anatomy of a DLC track — measured (patch_30 bank 1755985664, MUS_0805)
+
+```
+Event  Play_MUS_0805_00_0_0 (fnv)  -> 1 action
+Action 0x0403 Play  target = RanSeq 825486892, fade curve 4, bank id = 1755985664 (own bank)
+RanSeq 825486892   parent = ActorMixer 126675442 (shared music mixer), 1 child, playlist weight 50000
+Sound  541437393   codec plugin 0x00040001 (Wwise Vorbis), stream type 1 (streamed),
+                   source id 381712218 = stream in patch_30.pck (3,593,341 bytes), parent = the RanSeq
+```
+`_0_1` uses an identical Play action. A third, unnamed event per track adds a Stop (0x0103) on the music mixer with a
+3,000 ms fade. The ActorMixer 126675442 is re-declared in each patch bank with its child list.
+Codecs across all banks: Vorbis only (0x40001; stream types 0/1/2) plus a source plugin 0x650002. Wwise PCM
+(0x10001) is in the engine core but unused by the game.
+
+**Audio source for a test:** Matthew's folders already hold community `.wem` files in the game's exact format
+(RIFF, fmt tag 0xFFFF Wwise Vorbis, 2 ch, 48 kHz), e.g. `D:\Pictures\WWE 2K19\Alex Shelley\Alex Shelley Theme.wem`.
+A new slot can use one directly; making new ones needs Wwise authoring (or a PCM .wem built by our own script).
+
+## 6c. Names, IDs and the tool lists — measured
+
+- **Display name = string id 13000 + music id** for music ids < 1000 (298 of 390 named rows; e.g. 13100 'The Rock' =
+  MUS_0100, 13107 'Kane'). Ids >= 1000 (7xxx generic, 8xxx tag, 9xxx soundtrack) are named elsewhere (soundtrack
+  titles/artists at 18000-18034 for the jukebox).
+- Strings: `pac/string/win/string_win.pac` (overridden by SuperString: `mods/SuperString/pac/string/win/string_win.pac`,
+  6 language tables of 26,674-26,675 strings; format in `tools/audio/strtab.py`). 3,597 placeholder strings
+  ('EMPTY STRING TO BE FILLED' / 'WRESTLE PLUS CUSTOM STRING', ids 20797-28672) exist, none in the 13xxx range, so a
+  new name means **adding an index entry** (rebuild the table).
+- **Data Editor's music list** (`A - Data Editor 2k19/Data/DataLists/Modded/EntranceMusicID.data`, plain text,
+  `<musicid*1000> <name>`, 1,737 lines) lists every id 100-9012 including **blank entries for unused ids**. Character
+  data stores music as id*1000 (+ variation digits, e.g. 346010). CCT (same tool family) shows a dropdown; most likely
+  the same list embedded. **629 ids are blank in that list and completely free in the game** (unnamed VMUM row, no
+  event): 109, 110, 114, 116, 117, 120, … → **test slot = 109** (CCT should already list 109000).
+- Music-table container: TitantronFix differs from base in 99 table bytes only (headers identical) → **no content
+  checksum; in-place table edits work.**
+
 ## 7. Open questions (in order)
 
 1. CCT shows music as a **dropdown of names** (Matthew 2026-11-09). Where it gets them: game memory (then a new
    table row + name is enough) or its own encrypted list (then CCT needs patching). Decompile blocked by packing.
 2. ~~Patch levels above 30~~ answered for the audio script (p31/p40/p41 free); still to confirm for the music table's
    runtime patch list and for loading `assetconv_p40.pac` (Chunk0.def entry?).
-3. Where display names live (string tables) and what field 1 indexes.
+3. ~~Where names live~~ string 13000+id (6c). Field 1 meaning still open (not the name id).
 4. Tooling to author a v128 soundbank: Wwise 2016.2 authoring (matching bank version) or hand-built HIRC (a small
    Sound + Action + Event set, as in `patch_20`'s 519-byte bank).
 5. The one check only Matthew can do: hear it in game and see it in CCT (asked once everything else is done).

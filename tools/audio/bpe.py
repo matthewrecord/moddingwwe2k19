@@ -22,7 +22,10 @@ def expand(src,pos,outsize):
             if stack: c=stack.pop()
             else: c=src[pos]; pos+=1; i+=1
             if c==left[c]: out.append(c)
-            else: stack.append(right[c]); stack.append(left[c])
+            else:
+                stack.append(right[c]); stack.append(left[c])
+                if len(stack)>4096: raise ValueError('BPE stack overflow (not BPE data)')
+        if len(out)>outsize: raise ValueError('BPE overrun')
     return bytes(out),pos
 if __name__=='__main__':
     b=open(sys.argv[1],'rb').read(); o=b.find(b'BPE ')
