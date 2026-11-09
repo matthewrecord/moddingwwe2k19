@@ -19,6 +19,9 @@
   DLC track anatomy decoded (Event -> Play -> RanSeq -> Vorbis streamed Sound). Names = string 13000+id. Test slot
   **109** (blank in Data Editor/CCT list, free in game). No checksum on the music table. Remaining: GCOM list record
   format + BPE encoder, HSPC writer for the string table, bank writer, then build.
-- **Latest handoff:** `handoff/004_music_names_2026-11-09.md`.
+- **2026-11-09 night (handoff 005): FIRST NEW MUSIC SLOT BUILT AND INSTALLED (slot 109, Alex Shelley test theme).**
+  Verified offline (our parsers + wwiser); installed in the modded game with backups (notes/builds/slot109.md).
+  **Waiting on Matthew's in-game test** (3 checks: boots; CAE music list + preview; CCT 109000 plays).
+- **Latest handoff:** `handoff/005_slot109_built_2026-11-09.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.

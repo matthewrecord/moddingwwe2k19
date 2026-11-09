@@ -181,3 +181,9 @@ Override, don't add levels, where possible (fewest new containers to write):
    given a menu index; listed in `Chunk0.def` after TitantronFix (load order to confirm).
 4. Name string (string table, SuperString also overrides it: build on its version).
 Fallback if overrides of `pac\root` are ignored: the free p40 levels (section 4b).
+
+## 9. Built (2026-11-09 night): slot 109
+
+See notes/builds/slot109.md. Two more facts found while building: the CAE music menu is `BGM.lsd` (SHDC file id 2 in
+`pac/menu/cae_item_pNN.pac`; label = string 3000+id, upper case), and empty table rows have key 0 (bsearch quirk,
+Formats/Music_map 4). Status: installed, awaiting Matthew's in-game check.
