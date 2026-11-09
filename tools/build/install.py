@@ -29,6 +29,15 @@ def main():
             st = 'MODDED' if cur == omd5 else 'ORIGINAL' if cur == imd5 else 'OTHER'
             print(f"{k:5s} {st:8s} backup={'yes' if os.path.exists(bak) else 'no'}  {tgt}")
         return
+    if cmd in ('install', 'uninstall'):
+        locked = []
+        for k, tgt, *_ in rows:
+            try:
+                with open(tgt, 'r+b'): pass
+            except OSError as e:
+                locked.append((tgt, e.strerror))
+        if locked:
+            sys.exit('NOTHING CHANGED: files not writable (is the game running?): %r' % locked)
     if cmd == 'install':
         bad = [(k, tgt) for k, tgt, bak, imd5, omd5, cur in rows if cur not in (imd5, omd5)]
         if bad: sys.exit('REFUSED: these files changed since the build was made: %r' % bad)
