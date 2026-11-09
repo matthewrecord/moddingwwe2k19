@@ -15,6 +15,8 @@ class HSPC:
         self.raw = bytes(b)
         self.h = u32s(b, 0, 16)
         al = self.h[3]; n = self.h[14]
+        if not (0 < n < 100000):
+            raise ValueError('HSPC file count %d implausible' % n)
         self.dir_off = self.h[5] * al; self.tab_off = self.h[7] * al
         self.dir = [b[self.dir_off + 20 * i: self.dir_off + 20 * i + 20] for i in range(n)]
         self.files = []
@@ -47,6 +49,8 @@ class SHDC:
         self.raw = bytes(b)
         self.h = u32s(b, 0, 16)
         n = self.h[14]
+        if not (0 < n < 100000 and self.h[7] + 16 * n <= len(b)):
+            raise ValueError('SHDC file count %d implausible' % n)
         self.dir = b[self.h[5]: self.h[5] + self.h[6]]
         self.files = []
         for i in range(n):
