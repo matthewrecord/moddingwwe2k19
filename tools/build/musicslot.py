@@ -1,0 +1,199 @@
+"""Build a brand-new WWE 2K19 music slot (writes to an output folder only; never touches the game).
+
+Route (writeup/Music_map.md section 8): the new track goes into the DLC_30_E_S bank of sound/patch_30.pck (loaded at
+boot), the music table row <id> is activated in TitantronFix's assetconv_p30.pac, and the name (string 13000+id) is
+added to the English table of SuperString's string_win.pac.
+
+Usage (laptop agent shell, from the repo clone):
+  python3 -I tools/build/musicslot.py --game "<install>" --wem <file.wem> --id 109 --name "Name" --out <dir>
+Outputs in <dir>: sound/patch_30.pck, mods/TitantronFix/pac/audio/assetconv_p30.pac,
+mods/SuperString/pac/string/win/string_win.pac, manifest.json (inputs, outputs, md5s, ids).
+"""
+import argparse, bisect, hashlib, json, os, struct, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, '..', 'audio')); sys.path.insert(0, os.path.join(HERE, '..', 'lib'))
+from evmatch import fnv
+from vmum import load as vmum_load
+from yukes import HSPC, SHDC, string_table_parse, string_table_build
+
+DLC30_BANK = 1755985664          # DLC_30_E_S
+MUSIC_MIXER = 126675442          # shared music ActorMixer
+TEMPLATE = {'sound': 541437393, 'ranseq': 825486892, 'play': 1127526729}   # MUS_0805 chain
+
+def md5(b): return hashlib.md5(b).hexdigest()
+
+# ---------- AKPK ----------
+def akpk_read(b):
+    assert b[:4] == b'AKPK'
+    hs = struct.unpack_from('<I', b, 4)[0]
+    ver, lsz, bsz, ssz, esz = struct.unpack_from('<5I', b, 8)
+    o = 28; lang = b[o:o + lsz]; o += lsz
+    def tab(o, size):
+        n = struct.unpack_from('<I', b, o)[0]
+        return [list(struct.unpack_from('<5I', b, o + 4 + 20 * i)) for i in range(n)]
+    banks = tab(o, bsz); o += bsz
+    streams = tab(o, ssz); o += ssz
+    ext = b[o:o + esz]
+    assert o + esz == 8 + hs
+    data = {}
+    for kind, t in (('B', banks), ('S', streams)):
+        for fid, mul, sz, start, lng in t:
+            data[(kind, fid)] = b[start * mul: start * mul + sz]
+    return {'ver': ver, 'lang': lang, 'banks': banks, 'streams': streams, 'ext': ext, 'data': data, 'raw': b}
+
+def akpk_write(p):
+    """Tightly packed like the originals (block size 1); data order = original order, new items appended."""
+    def tabbytes(t): return struct.pack('<I', len(t)) + b''.join(struct.pack('<5I', *e) for e in t)
+    banks = sorted(p['banks'], key=lambda e: e[0]); streams = sorted(p['streams'], key=lambda e: e[0])
+    hdr_len = 20 + len(p['lang']) + 4 + 20 * len(banks) + 4 + 20 * len(streams) + len(p['ext'])
+    pos = 8 + hdr_len
+    order = sorted([('B', e) for e in banks] + [('S', e) for e in streams], key=lambda x: x[1][3])
+    body = bytearray()
+    for kind, e in order:
+        d = p['data'][(kind, e[0])]
+        e[1] = 1; e[2] = len(d); e[3] = pos + len(body); body += d
+    hdr = struct.pack('<5I', p['ver'], len(p['lang']), 4 + 20 * len(banks), 4 + 20 * len(streams), len(p['ext']))
+    hdr += p['lang'] + tabbytes(banks) + tabbytes(streams) + p['ext']
+    assert len(hdr) == hdr_len
+    return b'AKPK' + struct.pack('<I', hdr_len) + hdr + bytes(body)
+
+# ---------- bank / HIRC ----------
+def chunks(bank):
+    o = 0; out = []
+    while o < len(bank):
+        tag = bank[o:o + 4]; ln = struct.unpack_from('<I', bank, o + 4)[0]
+        out.append([tag, bank[o + 8: o + 8 + ln]]); o += 8 + ln
+    return out
+
+def hirc_objs(h):
+    n = struct.unpack_from('<I', h, 0)[0]; o = 4; out = []
+    for _ in range(n):
+        t = h[o]; ln = struct.unpack_from('<I', h, o + 1)[0]; oid = struct.unpack_from('<I', h, o + 5)[0]
+        out.append([t, oid, bytearray(h[o + 9: o + 5 + ln])]); o += 5 + ln
+    assert o == len(h)
+    return out
+
+def hirc_bytes(objs):
+    return struct.pack('<I', len(objs)) + b''.join(bytes([t]) + struct.pack('<II', 4 + len(b), oid) + bytes(b) for t, oid, b in objs)
+
+def wem_info(w):
+    assert w[:4] == b'RIFF' and w[8:12] == b'WAVE', 'not a RIFF/WAVE .wem'
+    o = 12; fmt = None; data_off = None
+    while o < len(w) - 8:
+        tag = w[o:o + 4]; ln = struct.unpack_from('<I', w, o + 4)[0]
+        if tag == b'fmt ': fmt = w[o + 8: o + 8 + ln]
+        if tag == b'data': data_off = o + 8; break
+        o += 8 + ln + (ln & 1)
+    assert fmt and data_off, 'fmt/data chunk missing'
+    codec, ch, sr, avg = struct.unpack_from('<HHII', fmt, 0)
+    assert codec == 0xFFFF and len(fmt) == 0x42, 'expected Wwise Vorbis (fmt 0xFFFF, size 0x42) like the game'
+    audio_off = struct.unpack_from('<I', fmt, 0x2C)[0]
+    # uInMemoryMediaSize: game files = header + seek/setup + ~0.81 s of audio (measured on 2 tracks; see Music_map 6b)
+    inmem = data_off + audio_off + int(0.81 * avg)
+    return {'channels': ch, 'rate': sr, 'avg_bps': avg, 'data_off': data_off, 'audio_off': audio_off, 'inmem': inmem}
+
+def add_track(bank, mid, src_id, inmem):
+    ch = chunks(bank)
+    hi = [c for c in ch if c[0] == b'HIRC'][0]
+    objs = hirc_objs(hi[1]); byid = {o[1]: o for o in objs}
+    ids = {
+        'sound': fnv('wwe2k19mod_sound_%04d' % mid), 'ranseq': fnv('wwe2k19mod_ranseq_%04d' % mid),
+        'play0': fnv('wwe2k19mod_play0_%04d' % mid), 'play1': fnv('wwe2k19mod_play1_%04d' % mid),
+        'ev0': fnv('Play_MUS_%04d_00_0_0' % mid), 'ev1': fnv('Play_MUS_%04d_00_0_1' % mid)}
+    for k, v in ids.items():
+        assert v not in byid, 'id collision %s %d' % (k, v)
+    # Sound (clone of MUS_0805's): sourceID @5, inMem @9, parent @21
+    snd = bytearray(byid[TEMPLATE['sound']][2])
+    struct.pack_into('<I', snd, 5, src_id); struct.pack_into('<I', snd, 9, inmem); struct.pack_into('<I', snd, 21, ids['ranseq'])
+    # RanSeq: parent @7, child @0x36, play id @0x3c
+    rs = bytearray(byid[TEMPLATE['ranseq']][2])
+    assert struct.unpack_from('<I', rs, 7)[0] == MUSIC_MIXER and struct.unpack_from('<I', rs, 0x32)[0] == 1
+    struct.pack_into('<I', rs, 0x36, ids['sound']); struct.pack_into('<I', rs, 0x3c, ids['sound'])
+    # Play actions: target @2, bank @10
+    def play():
+        a = bytearray(byid[TEMPLATE['play']][2])
+        assert struct.unpack_from('<H', a, 0)[0] == 0x0403 and struct.unpack_from('<I', a, 10)[0] == DLC30_BANK
+        struct.pack_into('<I', a, 2, ids['ranseq']); return a
+    ev = lambda aid: bytearray(b'\x01' + struct.pack('<I', aid))
+    # ActorMixer: children list at the end: u32 n, n x id (ascending)
+    mix = byid[MUSIC_MIXER][2]
+    n = None
+    for k in range(len(mix) - 4, 0, -1):
+        cand = struct.unpack_from('<I', mix, k)[0]
+        if 0 < cand < 4096 and k + 4 + 4 * cand == len(mix): n = cand; pos = k; break
+    assert n, 'mixer child list not found'
+    kids = list(struct.unpack_from('<%dI' % n, mix, pos + 4)); assert kids == sorted(kids)
+    kids.insert(bisect.bisect(kids, ids['ranseq']), ids['ranseq'])
+    byid[MUSIC_MIXER][2] = bytearray(mix[:pos] + struct.pack('<I', len(kids)) + struct.pack('<%dI' % len(kids), *kids))
+    objs += [[2, ids['sound'], snd], [5, ids['ranseq'], rs], [3, ids['play0'], play()], [4, ids['ev0'], ev(ids['play0'])],
+             [3, ids['play1'], play()], [4, ids['ev1'], ev(ids['play1'])]]
+    hi[1] = hirc_bytes(objs)
+    return b''.join(t + struct.pack('<I', len(d)) + bytes(d) for t, d in ch), ids
+
+# ---------- music table ----------
+def activate_row(pac, mid):
+    b = bytearray(pac); vb, o, h, recs = vmum_load_bytes(b)
+    named = [r for r in recs if r[1] and r[2] < 10000]
+    f0 = max(r[0] for r in named) + 1; f1 = max(r[1] for r in named) + 1
+    keys = [r[4] for r in recs]; assert keys == sorted(keys), 'table not sorted by field 4'
+    idx = [i for i, r in enumerate(recs) if r[2] == mid and r[3] == 0]
+    assert len(idx) == 1, 'row %d not found exactly once' % mid
+    i = idx[0]; r = recs[i]
+    assert r[0] == 0 and r[1] == 0, 'row %d already named %r' % (mid, r[:2])
+    assert r[4] == mid * 100000, 'unexpected key'
+    struct.pack_into('<II', b, o + 16 + 64 * i, f0, f1)
+    return bytes(b), {'row': i, 'f0': f0, 'f1': f1, 'before': list(r)}
+
+def vmum_load_bytes(b):
+    o = bytes(b).find(b'VMUM'); h = struct.unpack_from('<4I', b, o)
+    recs = [struct.unpack_from('<16I', b, o + 16 + 64 * i) for i in range(h[3])]
+    return b, o, h, recs
+
+# ---------- strings ----------
+def add_string(pac, sid, text, file_index=0):
+    H = HSPC(pac); d = H.files[file_index]['data']
+    S = SHDC(d)
+    pre, ents = string_table_parse(S.files[0]['data'])
+    ids = [i for i, _ in ents]; assert ids == sorted(ids)
+    s = text.encode('latin1') + b'\0'
+    if sid in ids:
+        ents[ids.index(sid)] = (sid, s)
+    else:
+        ents.insert(bisect.bisect(ids, sid), (sid, s))
+    S.files[0]['data'] = string_table_build(pre, ents)
+    return H.replace_append(file_index, S.build()), len(ents)
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--game', required=True); ap.add_argument('--wem', required=True)
+    ap.add_argument('--id', type=int, required=True); ap.add_argument('--name', required=True)
+    ap.add_argument('--out', required=True)
+    a = ap.parse_args(); G = a.game; mid = a.id
+    assert 0 < mid < 1000, 'ids < 1000 only (name rule 13000+id)'
+    paths = {'pck': 'sound/patch_30.pck', 'vmum': 'mods/TitantronFix/pac/audio/assetconv_p30.pac',
+             'str': 'mods/SuperString/pac/string/win/string_win.pac'}
+    src = {k: open(os.path.join(G, v), 'rb').read() for k, v in paths.items()}
+    wem = open(a.wem, 'rb').read(); wi = wem_info(wem)
+    man = {'id': mid, 'name': a.name, 'wem': a.wem, 'wem_md5': md5(wem), 'wem_info': wi,
+           'inputs': {k: {'path': paths[k], 'md5': md5(v), 'size': len(v)} for k, v in src.items()}}
+    # 1 audio
+    P = akpk_read(src['pck'])
+    src_id = fnv('wwe2k19mod_wem_%04d' % mid)
+    assert ('S', src_id) not in P['data']
+    newbank, ids = add_track(P['data'][('B', DLC30_BANK)], mid, src_id, wi['inmem'])
+    P['data'][('B', DLC30_BANK)] = newbank
+    P['streams'].append([src_id, 1, len(wem), 1 << 30, 0]); P['data'][('S', src_id)] = wem
+    pck = akpk_write(P)
+    # 2 table, 3 name
+    vm, row = activate_row(src['vmum'], mid)
+    st, nstr = add_string(src['str'], 13000 + mid, a.name)
+    out = {'pck': pck, 'vmum': vm, 'str': st}
+    for k, v in out.items():
+        p = os.path.join(a.out, paths[k]); os.makedirs(os.path.dirname(p), exist_ok=True); open(p, 'wb').write(v)
+    man.update({'ids': ids, 'source_id': src_id, 'row': row, 'strings': nstr,
+                'outputs': {k: {'path': paths[k], 'md5': md5(v), 'size': len(v)} for k, v in out.items()}})
+    open(os.path.join(a.out, 'manifest.json'), 'w').write(json.dumps(man, indent=1))
+    print(json.dumps({k: man[k] for k in ('ids', 'source_id', 'row', 'outputs')}, indent=1))
+
+if __name__ == '__main__':
+    main()
