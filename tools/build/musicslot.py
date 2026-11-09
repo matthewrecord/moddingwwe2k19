@@ -7,7 +7,7 @@ added to the English table of SuperString's string_win.pac.
 Usage (laptop agent shell, from the repo clone):
   python3 -I tools/build/musicslot.py --game "<install>" --wem <file.wem> --id 109 --name "Name" --out <dir>
 Outputs in <dir>: sound/patch_30.pck, mods/TitantronFix/pac/audio/assetconv_p30.pac,
-mods/SuperString/pac/string/win/string_win.pac, pac/menu/cae_item_p30.pac, manifest.json (inputs, outputs, md5s).
+mods/SuperString/pac/string/win/string_win.pac, pac/menu/cae_item.pac, manifest.json (inputs, outputs, md5s).
 """
 import argparse, bisect, hashlib, json, os, struct, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -191,6 +191,7 @@ def add_bgm_entry(pac, mid):
     assert all(e[0] != mid * 1000 for e in ents), 'entry already present'
     new = (mid * 1000, 0xFFFF0000 | mid, 0xFFFFFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 3000 + mid, 0xFFFF0001, 0, 0)
     ents.append(new)
+    # both header u16s +1, exactly as CAE Item Adder 0.2.1 does ('<2h' read, +1 each)
     f['data'] = struct.pack('<HH', n + 1, total + 1) + b''.join(struct.pack('<10I', *e) for e in ents)
     return H.replace_append(0, S.build()), {'entries': n + 1, 'total': total + 1, 'entry': list(new)}
 
@@ -202,7 +203,9 @@ def main():
     a = ap.parse_args(); G = a.game; mid = a.id
     assert 0 < mid < 1000, 'ids < 1000 only (name rule 13000+id)'
     paths = {'pck': 'sound/patch_30.pck', 'vmum': 'mods/TitantronFix/pac/audio/assetconv_p30.pac',
-             'str': 'mods/SuperString/pac/string/win/string_win.pac', 'cae': 'pac/menu/cae_item_p30.pac'}
+             'str': 'mods/SuperString/pac/string/win/string_win.pac', 'cae': 'pac/menu/cae_item.pac'}
+    # CAE menu: the BASE list (first SHDC of cae_item.pac), as the community CAE Item Adder does. v1 put the entry in
+    # cae_item_p30.pac and it did not show in game (Matthew 2026-11-09): patch lists carry DLC-flagged entries only.
     src = {k: open(os.path.join(G, v), 'rb').read() for k, v in paths.items()}
     wem = open(a.wem, 'rb').read(); wi = wem_info(wem)
     man = {'id': mid, 'name': a.name, 'wem': a.wem, 'wem_md5': md5(wem), 'wem_info': wi,
