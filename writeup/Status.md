@@ -2,7 +2,12 @@
 
 ## 1. What the project is
 
-Matthew's modding of **WWE 2K19** (PC, Steam). First mod: **not yet chosen**. Record the goal and its decisions here.
+Matthew's modding of **WWE 2K19** (PC, Steam).
+
+**Top priority and project validation (Matthew 2026-11-09): add brand-new music slots** to the game (not replacing
+existing tracks) and have **CCT** see and use the new tracks. The DLC added music after release, so the game can take
+new entries; no published community mod has done more than replace existing music. Success = a new track that did not
+exist in the game plays in game and is selectable/assignable in CCT, with the original tracks still intact.
 
 ## 2. Install layout and toolkit (as found 2026-11-09, read-only survey)
 
@@ -24,7 +29,11 @@ Not yet surveyed in depth: which mods are applied to the modded copy, what diffe
 2. Commit source/recipes before delivering anything to the game folder.
 3. Never modify `WWE 2K19 - unmodded`. Back up every game file before touching the modded install; record MD5s.
 4. No game files or large binaries in git (`.gitignore`); tool packs and samples go on the `assets` branch.
-5. Add new rules here as Matthew states them, with the date.
+5. **Autonomy (Matthew 2026-11-09):** agents work as autonomously as possible. Matthew does not want to run code or
+   bench-test findings himself. Agents run, test and verify everything they can on their own, and only stop for
+   Matthew when something genuinely cannot be settled from their side (e.g. a visual/audible in-game check that no
+   tool can make, or a decision that is his). When asking, batch the questions and make each one quick to answer.
+6. Add new rules here as Matthew states them, with the date.
 
 ## 4. Files in this project
 
@@ -32,6 +41,5 @@ See `writeup/README.md` (write-up), `handoff/` (session notes), `notes/` (refere
 
 ## 5. Open project-wide issues
 
-- Choose the first mod.
 - Confirm the laptop can push to GitHub on its own (git present; no credentials or `gh` found 2026-11-09).
 - Survey the modded vs unmodded install and inventory the tools in `D:\Pictures\WWE 2K19`.
