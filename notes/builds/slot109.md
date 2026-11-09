@@ -46,3 +46,10 @@ What changed (all verified by re-reading; bank also by wwiser):
   Matthew's Item-Adder/Pac-Editor-edited `cae_item.pac` and on vanilla `cae_item_p30.pac`.
 - **v3 installed** (`_moddingwwe2k19_builds\slot109_v3`): `cae_item.pac` keeps its size (entry fits in padding,
   word 15 unchanged); `string_win.pac` re-laid (word 15 = new data region; SuperString's old overlap removed).
+
+## v3 result and v4 diagnostic (2026-11-09 18:30)
+
+- **v3 in game:** entry still not listed.
+- **v4diag installed** (v3 + markers, `tools/build/diag_markers.py`): The Rock's BGM entry label -> 3109; string 3101
+  -> 'STEVE AUSTIN TEST'. Reading: Rock shows ALEX SHELLEY label => game reads our BGM.lsd (problem = adding entries);
+  Austin shows TEST => game reads our string table; neither => our pac edits are not loaded at all.
