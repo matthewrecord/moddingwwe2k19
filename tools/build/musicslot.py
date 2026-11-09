@@ -132,17 +132,32 @@ def add_track(bank, mid, src_id, inmem):
 
 # ---------- music table ----------
 def activate_row(pac, mid):
+    """Name row <mid> (fields 0/1 = new unique indexes), give it its key (field 4 = mid*100000) and move it into the
+    sorted tail. Table layout (measured): [ids 100-107 keyed][749 rows with key 0 = empty slots][sorted tail]. The game
+    bsearches field 4 over all rows; probes in the zero block always go right, so keys >= the tail start are found.
+    Only rows between the old and new position shift by one; no row content changes except row <mid>."""
     b = bytearray(pac); vb, o, h, recs = vmum_load_bytes(b)
+    recs = [list(r) for r in recs]
     named = [r for r in recs if r[1] and r[2] < 10000]
     f0 = max(r[0] for r in named) + 1; f1 = max(r[1] for r in named) + 1
-    keys = [r[4] for r in recs]; assert keys == sorted(keys), 'table not sorted by field 4'
     idx = [i for i, r in enumerate(recs) if r[2] == mid and r[3] == 0]
     assert len(idx) == 1, 'row %d not found exactly once' % mid
-    i = idx[0]; r = recs[i]
-    assert r[0] == 0 and r[1] == 0, 'row %d already named %r' % (mid, r[:2])
-    assert r[4] == mid * 100000, 'unexpected key'
-    struct.pack_into('<II', b, o + 16 + 64 * i, f0, f1)
-    return bytes(b), {'row': i, 'f0': f0, 'f1': f1, 'before': list(r)}
+    i = idx[0]; row = recs[i]; before = list(row)
+    assert row[0] == 0 and row[1] == 0 and row[4] == 0, 'row %d is not an empty slot: %r' % (mid, row[:6])
+    keys = [r[4] for r in recs]
+    tail_start = next(k for k in range(len(recs)) if keys[k] > 0 and k > 0 and keys[k - 1] == 0)
+    tail = keys[tail_start:]; assert tail == sorted(tail), 'tail not sorted'
+    key = mid * 100000
+    assert key > tail[0], 'id below the sorted tail start; bsearch could not reach it'
+    row[0], row[1], row[4] = f0, f1, key
+    del recs[i]
+    if i < tail_start: tail_start -= 1
+    tk = [r[4] for r in recs[tail_start:]]
+    j = tail_start + bisect.bisect(tk, key)
+    recs.insert(j, row)
+    for k, r in enumerate(recs):
+        struct.pack_into('<16I', b, o + 16 + 64 * k, *r)
+    return bytes(b), {'old_index': i, 'new_index': j, 'f0': f0, 'f1': f1, 'key': key, 'before': before, 'after': row}
 
 def vmum_load_bytes(b):
     o = bytes(b).find(b'VMUM'); h = struct.unpack_from('<4I', b, o)
