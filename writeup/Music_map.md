@@ -162,7 +162,16 @@ A new slot can use one directly; making new ones needs Wwise authoring (or a PCM
    Sound + Action + Event set, as in `patch_20`'s 519-byte bank).
 5. The one check only Matthew can do: hear it in game and see it in CCT (asked once everything else is done).
 
-## 8. Chosen route for the first test slot (2026-11-09)
+## 8. Chosen route for the first test slot (revised 2026-11-09 night)
+
+**Revised:** the package list is a GCOM bytecode script, but the DLC banks `DLC_30_E_S` (= bank 1755985664 in
+`patch_30.pck`) etc. are loaded at boot by name together with `Menu_M.bnk`/`System_E_S.bnk`. So the new track goes
+**into the existing `DLC_30_E_S` bank and `patch_30.pck`** (new Event/Action/RanSeq/Sound objects + appended stream):
+no script, exe or new-package changes. Music table: activate row 109 in place (fields 0/1 = new unique indexes; rows
+must stay sorted by field 4 for the game's bsearch). Name: string 13109 in all language tables of SuperString's
+`string_win.pac`. CAE list: `BGM.lsd` if it gates the menu (to map).
+
+### Earlier plan (superseded)
 
 Override, don't add levels, where possible (fewest new containers to write):
 1. `sound\custom_music.pck` (new file): own bank with `Play_MUS_<id>_00_0_0` and `_0_1` + the stream.
