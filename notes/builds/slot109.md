@@ -21,3 +21,17 @@ What changed (all verified by re-reading; bank also by wwiser):
   position); bsearch simulation: 390 -> 391 reachable keys, none lost. Field 15 (tron flags) left 0 (no video exists).
 - Strings (English table only): 3109 `ALEX SHELLEY (CUSTOM 109)` (menu label), 13109 `Alex Shelley (Custom 109)`.
 - CAE `BGM.lsd` (p30): +1 base-style entry (value 109000, id 109, label 3109); header 7/315 -> 8/316.
+
+## v1 result and v2 (2026-11-09 18:15)
+
+- **v1 in game (Matthew):** no crash; the entry did NOT appear in Create an Entrance > Entrance Music. CCT lists every
+  id from its own database (incl. unused ones), so CCT showing 109000 proves nothing by itself.
+- Cause (most likely): CAE Item Adder 0.2.1 (decompiled from its PyInstaller bundle) only ever adds to the **base**
+  list (first SHDC of `pac/menu/cae_item.pac`, both header u16s +1); patch lists hold DLC-flagged entries.
+- v1 uninstalled (all four originals restored, MD5-verified). **v2 installed**: same audio, table and strings; CAE
+  entry now in base `pac/menu/cae_item.pac` (BGM 304/308 -> 305/309); `cae_item_p30.pac` stays original.
+  Build: `D:\Pictures\WWE 2K19\_moddingwwe2k19_builds\slot109_v2\`.
+- First attempt to swap failed with "permission denied" because the game was running; `install.py` now refuses up
+  front if any target is locked.
+- **Decisive CCT test:** before the mod no `Play_MUS_0109_*` event existed in any bank (evmatch over all banks), so if
+  assigning 109000 in CCT now plays the Alex Shelley theme, the slot is real, not a database label.

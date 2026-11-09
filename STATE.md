@@ -21,7 +21,8 @@
   format + BPE encoder, HSPC writer for the string table, bank writer, then build.
 - **2026-11-09 night (handoff 005): FIRST NEW MUSIC SLOT BUILT AND INSTALLED (slot 109, Alex Shelley test theme).**
   Verified offline (our parsers + wwiser); installed in the modded game with backups (notes/builds/slot109.md).
-  **Waiting on Matthew's in-game test** (3 checks: boots; CAE music list + preview; CCT 109000 plays).
+  v1: boots, but not in the CAE list -> **v2 installed** (entry in base cae_item.pac, Item Adder method).
+  **Waiting on Matthew's in-game test of v2** (CAE list + preview; CCT 109000 plays the theme in an entrance).
 - **Latest handoff:** `handoff/005_slot109_built_2026-11-09.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
