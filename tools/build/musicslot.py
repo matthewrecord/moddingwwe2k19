@@ -7,7 +7,7 @@ added to the English table of SuperString's string_win.pac.
 Usage (laptop agent shell, from the repo clone):
   python3 -I tools/build/musicslot.py --game "<install>" --wem <file.wem> --id 109 --name "Name" --out <dir>
 Outputs in <dir>: sound/patch_30.pck, mods/TitantronFix/pac/audio/assetconv_p30.pac,
-mods/SuperString/pac/string/win/string_win.pac, manifest.json (inputs, outputs, md5s, ids).
+mods/SuperString/pac/string/win/string_win.pac, pac/menu/cae_item_p30.pac, manifest.json (inputs, outputs, md5s).
 """
 import argparse, bisect, hashlib, json, os, struct, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -178,6 +178,22 @@ def add_string(pac, sid, text, file_index=0):
     S.files[0]['data'] = string_table_build(pre, ents)
     return H.replace_append(file_index, S.build()), len(ents)
 
+# ---------- Create-an-Entrance music menu (BGM.lsd = SHDC file id 2 in pac/menu/cae_item_pNN.pac) ----------
+def add_bgm_entry(pac, mid):
+    """BGM.lsd: u16 entries in this file, u16 cumulative total; entries of 10 x u32:
+    value (id*1000), u16 id | u16 0xFFFF, 0xFFFFFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, menu string (3000+id),
+    0xFFFF0001, 0, dlc flag (1 on DLC entries, 0 on base ones). We add a base-style entry."""
+    H = HSPC(pac); S = SHDC(H.files[0]['data'])
+    f = [x for x in S.files if x['id'] == 2]; assert len(f) == 1, 'BGM.lsd (id 2) not found'
+    f = f[0]; d = f['data']
+    n, total = struct.unpack_from('<HH', d, 0); assert len(d) == 4 + 40 * n
+    ents = [struct.unpack_from('<10I', d, 4 + 40 * k) for k in range(n)]
+    assert all(e[0] != mid * 1000 for e in ents), 'entry already present'
+    new = (mid * 1000, 0xFFFF0000 | mid, 0xFFFFFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 3000 + mid, 0xFFFF0001, 0, 0)
+    ents.append(new)
+    f['data'] = struct.pack('<HH', n + 1, total + 1) + b''.join(struct.pack('<10I', *e) for e in ents)
+    return H.replace_append(0, S.build()), {'entries': n + 1, 'total': total + 1, 'entry': list(new)}
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--game', required=True); ap.add_argument('--wem', required=True)
@@ -186,7 +202,7 @@ def main():
     a = ap.parse_args(); G = a.game; mid = a.id
     assert 0 < mid < 1000, 'ids < 1000 only (name rule 13000+id)'
     paths = {'pck': 'sound/patch_30.pck', 'vmum': 'mods/TitantronFix/pac/audio/assetconv_p30.pac',
-             'str': 'mods/SuperString/pac/string/win/string_win.pac'}
+             'str': 'mods/SuperString/pac/string/win/string_win.pac', 'cae': 'pac/menu/cae_item_p30.pac'}
     src = {k: open(os.path.join(G, v), 'rb').read() for k, v in paths.items()}
     wem = open(a.wem, 'rb').read(); wi = wem_info(wem)
     man = {'id': mid, 'name': a.name, 'wem': a.wem, 'wem_md5': md5(wem), 'wem_info': wi,
@@ -201,11 +217,13 @@ def main():
     pck = akpk_write(P)
     # 2 table, 3 name
     vm, row = activate_row(src['vmum'], mid)
-    st, nstr = add_string(src['str'], 13000 + mid, a.name)
-    out = {'pck': pck, 'vmum': vm, 'str': st}
+    st, nstr = add_string(src['str'], 13000 + mid, a.name)            # name (mixed case)
+    st, nstr = add_string(st, 3000 + mid, a.name.upper())              # menu label (upper case, as in BGM.lsd)
+    cae, bgm = add_bgm_entry(src['cae'], mid)
+    out = {'pck': pck, 'vmum': vm, 'str': st, 'cae': cae}
     for k, v in out.items():
         p = os.path.join(a.out, paths[k]); os.makedirs(os.path.dirname(p), exist_ok=True); open(p, 'wb').write(v)
-    man.update({'ids': ids, 'source_id': src_id, 'row': row, 'strings': nstr,
+    man.update({'ids': ids, 'source_id': src_id, 'row': row, 'strings': nstr, 'bgm': bgm,
                 'outputs': {k: {'path': paths[k], 'md5': md5(v), 'size': len(v)} for k, v in out.items()}})
     open(os.path.join(a.out, 'manifest.json'), 'w').write(json.dumps(man, indent=1))
     print(json.dumps({k: man[k] for k in ('ids', 'source_id', 'row', 'outputs')}, indent=1))

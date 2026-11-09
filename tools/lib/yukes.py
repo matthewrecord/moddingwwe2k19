@@ -71,6 +71,7 @@ class SHDC:
         for i in range(n):
             fid, off, sz, z = struct.unpack_from('<4I', b, self.h[7] + 16 * i)
             self.files.append({'id': fid, 'off': off, 'data': bytes(b[off: off + sz]), 'z': z})
+        self._orig_total = sum(len(f['data']) for f in self.files)
 
     def build(self):
         """Keep header/dir/table area as is up to the first file; append files in original offset order, 4-aligned
@@ -83,6 +84,10 @@ class SHDC:
             off = len(b)
             struct.pack_into('<4I', b, self.h[7] + 16 * i, f['id'], off, len(f['data']), f['z'])
             b += f['data']
+        # word 15 = total data size in untouched SHDCs (not validated by the game: edited community pacs leave it
+        # stale). Shift it by our size change so untouched-style files stay consistent.
+        delta = sum(len(f['data']) for f in self.files) - self._orig_total
+        struct.pack_into('<I', b, 60, (self.h[15] + delta) & 0xffffffff)
         return bytes(b)
 
 def string_table_parse(d):
