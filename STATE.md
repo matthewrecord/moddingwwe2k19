@@ -22,7 +22,8 @@
 - **2026-11-09 night (handoff 005): FIRST NEW MUSIC SLOT BUILT AND INSTALLED (slot 109, Alex Shelley test theme).**
   Verified offline (our parsers + wwiser); installed in the modded game with backups (notes/builds/slot109.md).
   v1: boots, but not in the CAE list -> **v2 installed** (entry in base cae_item.pac, Item Adder method).
-  **Waiting on Matthew's in-game test of v2** (CAE list + preview; CCT 109000 plays the theme in an entrance).
+  v2 not visible either: our pac writer appended past header word 15's data region -> fixed (Pac Editor-style
+  relayout). **v3 installed; waiting on Matthew's in-game check of the Entrance Music list** (CCT test later).
 - **Latest handoff:** `handoff/005_slot109_built_2026-11-09.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.

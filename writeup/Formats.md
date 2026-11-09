@@ -20,7 +20,7 @@ not obfuscated; disassembled with `dnfile`+`dncil`, script `/tools/exe/cildump.p
 | 8 | data2size | 0x0C | 12 bytes x files |
 | 9-13 | (skipped) | 0x11, 0x70, 0x12, 0x800, 0 | name-directory/plugin blocks (zlib `EOP5/plugin version` + path names at the end) |
 | 14 | filecount | 1 | |
-| 15 | size | 0x7000 | rewritten by rePac at offset 60 |
+| 15 | size | 0x7000 | **data region** (first file start -> tail start) in cae_item/string pacs; Pac Editor updates it; the game ignores data outside it (v1/v2 lesson). assetconv_p30 has 0x7000 (meaning there open; in-place edits keep it) |
 
 File-table `size` field: rePac reads each file up to the **next file's offset** (not by size). SuperString's
 `string_win.pac` has an English table that overruns the next file's start (a latent bug in that mod, harmless in

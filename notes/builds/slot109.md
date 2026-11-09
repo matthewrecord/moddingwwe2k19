@@ -35,3 +35,14 @@ What changed (all verified by re-reading; bank also by wwiser):
   front if any target is locked.
 - **Decisive CCT test:** before the mod no `Play_MUS_0109_*` event existed in any bank (evmatch over all banks), so if
   assigning 109000 in CCT now plays the Alex Shelley theme, the slot is real, not a database label.
+
+## v2 result and v3 (2026-11-09 18:25)
+
+- **v2 in game (Matthew):** entry still not in the Entrance Music list. Matthew: the files are the right ones.
+- Cause found: our writer appended edited files past the end of the pac and repointed the entry, leaving header word
+  15 (= data region, first file -> tail) unchanged; Pac Editor instead re-lays out in place and updates word 15. The
+  game evidently reads only that region, so v1/v2 edits to `cae_item*.pac` and `string_win.pac` were invisible.
+- Writer fixed (`HSPC.build/replace`, Pac Editor-style); roundtrip byte-identical on vanilla `cae_item.pac`, on
+  Matthew's Item-Adder/Pac-Editor-edited `cae_item.pac` and on vanilla `cae_item_p30.pac`.
+- **v3 installed** (`_moddingwwe2k19_builds\slot109_v3`): `cae_item.pac` keeps its size (entry fits in padding,
+  word 15 unchanged); `string_win.pac` re-laid (word 15 = new data region; SuperString's old overlap removed).
