@@ -1,0 +1,19 @@
+# Game files, modded builds and large binaries never go in this repository (they live on Matthew's laptop).
+*.exe
+*.dll
+*.arc
+*.def
+*.pac
+*.bik
+*.bk2
+*.zip
+*.7z
+*.rar
+*.bin
+*.dmp
+*.csv.bak
+CrashDump/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
