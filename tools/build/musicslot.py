@@ -203,9 +203,10 @@ def main():
     a = ap.parse_args(); G = a.game; mid = a.id
     assert 0 < mid < 1000, 'ids < 1000 only (name rule 13000+id)'
     paths = {'pck': 'sound/patch_30.pck', 'vmum': 'mods/TitantronFix/pac/audio/assetconv_p30.pac',
-             'str': 'mods/SuperString/pac/string/win/string_win.pac', 'cae': 'pac/menu/cae_item.pac'}
-    # CAE menu: the BASE list (first SHDC of cae_item.pac), as the community CAE Item Adder does. v1 put the entry in
-    # cae_item_p30.pac and it did not show in game (Matthew 2026-11-09): patch lists carry DLC-flagged entries only.
+             'str': 'mods/SuperString/pac/string/win/string_win.pac', 'cae': 'pac/menu/cae_item_p30.pac'}
+    # CAE lists are one combined index filled in order: base entries, then p10, p20, p30 (each header = (own count,
+    # running end): base (304,308), p10 (3,307), p20 (1,308), p30 (7,315)). A base append lands at 304 and is
+    # overwritten by p10's first entry (v2/v3/v4 evidence). New entries go at the END of the last list (p30).
     src = {k: open(os.path.join(G, v), 'rb').read() for k, v in paths.items()}
     wem = open(a.wem, 'rb').read(); wi = wem_info(wem)
     man = {'id': mid, 'name': a.name, 'wem': a.wem, 'wem_md5': md5(wem), 'wem_info': wi,
