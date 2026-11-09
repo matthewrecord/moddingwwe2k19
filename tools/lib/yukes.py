@@ -22,14 +22,29 @@ class HSPC:
         self.files = []
         for i in range(n):
             off, sz, ext = struct.unpack_from('<3I', b, self.tab_off + 12 * i)
+            # extent: the game's own rule is unknown; rePac reads up to the next file's offset. We keep size*256.
             self.files.append({'sector': off, 'size256': sz, 'ext': ext,
                                'data': bytes(b[off * 2048: off * 2048 + sz * 256])})
         last = max(f['sector'] * 2048 + f['size256'] * 256 for f in self.files) if self.files else 0
         self.tail_off = (last + 2047) // 2048 * 2048
         self.tail = bytes(b[self.tail_off:])
 
+    def replace_append(self, i, data):
+        """Safest write: keep every original byte; append `data` (2048-aligned) at the end of the file and repoint
+        file-table entry i (sector, size in 256-byte units). Unchanged files, directory and tail stay byte-identical.
+        Note: some community pacs (SuperString) already have overlapping entries; this never touches them."""
+        b = bytearray(self.raw)
+        b += b'\0' * ((-len(b)) % 2048)
+        sector = len(b) // 2048
+        pad = (-len(data)) % 256
+        struct.pack_into('<3I', b, self.tab_off + 12 * i, sector, (len(data) + pad) // 256, self.files[i]['ext'])
+        b += data + b'\0' * pad
+        b += b'\0' * ((-len(b)) % 2048)
+        return bytes(b)
+
     def build(self):
-        """Re-lay out files (2048-aligned, in original sector order), keep directory, tail and header words."""
+        """Re-lay out files (2048-aligned, in original sector order), keep directory, tail and header words.
+        Only byte-identical for well-formed pacs; prefer replace_append for edits."""
         b = bytearray(self.raw[:min(f['sector'] for f in self.files) * 2048])
         order = sorted(range(len(self.files)), key=lambda i: self.files[i]['sector'])
         for i in order:
