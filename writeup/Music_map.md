@@ -82,12 +82,14 @@ Take an unused ID (e.g. one of the 747), then:
 
 `D:\Pictures\WWE 2K19\A - CCT\Custom_Character_Tools.exe` is an obfuscated .NET (Mono) program that edits game memory
 (`data.xml` = addresses and CAW/superstar/team/match lists; **no music list**). Its music names therefore come from
-game memory or its own resources: to establish by decompiling (next step). If it reads the game's in-memory table, a
-new VMUM row is enough for CCT too.
+game memory or its own resources. Static decompiling is blocked: the assembly is packed (4 encrypted resources, AES,
+clrjit hook; only 17 plain user strings, none about music). Asked Matthew how CCT presents music (dropdown of names vs
+a number). If it reads the game's in-memory table, a new VMUM row is enough for CCT too; if it is a number field, any
+ID works once the game knows it.
 
 ## 7. Open questions (in order)
 
-1. How CCT lists music (decompile).
+1. How CCT lists music (asked Matthew 2026-11-09; decompile blocked by packing).
 2. Whether the game loads patch levels above 30 (`PATCH%02d` loop bounds; `sound.pac`/`SoundScripts` bank list) or the
    new bank must go into `patch_30.pck` / a replaced p30 table.
 3. Where display names live (string tables) and what field 1 indexes.
