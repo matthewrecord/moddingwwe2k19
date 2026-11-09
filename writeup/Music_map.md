@@ -64,7 +64,7 @@ Header `VMUM, 16, 1000, n`; n records of 64 bytes (16 × u32); then a C-string p
 | 6 | string: special music cue, e.g. `MUS_9001_00_0_4` (measured) |
 | 7 | string: entrance video, e.g. `ent_0101_0_2`, `tag_0071_0_0` (measured) |
 | 8-14 | timing/asset values; defaults = ID×1000, ID×100 (measured pattern; meaning open) |
-| 15 | flags, e.g. 0x10101 (open) |
+| 15 | flag bytes, e.g. 0x10101; TitantronFix flips these (titantron availability; exact bits open) |
 
 Rows per level: base 375, p01 388, p10 389, p20 390, **p30 1,147**. p30 = the 390 real rows **plus 757 unnamed rows
 that fill every ID 0-999. 747 of those IDs have no Wwise event at all: empty, reserved slots** (`tools/audio/vmum.py`).
@@ -84,6 +84,17 @@ that fill every ID 0-999. 747 of those IDs have no Wwise event at all: empty, re
   runtime list is filled (expected: the same 01…41 table).
 - **Chunk0.def** (`;PAC_LIST_ARC_EPAC`) is the master list of pac files; the modded install adds ~5,700 lines, so
   community mods register new pacs by listing them there.
+
+- **Runtime patch list = data:** filled by `yCObserveInfoCSV::InitObserve` (writer 0x14093CB84) from
+  `observe_info.csv` inside `pac/root/_startup_observeinfo_pNN.pac` (BPE), which reads `1	10	20	30`. Adding `40` there
+  (in a p40 or overridden p30 observeinfo pac) makes the game look for `/MusicAndVideoList/PATCH40`.
+- **Mods folder:** `Chunk0.def` ends with `mods\<mod>\<original path>` lines (CCT, PerfectPlextra, SuperString,
+  TitantronFix, Universal Alternate Attire Unlock). A mod overrides a game pac by shipping the same relative path under
+  `mods\<name>\` and listing it. **TitantronFix overrides `pac\audio\assetconv_p30.pac`**: it changes only field 15
+  of 53 rows (flag bytes, e.g. 0x10000 -> 0x10101; titantron availability), so **any music-table change must start
+  from the TitantronFix table** (`mods\TitantronFix\pac\audio\assetconv_p30.pac`, MD5 7e934337…) or it undoes the fix.
+- **"Unmodded" copy is not vanilla:** it carries the same `mods\` folder and Chunk0 entries. Use the base files outside
+  `mods\` for vanilla facts.
 
 ## 5. Route to a new slot (plan, see section 7)
 
@@ -115,3 +126,14 @@ ID works once the game knows it.
 4. Tooling to author a v128 soundbank: Wwise 2016.2 authoring (matching bank version) or hand-built HIRC (a small
    Sound + Action + Event set, as in `patch_20`'s 519-byte bank).
 5. The one check only Matthew can do: hear it in game and see it in CCT (asked once everything else is done).
+
+## 8. Chosen route for the first test slot (2026-11-09)
+
+Override, don't add levels, where possible (fewest new containers to write):
+1. `sound\custom_music.pck` (new file): own bank with `Play_MUS_<id>_00_0_0` and `_0_1` + the stream.
+2. `mods\CustomMusic\pac\root\_startup_audio_p30.pac`: the p30 script plus a `custom_music.pck` entry; listed
+   in `Chunk0.def` after the existing mods.
+3. `mods\CustomMusic\pac\audio\assetconv_p30.pac`: the TitantronFix table with the chosen empty row named and
+   given a menu index; listed in `Chunk0.def` after TitantronFix (load order to confirm).
+4. Name string (string table, SuperString also overrides it: build on its version).
+Fallback if overrides of `pac\root` are ignored: the free p40 levels (section 4b).
