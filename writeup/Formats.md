@@ -61,3 +61,11 @@ bank names `DLC_30_E_S`, `Entrance_Music_E_S`, … , `/SoundScripts/PATCHnn` + `
 `pac/menu/cae_item[_pNN].pac` (HSPC) holds `/ENEX30/*.lsd` lists: `BGM.lsd` (entrance music list, by name),
 `titantron.lsd`, `minitron.lsd`, `entrance*.lsd`, `CAE_*.lsd`, `winning_*.lsd`, … The community "CAE Item Adder"
 edits these. Format of `.lsd` and whether `BGM.lsd` gates the in-game music list: next to map.
+
+## CAE `.lsd` lists: one combined index (measured + confirmed in game 2026-11-09)
+
+Header `(u16 own count, u16 running end)`; entries 40 bytes (BGM.lsd). Base, p10, p20, p30 lists are concatenated
+into one index; each header's second value is the running end (BGM: base 304/308 with 4 slots reserved for p10/p20;
+p10 3/307; p20 1/308; p30 7/315). New entries must go at the END of the last list (p30), with both values +1.
+Appending to the base list puts the entry in a slot a DLC entry overwrites (CAE Item Adder only works where no
+patch list follows). Other lists show the same pattern (e.g. entrance.lsd base 218/222, p30 9/233).

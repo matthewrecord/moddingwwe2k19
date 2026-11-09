@@ -53,3 +53,13 @@ What changed (all verified by re-reading; bank also by wwiser):
 - **v4diag installed** (v3 + markers, `tools/build/diag_markers.py`): The Rock's BGM entry label -> 3109; string 3101
   -> 'STEVE AUSTIN TEST'. Reading: Rock shows ALEX SHELLEY label => game reads our BGM.lsd (problem = adding entries);
   Austin shows TEST => game reads our string table; neither => our pac edits are not loaded at all.
+
+## v4 result and v5 (2026-11-09 18:35)
+
+- **v4diag in game (Matthew):** both markers appeared and worked -> the game reads our `cae_item.pac` BGM list and
+  our string table. The added base entry was the only thing missing.
+- Cause: CAE lists form one combined index filled in order base -> p10 -> p20 -> p30; headers are (own count, running
+  end): BGM base (304,308), p10 (3,307), p20 (1,308), p30 (7,315). A base append sits at index 304 and is overwritten
+  by p10's first entry. (Field-based filtering ruled out: listed tracks include rows identical in kind to row 109.)
+- **v5 installed** (`_moddingwwe2k19_builds\slot109_v5`): markers gone, base `cae_item.pac` original, entry appended to
+  the p30 BGM list -> (8,316). Pac Editor-style relayout (file1 moved 5 -> 7, word 15 8192 -> 12288).

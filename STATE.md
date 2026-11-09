@@ -23,7 +23,8 @@
   Verified offline (our parsers + wwiser); installed in the modded game with backups (notes/builds/slot109.md).
   v1: boots, but not in the CAE list -> **v2 installed** (entry in base cae_item.pac, Item Adder method).
   v2 not visible either: our pac writer appended past header word 15's data region -> fixed (Pac Editor-style
-  relayout). **v3 installed; waiting on Matthew's in-game check of the Entrance Music list** (CCT test later).
+  relayout). v3 not listed; v4 markers proved our files are read; cause = CAE lists are one combined index (base
+  append overwritten by p10). **v5 installed (entry at the end of the p30 list); waiting on Matthew's check.**
 - **Latest handoff:** `handoff/005_slot109_built_2026-11-09.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
