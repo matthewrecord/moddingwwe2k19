@@ -35,7 +35,7 @@ Example: decoded `_startup_audio_p30` = 8 files (10, 11, 12, 13, 100, 101, …).
 
 ## String table (file #0 of each language SHDC in `string_win.pac`)
 
-`u32 0, u32 0, u32 count, count x (offset, length, id), pool` — offsets from the start of this file, length includes
+`u32 0, u32 count, count x (offset, length, id), pool` — offsets from the start of this file (= SHDC+0x64), length includes
 the NUL. SuperString's copy: 6 language SHDCs, 26,674-26,675 strings each. Music name = id 13000 + music id.
 
 ## BPE (`BPE ` blocks, e.g. `pac/root/_startup_*`)

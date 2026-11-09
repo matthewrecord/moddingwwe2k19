@@ -86,18 +86,20 @@ class SHDC:
         return bytes(b)
 
 def string_table_parse(d):
-    """String-table file: u32 0, u32 0, u32 count, count x (offset, length incl NUL, id), pool. -> (prefix, [(id, bytes)])"""
-    pre = d[:8]; n = struct.unpack_from('<I', d, 8)[0]
+    """String-table file: u32 0, u32 count, count x (offset, length incl NUL, id), pool; offsets from file start.
+    -> (prefix, [(id, bytes)])"""
+    pre = d[:4]; n = struct.unpack_from('<I', d, 4)[0]
+    if not 0 < n < 1000000: raise ValueError('string count %d implausible' % n)
     out = []
     for j in range(n):
-        off, ln, i = struct.unpack_from('<3I', d, 12 + 12 * j)
+        off, ln, i = struct.unpack_from('<3I', d, 8 + 12 * j)
         out.append((i, d[off: off + ln]))
     return pre, out
 
 def string_table_build(pre, entries):
     """entries: [(id, bytes incl NUL)] in the order the index should have. Pool order follows index order."""
     n = len(entries); idx = bytearray(); pool = bytearray()
-    base = 12 + 12 * n
+    base = 8 + 12 * n
     for i, s in entries:
         idx += struct.pack('<3I', base + len(pool), len(s), i); pool += s
     return bytes(pre) + struct.pack('<I', n) + bytes(idx) + bytes(pool)
