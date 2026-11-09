@@ -11,6 +11,10 @@
   events `Play_MUS_<id>_..` in banks in `music_e_s.pck` and DLC `patch_NN.pck`, music list = VMUM table in
   `pac/audio/assetconv_pNN.pac`. DLC added new IDs this way; p30 table already holds 747 empty IDs. Next: how CCT lists
   music (decompile), whether the game loads patch levels above 30, string table for names, bank authoring.
-- **Latest handoff:** `handoff/002_music_survey_2026-11-09.md`.
+- **2026-11-09 evening (handoff 003):** loader traced. `.pck` list lives in BPE-compressed `pac/root/_startup_audio_pNN.pac`;
+  the exe tries levels 01,10,11,20,21,30,31,40,41, so **p40 is free: a new audio patch needs no exe change**. Music
+  table: highest `/MusicAndVideoList/PATCHnn` wins. CCT uses a dropdown (Matthew). Next: runtime patch list for the
+  music table, BPE/HSPC re-pack, bank authoring, string table.
+- **Latest handoff:** `handoff/003_music_loader_2026-11-09.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.

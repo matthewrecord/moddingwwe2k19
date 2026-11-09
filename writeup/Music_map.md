@@ -69,14 +69,32 @@ Header `VMUM, 16, 1000, n`; n records of 64 bytes (16 × u32); then a C-string p
 Rows per level: base 375, p01 388, p10 389, p20 390, **p30 1,147**. p30 = the 390 real rows **plus 757 unnamed rows
 that fill every ID 0-999. 747 of those IDs have no Wwise event at all: empty, reserved slots** (`tools/audio/vmum.py`).
 
+## 4b. How the game finds the packages and tables — measured (exe + data, 2026-11-09)
+
+- **Package list:** not in the exe. `pac/root/_startup_audio_pNN.pac` (SHDC container, **BPE**-compressed GCOM
+  script; `tools/audio/bpe.py`) lists every `.pck` to load, patch packages first (`patch_30.pck`, `patch_30_dialogue.pck`,
+  `patch_20.pck`, …, then `music_0_m.pck` …). Records are 4-byte-aligned names with type words (e.g. `INIT` after each
+  patch package). The game opens these names under `sound\` (Wwise IO hook at 0x140F17EF1 checks for `.PCK`).
+  No folder scan (no FindFirstFile call in the sound module).
+- **Patch levels the game tries:** the exe formats `pac\root\_startup_audio_p%02d.pac` in a 9-step loop
+  (0x14093EBA0) over the table at 0x142145CC8 = **01, 10, 11, 20, 21, 30, 31, 40, 41**. Only 01/10/20/30 exist, so
+  **p31, p40, p41 are free levels the game already looks for**: a custom audio patch needs no exe change.
+- **Music table:** the exe (0x1404D17B7) walks a runtime list of patch numbers (vector at 0x1425E68E8), looks up
+  `/MusicAndVideoList/PATCHnn` for each, and **keeps the last one found** (highest patch wins). Still to trace: how that
+  runtime list is filled (expected: the same 01…41 table).
+- **Chunk0.def** (`;PAC_LIST_ARC_EPAC`) is the master list of pac files; the modded install adds ~5,700 lines, so
+  community mods register new pacs by listing them there.
+
 ## 5. Route to a new slot (plan, see section 7)
 
 Take an unused ID (e.g. one of the 747), then:
-1. build a soundbank with `Play_MUS_<id>_00_0_0` / `_0_1` pointing at a new stream, and package it like `patch_30.pck`
-   (or a new `patch_40.pck` if the game loads further patch levels — to check in the exe);
-2. give its VMUM row a name index and menu index (or add a row) in a new top patch level of `assetconv`;
-3. add the display name to the game's string table (location to find: `pac/string/`);
-4. check the menu lists it and the event plays; then CCT.
+1. build a soundbank with `Play_MUS_<id>_00_0_0` / `_0_1` pointing at a new stream, packaged as a new
+   `sound\patch_40.pck` (own Init bank + content bank + stream, like `patch_30.pck`);
+2. ship `pac/root/_startup_audio_p40.pac` = the p30 script plus a `patch_40.pck` entry (BPE re-encode or stored);
+3. give the slot's VMUM row a name index and menu index in a new top level `/MusicAndVideoList/PATCH40`
+   (`assetconv_p40.pac`) — if the runtime patch list includes 40;
+4. add the display name to the game's string table (location to find: `pac/string/`);
+5. check the menu lists it and the event plays; then CCT.
 
 ## 6. CCT — measured so far
 
@@ -89,9 +107,10 @@ ID works once the game knows it.
 
 ## 7. Open questions (in order)
 
-1. How CCT lists music (asked Matthew 2026-11-09; decompile blocked by packing).
-2. Whether the game loads patch levels above 30 (`PATCH%02d` loop bounds; `sound.pac`/`SoundScripts` bank list) or the
-   new bank must go into `patch_30.pck` / a replaced p30 table.
+1. CCT shows music as a **dropdown of names** (Matthew 2026-11-09). Where it gets them: game memory (then a new
+   table row + name is enough) or its own encrypted list (then CCT needs patching). Decompile blocked by packing.
+2. ~~Patch levels above 30~~ answered for the audio script (p31/p40/p41 free); still to confirm for the music table's
+   runtime patch list and for loading `assetconv_p40.pac` (Chunk0.def entry?).
 3. Where display names live (string tables) and what field 1 indexes.
 4. Tooling to author a v128 soundbank: Wwise 2016.2 authoring (matching bank version) or hand-built HIRC (a small
    Sound + Action + Event set, as in `patch_20`'s 519-byte bank).

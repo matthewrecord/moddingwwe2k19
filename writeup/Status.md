@@ -33,7 +33,9 @@ Not yet surveyed in depth: which mods are applied to the modded copy, what diffe
    bench-test findings himself. Agents run, test and verify everything they can on their own, and only stop for
    Matthew when something genuinely cannot be settled from their side (e.g. a visual/audible in-game check that no
    tool can make, or a decision that is his). When asking, batch the questions and make each one quick to answer.
-6. Add new rules here as Matthew states them, with the date.
+6. **Git (Matthew 2026-11-09, "most expedient"):** commits and pushes go from the agent's cloud clone; game files are
+   read and written on the laptop through the agent shell. No laptop clone for now.
+7. Add new rules here as Matthew states them, with the date.
 
 ## 4. Files in this project
 
@@ -41,5 +43,4 @@ See `writeup/README.md` (write-up), `handoff/` (session notes), `notes/` (refere
 
 ## 5. Open project-wide issues
 
-- Confirm the laptop can push to GitHub on its own (git present; no credentials or `gh` found 2026-11-09).
 - Survey the modded vs unmodded install and inventory the tools in `D:\Pictures\WWE 2K19`.
