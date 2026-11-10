@@ -54,6 +54,28 @@ __asm__(
     "  add rax, qword ptr [rip + g_ovf_pofo]\n"
     "  ret\n");
 
+/* ---- inline pofo-array indexing (pofo index from the id map, array = some 509-entry pofo array): each site's
+   `imul R, X, 0x1e4` (7 bytes) becomes `call stub; nop; nop`. The stub returns X*0x1E4 for X < 509; for X >= 509 it
+   returns overflow_entry + k - B, so the site's following `add R, B` (+ constant) lands on the overflow pofo. ---- */
+extern char st_e8130b[], st_e23c67[], st_e5de59[], st_d2513f[];
+__asm__(
+    ".globl st_e8130b\n st_e8130b:\n  cmp rax, 509\n  jge 1f\n  imul rax, rax, 0x1e4\n  ret\n"
+    "1:\n  sub rax, 509\n  imul rax, rax, 0x1e4\n  add rax, qword ptr [rip + g_ovf_pofo]\n  sub rax, rdi\n  ret\n"   /* then add rax, rdi */
+    ".globl st_e23c67\n st_e23c67:\n  cmp rax, 509\n  jge 1f\n  imul rax, rax, 0x1e4\n  ret\n"
+    "1:\n  sub rax, 509\n  imul rax, rax, 0x1e4\n  add rax, qword ptr [rip + g_ovf_pofo]\n  sub rax, rdx\n  ret\n"   /* then add rax, rdx */
+    ".globl st_e5de59\n st_e5de59:\n  cmp rax, 509\n  jge 1f\n  imul rcx, rax, 0x1e4\n  ret\n"
+    "1:\n  lea rcx, [rax - 509]\n  imul rcx, rcx, 0x1e4\n  add rcx, qword ptr [rip + g_ovf_pofo]\n  add rcx, 0x120\n  sub rcx, rdi\n  ret\n"   /* rdi = array + 0x120; then add rcx, rdi */
+    ".globl st_d2513f\n st_d2513f:\n  cmp rcx, 509\n  jge 1f\n  imul rax, rcx, 0x1e4\n  ret\n"
+    "1:\n  lea rax, [rcx - 509]\n  imul rax, rax, 0x1e4\n  add rax, qword ptr [rip + g_ovf_pofo]\n  sub rax, 0x2247c\n  sub rax, rdi\n  ret\n"   /* then add rax, 0x2247c; add rax, rdi */
+);
+typedef struct { uint64_t va; const char *orig; void *stub; } Site;
+static const Site SITES[] = {
+    {0x140e8130b, "4869c0e4010000", st_e8130b}, {0x140e23c67, "4869c0e4010000", st_e23c67},
+    {0x140e5de59, "4869c8e4010000", st_e5de59}, {0x140d2513f, "4869c1e4010000", st_d2513f},
+};
+#define NSITES (int)(sizeof SITES / sizeof SITES[0])
+static uint8_t *g_tramp;   /* near-image jump table: call rel32 must reach it */
+
 /* ---- buffers near the image (RIP-relative disp32 needs +-2 GB) ---- */
 static void *alloc_near(size_t n) {
     uintptr_t a = (g_img + 0x3700000 + 0xFFFF) & ~(uintptr_t)0xFFFF;
@@ -102,6 +124,7 @@ static int apply(void) {
     if (!same(0x1404c98e9, "4181fafd010000")) { L("MISMATCH 1404c98e9"); ok = 0; }
     if (!same(0x14190fe1d, "4589948160fb5b02")) { L("MISMATCH 14190fe1d"); ok = 0; }
     if (!same(0x14190fe36, "41898c8160fb5b02")) { L("MISMATCH 14190fe36"); ok = 0; }
+    for (int i = 0; i < NSITES; i++) if (!same(SITES[i].va, SITES[i].orig)) { L("MISMATCH site %llx", SITES[i].va); ok = 0; }
     if (!ok) { L("exe build differs: NOTHING applied"); return 0; }
 
     for (int t = 0; t < 3; t++) {
@@ -135,9 +158,19 @@ static int apply(void) {
     /* pofo getter main path -> stub (mov rax, imm64; jmp rax; 2 x int3) */
     uint8_t j[14] = {0x48, 0xB8}; uint64_t s = (uint64_t)stub_pofo_main; memcpy(j + 2, &s, 8);
     j[10] = 0xFF; j[11] = 0xE0; j[12] = 0xCC; j[13] = 0xCC; put(0x140965760, j, 14);
+    /* inline pofo sites -> call near trampoline (jmp [rip+0] abs64) -> stub */
+    g_tramp = alloc_near(0x1000);
+    if (!g_tramp) { L("alloc_near failed (tramp)"); return 0; }
+    for (int i = 0; i < NSITES; i++) {
+        uint8_t *t = g_tramp + 16 * i; t[0] = 0xFF; t[1] = 0x25; memset(t + 2, 0, 4); uint64_t a = (uint64_t)SITES[i].stub; memcpy(t + 6, &a, 8);
+        int64_t rel = (int64_t)(uintptr_t)t - (int64_t)(VA(SITES[i].va) + 5);
+        if (rel > INT32_MAX || rel < INT32_MIN) { L("tramp out of range"); return 0; }
+        uint8_t c[7] = {0xE8}; int32_t r32 = (int32_t)rel; memcpy(c + 1, &r32, 4); c[5] = 0x90; c[6] = 0x90; put(SITES[i].va, c, 7);
+    }
+    { DWORD old; VirtualProtect(g_tramp, 0x1000, PAGE_EXECUTE_READ, &old); }
     /* lookup bounds: pofo-by-id getter (ja 0x1FC), moveset-by-id getter (jge 0x1FD), index->id reader (jae 0x1FD) */
     { uint32_t v = SLOT_CAP - 1; put(0x1409656bb + 1, &v, 4); v = SLOT_CAP; put(0x1409657ef + 3, &v, 4); put(0x1404c98e9 + 3, &v, 4); }
-    L("applied: %d relocs, getter detour -> %p, overflow pofo %p, SLOT_CAP %d", NRELOC, (void *)s, (void *)g_ovf_pofo, SLOT_CAP);
+    L("applied: %d inline sites, %d relocs, getter detour -> %p, overflow pofo %p, SLOT_CAP %d", NSITES, NRELOC, (void *)s, (void *)g_ovf_pofo, SLOT_CAP);
     return 1;
 }
 
