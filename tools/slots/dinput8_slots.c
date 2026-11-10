@@ -12,7 +12,6 @@
  * Build: x86_64-w64-mingw32-gcc -O2 -shared -masm=intel -o dinput8.dll dinput8_slots.c dinput8.def -static-libgcc
  */
 #include <windows.h>
-#include <tlhelp32.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -262,28 +261,19 @@ static int hook_all(void) {
     r += hook_iat("CreateFileMappingW", h_cfmw, (void **)&o_cfmw) == 2;
     return r; }
 
-/* ---- hang snapshot (F12): suspend each game thread briefly, log RIP and exe return addresses on its stack ---- */
+/* ---- hang snapshot (F12): ask the game's own dbghelp.dll (loaded by name at run time) to write a minidump of the
+   process: every thread's registers and stack. Read with tools/exe/crashdump.py --all. (test1d's own thread
+   suspension was blocked by Windows security, so this build uses the standard dump API instead.) ---- */
+typedef BOOL (WINAPI *MDWD)(HANDLE, DWORD, HANDLE, int, void *, void *, void *);
 static void dump_threads(void) {
-    DWORD me = GetCurrentThreadId(), pid = GetCurrentProcessId();
-    HANDLE sn = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0); THREADENTRY32 te; te.dwSize = sizeof te;
-    L("---- thread snapshot ----");
-    for (BOOL ok = Thread32First(sn, &te); ok; ok = Thread32Next(sn, &te)) {
-        if (te.th32OwnerProcessID != pid || te.th32ThreadID == me) continue;
-        HANDLE th = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, te.th32ThreadID);
-        if (!th) continue;
-        if (SuspendThread(th) == (DWORD)-1) { CloseHandle(th); continue; }
-        CONTEXT c; memset(&c, 0, sizeof c); c.ContextFlags = CONTEXT_FULL; char line[700]; line[0] = 0;
-        if (GetThreadContext(th, &c)) {
-            int n = sprintf(line, "  t%-5lu rip %llx%s rsp %llx stack:", te.th32ThreadID, c.Rip,
-                (c.Rip >= g_img && c.Rip < g_img + 0x1e06000) ? "(exe)" : "", c.Rsp);
-            uint64_t *sp = (uint64_t *)c.Rsp;
-            for (int i = 0, k = 0; i < 1024 && k < 16; i++) { if (IsBadReadPtr(sp + i, 8)) break;
-                uint64_t v = sp[i]; if (v >= g_img + 0x1000 && v < g_img + 0x1e06000) { n += sprintf(line + n, " %llx", (unsigned long long)v); k++; } }
-        }
-        ResumeThread(th); CloseHandle(th);
-        if (line[0]) L("%s", line);   /* log only after resuming (the thread may hold the CRT/heap lock) */
-    }
-    CloseHandle(sn); L("---- end of thread snapshot ----");
+    static MDWD f; if (!f) { HMODULE d = LoadLibraryA("dbghelp.dll"); if (d) f = (MDWD)GetProcAddress(d, "MiniDumpWriteDump"); }
+    if (!f) { L("no MiniDumpWriteDump"); return; }
+    char p[MAX_PATH]; GetModuleFileNameA(NULL, p, MAX_PATH); char *s = strrchr(p, '\\'); if (s) s[1] = 0;
+    sprintf(p + strlen(p), "slots_snapshot_%lu.dmp", (unsigned long)((GetTickCount() - g_t0) / 1000));
+    HANDLE h = CreateFileA(p, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    if (h == INVALID_HANDLE_VALUE) { L("snapshot: cannot create %s", p); return; }
+    BOOL ok = f(GetCurrentProcess(), GetCurrentProcessId(), h, 0x0 /* MiniDumpNormal: all thread stacks */, 0, 0, 0);
+    CloseHandle(h); L("snapshot %s: %s", p, ok ? "written" : "FAILED");
 }
 static DWORD WINAPI rec_thread(LPVOID p) {
     (void)p; int down = 0;
