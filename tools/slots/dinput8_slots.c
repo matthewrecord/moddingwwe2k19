@@ -100,6 +100,8 @@ static int apply(void) {
     if (!same(0x1409656bb, "3dfc010000")) { L("MISMATCH 1409656bb"); ok = 0; }
     if (!same(0x1409657ef, "4181f9fd010000")) { L("MISMATCH 1409657ef"); ok = 0; }
     if (!same(0x1404c98e9, "4181fafd010000")) { L("MISMATCH 1404c98e9"); ok = 0; }
+    if (!same(0x14190fe1d, "4589948160fb5b02")) { L("MISMATCH 14190fe1d"); ok = 0; }
+    if (!same(0x14190fe36, "41898c8160fb5b02")) { L("MISMATCH 14190fe36"); ok = 0; }
     if (!ok) { L("exe build differs: NOTHING applied"); return 0; }
 
     for (int t = 0; t < 3; t++) {
@@ -123,6 +125,11 @@ static int apply(void) {
         if (nd > INT32_MAX || nd < INT32_MIN) { L("disp out of range at %llx", r->va); return 0; }
         int32_t d2 = (int32_t)nd; put(r->va + r->dispoff, &d2, 4);
     }
+    /* image-base-relative writes of the index->id table in the registration function 0x14190fdf0
+       ([r9 + rax*4 + 0x25bfb60], r9 = image base): disp32 at +4 becomes new table - image base */
+    { int64_t nd = (int64_t)(uintptr_t)TBL_NEW[2] - (int64_t)g_img;
+      if (nd <= 0 || nd > INT32_MAX) { L("idx2id table too far for image-relative disp: NOT applying"); return 0; }
+      int32_t d2 = (int32_t)nd; put(0x14190fe1d + 4, &d2, 4); put(0x14190fe36 + 4, &d2, 4); }
     /* index->id init loop: 0x1f*16 + tail 13 ints; cover MAX_SLOTS (63*16 + 13 = 1021 <= 1024+0x1000/4) */
     uint8_t movecx[5] = {0xB9, 0x3F, 0, 0, 0}; put(0x14190fc8a, movecx, 5);
     /* pofo getter main path -> stub (mov rax, imm64; jmp rax; 2 x int3) */
@@ -173,6 +180,32 @@ static DWORD WINAPI slot_thread(LPVOID p) {
     return 0;
 }
 
+/* ---- crash logger: vectored handler logs fatal-type exceptions raised in the exe or this DLL (first chance,
+   so also ones the game later handles; capped at 20 entries). Registers, faulting address as exe offset, and
+   exe return addresses found on the stack. ---- */
+static volatile LONG g_nexc;
+static LONG CALLBACK veh(PEXCEPTION_POINTERS e) {
+    DWORD c = e->ExceptionRecord->ExceptionCode;
+    if (c != EXCEPTION_ACCESS_VIOLATION && c != EXCEPTION_ILLEGAL_INSTRUCTION && c != EXCEPTION_INT_DIVIDE_BY_ZERO &&
+        c != EXCEPTION_STACK_OVERFLOW && c != EXCEPTION_PRIV_INSTRUCTION && c != 0xC0000409) return EXCEPTION_CONTINUE_SEARCH;
+    if (InterlockedIncrement(&g_nexc) > 20) return EXCEPTION_CONTINUE_SEARCH;
+    CONTEXT *x = e->ContextRecord; uintptr_t ip = (uintptr_t)e->ExceptionRecord->ExceptionAddress;
+    HMODULE me = 0; GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)veh, &me);
+    MEMORY_BASIC_INFORMATION mb; VirtualQuery((void *)ip, &mb, sizeof mb);
+    int in_exe = ip >= g_img && ip < g_img + 0x3700000, in_me = mb.AllocationBase == (void *)me;
+    L("EXCEPTION %08lx at %p (%s) info %llx %llx thread %lu", c, (void *)ip, in_exe ? "exe" : in_me ? "slots dll" : "other module",
+      (unsigned long long)e->ExceptionRecord->ExceptionInformation[0], (unsigned long long)e->ExceptionRecord->ExceptionInformation[1], GetCurrentThreadId());
+    L("  rax %llx rbx %llx rcx %llx rdx %llx rsi %llx rdi %llx rbp %llx rsp %llx", x->Rax, x->Rbx, x->Rcx, x->Rdx, x->Rsi, x->Rdi, x->Rbp, x->Rsp);
+    L("  r8 %llx r9 %llx r10 %llx r11 %llx r12 %llx r13 %llx r14 %llx r15 %llx", x->R8, x->R9, x->R10, x->R11, x->R12, x->R13, x->R14, x->R15);
+    char line[512]; int n = sprintf(line, "  stack exe addrs:"); uint64_t *sp = (uint64_t *)x->Rsp;
+    for (int i = 0, k = 0; i < 512 && k < 24; i++) {
+        uint64_t v; if (IsBadReadPtr(sp + i, 8)) break; v = sp[i];
+        if (v >= g_img + 0x1000 && v < g_img + 0x1e06000) { n += sprintf(line + n, " %llx", (unsigned long long)v); k++; }
+    }
+    L("%s", line);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
 static DWORD WINAPI later_check(LPVOID p) {
     (void)p; Sleep(30000);
     uint8_t b[2]; memcpy(b, (void *)VA(0x140965760), 2);
@@ -188,6 +221,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         char p[MAX_PATH]; GetModuleFileNameA(NULL, p, MAX_PATH); char *s = strrchr(p, '\\'); if (s) strcpy(s + 1, "wwe2k19_slots.log");
         g_log = fopen(p, "w");
         L("wwe2k19 slots proxy, build " __DATE__ " " __TIME__ ", image %p", (void *)g_img);
+        AddVectoredExceptionHandler(1, veh);
         if (g_img == 0x140000000ULL) { if (apply()) { CreateThread(0, 0, later_check, 0, 0, 0); load_slots(); if (g_nslots) CreateThread(0, 0, slot_thread, 0, 0, 0); } }
         else L("unexpected image base: NOTHING applied");
     }
