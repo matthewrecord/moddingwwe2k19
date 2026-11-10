@@ -47,3 +47,5 @@ fall back to `_moddingwwe2k19_builds/testwrestler_v1/dinput8.dll.test1c` (known 
 
 ## 18:15 test1e hang snapshots read (notes step 1h); test1f installed (md5 a6f6ea73...)
 Old snapshots + log moved to `_moddingwwe2k19_builds/logs/`. Next: Matthew boots test1f, tries the match again.
+
+## 18:20 test1f hung too; test1g installed (md5 bb0f3fd9...), slot files renamed slots\0509_0937_0779.* (notes 1h)
