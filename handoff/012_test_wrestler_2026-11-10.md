@@ -44,3 +44,6 @@ so likely Smart App Control / reputation heuristics reacting to SuspendThread+Ge
 test1e installed (md5 36f19407...): no thread suspension; F12 asks dbghelp.dll (game's own copy) for a minidump
 `slots_snapshot_<s>.dmp` in the game folder (read: tools/exe/crashdump.py <dmp> --all). If test1e is also blocked:
 fall back to `_moddingwwe2k19_builds/testwrestler_v1/dinput8.dll.test1c` (known to run).
+
+## 18:15 test1e hang snapshots read (notes step 1h); test1f installed (md5 a6f6ea73...)
+Old snapshots + log moved to `_moddingwwe2k19_builds/logs/`. Next: Matthew boots test1f, tries the match again.
