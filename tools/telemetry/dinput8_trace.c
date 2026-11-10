@@ -77,6 +77,8 @@ static void apply_all(void) {
 }
 #define MAXSEEN 4000
 static struct { int dr; uintptr_t rip; } g_seen[MAXSEEN]; static volatile LONG g_nseen, g_hits;
+static char *hx(char *o, unsigned long long v) { char t[17]; int n = 0; do { t[n++] = "0123456789abcdef"[v & 15]; v >>= 4; } while (v); while (n) *o++ = t[--n]; return o; }
+static char *sa(char *o, const char *s) { while (*s) *o++ = *s++; return o; }
 static LONG CALLBACK veh(PEXCEPTION_POINTERS ep) {
     if (ep->ExceptionRecord->ExceptionCode != EXCEPTION_SINGLE_STEP) return EXCEPTION_CONTINUE_SEARCH;
     CONTEXT *c = ep->ContextRecord; DWORD64 st = c->Dr6;
@@ -87,16 +89,14 @@ static LONG CALLBACK veh(PEXCEPTION_POINTERS ep) {
         for (LONG k = 0; k < n && k < MAXSEEN; k++) if (g_seen[k].dr == i && g_seen[k].rip == rip) { dup = 1; break; }
         if (!dup && n < MAXSEEN) {
             LONG k = InterlockedIncrement(&g_nseen) - 1; if (k < MAXSEEN) { g_seen[k].dr = i; g_seen[k].rip = rip; }
-            char rets[600]; int p = 0; uintptr_t *sp = (uintptr_t *)c->Rsp;
-            for (int j = 0; j < 96 && p < 560; j++) { uintptr_t v; SIZE_T got;
-                if (!ReadProcessMemory(GetCurrentProcess(), sp + j, &v, 8, &got)) break;
-                if (v > g_base && v < g_end) p += sprintf(rets + p, " +%llx", (unsigned long long)(v - g_base)); }
-            rets[p] = 0;
-            char line[384];
-            snprintf(line, sizeof line, "t%lu HIT %s addr=%p rip=+%llx rcx=%llx rdx=%llx r8=%llx rax=%llx stack:%s",
-                     GetCurrentThreadId(), g_watch_name[i], (void *)g_watch[i], (unsigned long long)(rip - g_base),
-                     (unsigned long long)c->Rcx, (unsigned long long)c->Rdx, (unsigned long long)c->R8,
-                     (unsigned long long)c->Rax, rets);
+            char line[384], *o = line, *lim = line + 330; uintptr_t *sp = (uintptr_t *)c->Rsp;
+            o = sa(o, "t"); o = hx(o, GetCurrentThreadId()); o = sa(o, " HIT "); o = sa(o, g_watch_name[i]);
+            o = sa(o, " rip=+"); o = hx(o, rip - g_base); o = sa(o, " rip_abs="); o = hx(o, rip);
+            o = sa(o, " rcx="); o = hx(o, c->Rcx); o = sa(o, " rdx="); o = hx(o, c->Rdx); o = sa(o, " r8="); o = hx(o, c->R8);
+            o = sa(o, " rax="); o = hx(o, c->Rax); o = sa(o, " stack:");
+            for (int j = 0; j < 64 && o < lim; j++) { uintptr_t v = sp[j];   /* stack page is committed */
+                if (v > g_base && v < g_end) { o = sa(o, " +"); o = hx(o, v - g_base); } }
+            *o = 0;
             ring_put(line);
         }
     }
@@ -162,8 +162,10 @@ static DWORD WINAPI watcher(LPVOID _) {
             }
         }
         ring_flush();
-        if (armed) apply_all();
-        if (pass % 240 == 0) tlog("heartbeat pass %d copies %d hits %ld unique %ld", pass, g_ncp, g_hits, g_nseen);
+        { static uintptr_t last[4]; static int lastpass;
+          if (armed && (memcmp(last, (void *)g_watch, sizeof last) || pass - lastpass >= 20)) {
+              apply_all(); memcpy(last, (void *)g_watch, sizeof last); lastpass = pass; } }
+        if (pass % 40 == 0) tlog("heartbeat pass %d copies %d hits %ld unique %ld", pass, g_ncp, g_hits, g_nseen);
     }
     tlog("watcher done");
     return 0;
@@ -177,7 +179,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         g_base = (uintptr_t)GetModuleHandleA(NULL);
         IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)(g_base + ((IMAGE_DOS_HEADER *)g_base)->e_lfanew);
         g_end = g_base + nt->OptionalHeader.SizeOfImage;
-        tlog("telemetry v3 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
+        tlog("telemetry v4 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
         AddVectoredExceptionHandler(1, veh);
         CreateThread(NULL, 0, watcher, NULL, 0, NULL);
     } else if (why == DLL_THREAD_ATTACH) {
