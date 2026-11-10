@@ -12,6 +12,7 @@
  * Build: x86_64-w64-mingw32-gcc -O2 -shared -masm=intel -o dinput8.dll dinput8_slots.c dinput8.def -static-libgcc
  */
 #include <windows.h>
+#include <tlhelp32.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -260,13 +261,37 @@ static int hook_all(void) {
     r += hook_iat("SetFilePointer", h_sfp, (void **)&o_sfp) == 2; r += hook_iat("CloseHandle", h_ch, (void **)&o_ch) == 2;
     r += hook_iat("CreateFileMappingW", h_cfmw, (void **)&o_cfmw) == 2;
     return r; }
+
+/* ---- hang snapshot (F12): suspend each game thread briefly, log RIP and exe return addresses on its stack ---- */
+static void dump_threads(void) {
+    DWORD me = GetCurrentThreadId(), pid = GetCurrentProcessId();
+    HANDLE sn = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0); THREADENTRY32 te; te.dwSize = sizeof te;
+    L("---- thread snapshot ----");
+    for (BOOL ok = Thread32First(sn, &te); ok; ok = Thread32Next(sn, &te)) {
+        if (te.th32OwnerProcessID != pid || te.th32ThreadID == me) continue;
+        HANDLE th = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, te.th32ThreadID);
+        if (!th) continue;
+        if (SuspendThread(th) == (DWORD)-1) { CloseHandle(th); continue; }
+        CONTEXT c; memset(&c, 0, sizeof c); c.ContextFlags = CONTEXT_FULL; char line[700]; line[0] = 0;
+        if (GetThreadContext(th, &c)) {
+            int n = sprintf(line, "  t%-5lu rip %llx%s rsp %llx stack:", te.th32ThreadID, c.Rip,
+                (c.Rip >= g_img && c.Rip < g_img + 0x1e06000) ? "(exe)" : "", c.Rsp);
+            uint64_t *sp = (uint64_t *)c.Rsp;
+            for (int i = 0, k = 0; i < 1024 && k < 16; i++) { if (IsBadReadPtr(sp + i, 8)) break;
+                uint64_t v = sp[i]; if (v >= g_img + 0x1000 && v < g_img + 0x1e06000) { n += sprintf(line + n, " %llx", (unsigned long long)v); k++; } }
+        }
+        ResumeThread(th); CloseHandle(th);
+        if (line[0]) L("%s", line);   /* log only after resuming (the thread may hold the CRT/heap lock) */
+    }
+    CloseHandle(sn); L("---- end of thread snapshot ----");
+}
 static DWORD WINAPI rec_thread(LPVOID p) {
     (void)p; int down = 0;
     for (int i = 0;; i++) {
         Sleep(100);
         if (i % 20 == 0) { int r = hook_all(); if (r) L("[%8.2f] file hooks (re)installed: %d", (GetTickCount() - g_t0) / 1000.0, r); }
         int k = (GetAsyncKeyState(VK_F12) & 0x8000) != 0;
-        if (k && !down) dump_ring("F12 pressed");
+        if (k && !down) { L("[%8.2f] F12", (GetTickCount() - g_t0) / 1000.0); dump_threads(); dump_ring("F12 pressed"); }
         down = k;
     }
     return 0;
