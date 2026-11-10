@@ -113,7 +113,7 @@ static void scan(int pass) {
     for (int i = 0; i < g_ncp; i++) g_cp[i].alive &= ~2;
     while (a < 0x7FFFFFFF0000ull && VirtualQuery((void *)a, &mi, sizeof mi)) {
         uintptr_t rb = (uintptr_t)mi.BaseAddress, re = rb + mi.RegionSize;
-        int ok = mi.State == MEM_COMMIT && !(mi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) && mi.Type != MEM_IMAGE &&
+        int ok = mi.State == MEM_COMMIT && !(mi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) && mi.Type == MEM_PRIVATE &&
                  (mi.Protect & (PAGE_READWRITE | PAGE_READONLY | PAGE_WRITECOPY | PAGE_EXECUTE_READWRITE));
         if (ok) for (uintptr_t p = rb; p < re; p += sizeof buf - 8) {
             SIZE_T n = re - p < sizeof buf ? re - p : sizeof buf, got = 0;
@@ -146,12 +146,12 @@ static void scan(int pass) {
 static DWORD WINAPI watcher(LPVOID _) {
     g_watcher_tid = GetCurrentThreadId(); SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
     int armed = 0;
-    for (int pass = 1; pass <= 1800; pass++) {          /* ~60 min */
-        Sleep(pass < 120 ? 1000 : 2000); ring_flush();
+    for (int pass = 1; pass <= 20000; pass++) {          /* ~60 min */
+        Sleep(250); ring_flush();
         scan(pass);
-        {   /* watch the two newest full sets (by their 109 entry) that have lived >= 8 passes */
+        {   /* watch the two newest full sets (by their 109 entry) as soon as they appear */
             int sets[2] = {-1, -1};
-            for (int i = g_ncp - 1; i >= 0; i--) if (g_cp[i].id == 109 && (g_cp[i].alive & 1) && pass - g_cp[i].first >= 8) {
+            for (int i = g_ncp - 1; i >= 0; i--) if (g_cp[i].id == 109 && (g_cp[i].alive & 1) && pass - g_cp[i].first >= 0) {
                 if (sets[0] < 0) sets[0] = i; else if (sets[1] < 0) { sets[1] = i; break; } }
             uintptr_t want[4] = {0, 0, 0, 0};
             for (int k = 0; k < 2; k++) if (sets[k] >= 0) { want[k * 2] = g_cp[sets[k]].a; want[k * 2 + 1] = g_cp[sets[k]].a + 6 * 40; }
@@ -163,7 +163,7 @@ static DWORD WINAPI watcher(LPVOID _) {
         }
         ring_flush();
         if (armed) apply_all();
-        if (pass % 30 == 0) tlog("heartbeat pass %d copies %d hits %ld unique %ld", pass, g_ncp, g_hits, g_nseen);
+        if (pass % 240 == 0) tlog("heartbeat pass %d copies %d hits %ld unique %ld", pass, g_ncp, g_hits, g_nseen);
     }
     tlog("watcher done");
     return 0;
@@ -177,7 +177,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         g_base = (uintptr_t)GetModuleHandleA(NULL);
         IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)(g_base + ((IMAGE_DOS_HEADER *)g_base)->e_lfanew);
         g_end = g_base + nt->OptionalHeader.SizeOfImage;
-        tlog("telemetry v2 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
+        tlog("telemetry v3 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
         AddVectoredExceptionHandler(1, veh);
         CreateThread(NULL, 0, watcher, NULL, 0, NULL);
     } else if (why == DLL_THREAD_ATTACH) {
