@@ -88,3 +88,16 @@ What changed (all verified by re-reading; bank also by wwiser):
 - **v9 installed:** DLC-style flags like Lio Rush/Ricochet: BGM last word 1, MEMU flags 0x1EFFFF. Hypothesis: base-style
   items are gated by save-file unlock state (a new item has none); DLC-style items by DLC ownership (Matthew owns p30).
 - If v9 fails: trace the CAE BGM filter in the exe (code reading `/ENEX%d/LSD`), no more blind variants.
+
+## Where it stands (2026-11-10 00:30)
+
+- Matthew declined to test v9 (DLC-style flags): "if this were just adding to lists, WrestleMINUS would have done it".
+  Agreed: the gate is in code. v9 remains installed but untested (harmless).
+- Corrections: MEMU = `MenuMusicData.bin` (main-menu music playlist), not the CAE gate.
+- Static tracing done: LSD list loader 0x140C1F480 (builds one 0x340 list object per patch level from `/ENEXnn/LSD`;
+  vtable 0x14217B3D8 = generic 40-byte-entry container, div-by-40 via 0x6666666666666667). The per-entry visibility
+  test was NOT found by static heuristics (9999 compares: 140 sites; no div40+9999 co-location).
+- Proven facts: game reads our p30 BGM list (relabel + appended Rock duplicate show); value 109000 is rejected even
+  with a known label; value 100000 accepted anywhere.
+- Proposed next step: dynamic tracing (computer use + a debugger / Cheat Engine on Matthew's PC): break on reads of the
+  appended entry's value in memory while the Entrance Music menu builds -> the rejecting function directly.
