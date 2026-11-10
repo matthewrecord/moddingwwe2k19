@@ -125,6 +125,7 @@ static int apply(void) {
     if (!same(0x14190fe1d, "4589948160fb5b02")) { L("MISMATCH 14190fe1d"); ok = 0; }
     if (!same(0x14190fe36, "41898c8160fb5b02")) { L("MISMATCH 14190fe36"); ok = 0; }
     for (int i = 0; i < NSITES; i++) if (!same(SITES[i].va, SITES[i].orig)) { L("MISMATCH site %llx", SITES[i].va); ok = 0; }
+    if (!same(0x1409658f9, "3dfd010000")) { L("MISMATCH 1409658f9"); ok = 0; }
     if (!ok) { L("exe build differs: NOTHING applied"); return 0; }
 
     for (int t = 0; t < 3; t++) {
@@ -169,7 +170,8 @@ static int apply(void) {
     }
     { DWORD old; VirtualProtect(g_tramp, 0x1000, PAGE_EXECUTE_READ, &old); }
     /* lookup bounds: pofo-by-id getter (ja 0x1FC), moveset-by-id getter (jge 0x1FD), index->id reader (jae 0x1FD) */
-    { uint32_t v = SLOT_CAP - 1; put(0x1409656bb + 1, &v, 4); v = SLOT_CAP; put(0x1409657ef + 3, &v, 4); put(0x1404c98e9 + 3, &v, 4); }
+    { uint32_t v = SLOT_CAP - 1; put(0x1409656bb + 1, &v, 4); v = SLOT_CAP; put(0x1409657ef + 3, &v, 4); put(0x1404c98e9 + 3, &v, 4);
+      put(0x1409658f9 + 1, &v, 4); /* 40-byte record getter 0x140965860 (jge 0x1FD): used with the moveset by match setup 0x141331281 */ }
     L("applied: %d inline sites, %d relocs, getter detour -> %p, overflow pofo %p, SLOT_CAP %d", NSITES, NRELOC, (void *)s, (void *)g_ovf_pofo, SLOT_CAP);
     return 1;
 }
@@ -177,7 +179,7 @@ static int apply(void) {
 /* ---- overflow slots: slots\\IIII_DDDD.pofo / .moveset next to the exe (profile index IIII >= 509, character id DDDD).
    After the game has built its id->index map, write pofo/moveset into the overflow/relocated arrays and register
    id <-> index; re-done whenever the map is rebuilt (checked every second). ---- */
-typedef struct { int idx, id; uint8_t pofo[0x1E4]; uint8_t mov[0xD88]; int done_logged; } Slot;
+typedef struct { int idx, id, src; uint8_t pofo[0x1E4]; uint8_t mov[0xD88]; int done_logged; } Slot;
 static Slot g_slots[64]; static int g_nslots;
 static int readf(const char *p, void *buf, DWORD n) { HANDLE h = CreateFileA(p, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
     if (h == INVALID_HANDLE_VALUE) return 0; DWORD got = 0; ReadFile(h, buf, n, &got, 0); DWORD hi = 0, sz = GetFileSize(h, &hi); CloseHandle(h); return got == n && sz == n; }
@@ -185,12 +187,13 @@ static void load_slots(void) {
     char dir[MAX_PATH], pat[MAX_PATH]; GetModuleFileNameA(NULL, dir, MAX_PATH); char *s = strrchr(dir, '\\'); if (s) s[1] = 0;
     strcat(dir, "slots\\"); strcpy(pat, dir); strcat(pat, "*.pofo");
     WIN32_FIND_DATAA f; HANDLE h = FindFirstFileA(pat, &f); if (h == INVALID_HANDLE_VALUE) { L("no slots\\*.pofo"); return; }
-    do { int idx, id; if (sscanf(f.cFileName, "%d_%d.pofo", &idx, &id) != 2 || g_nslots >= 64) continue;
+    do { int idx, id, src = -1; int nf = sscanf(f.cFileName, "%d_%d_%d.pofo", &idx, &id, &src);
+        if (nf < 2 || g_nslots >= 64) continue; if (nf == 2) src = -1;
         Slot *t = &g_slots[g_nslots]; char p[MAX_PATH];
         if (idx < BASE_SLOTS || idx >= SLOT_CAP || id < 100 || id >= 1024) { L("slot %s: index/id out of range (cap %d)", f.cFileName, SLOT_CAP); continue; }
         strcpy(p, dir); strcat(p, f.cFileName); if (!readf(p, t->pofo, 0x1E4)) { L("slot %s: bad pofo", f.cFileName); continue; }
         strcpy(strrchr(p, '.'), ".moveset"); if (!readf(p, t->mov, 0xD88)) { L("slot %s: missing/bad .moveset", f.cFileName); continue; }
-        t->idx = idx; t->id = id; *(uint16_t *)t->pofo = (uint16_t)id; *(uint16_t *)(t->pofo + 2) = (uint16_t)idx;
+        t->idx = idx; t->id = id; t->src = src; *(uint16_t *)t->pofo = (uint16_t)id; *(uint16_t *)(t->pofo + 2) = (uint16_t)idx;
         g_nslots++; L("slot loaded: index %d id %d (%s)", idx, id, f.cFileName);
     } while (FindNextFileA(h, &f)); FindClose(h);
 }
@@ -206,8 +209,10 @@ static DWORD WINAPI slot_thread(LPVOID p) {
             if (map[t->id] != -1 && map[t->id] != t->idx) { if (!t->done_logged) L("id %d already used by index %d: slot %d skipped", t->id, map[t->id], t->idx); t->done_logged = 1; continue; }
             memcpy((void *)(g_ovf_pofo + (size_t)(t->idx - BASE_SLOTS) * 0x1E4), t->pofo, 0x1E4);
             memcpy(TBL_NEW[0] + (size_t)t->idx * 0xD88, t->mov, 0xD88);
+            if (t->src >= 0 && map[t->src] >= 0 && map[t->src] < BASE_SLOTS)   /* per-slot 40-byte record: clone the source's */
+                memcpy(TBL_NEW[1] + (size_t)t->idx * 40, TBL_NEW[1] + (size_t)map[t->src] * 40, 40);
             i2i[t->idx] = t->id; map[t->id] = t->idx;
-            L("[%d s] slot %d registered (id %d)", tick + 1, t->idx, t->id);
+            L("[%d s] slot %d registered (id %d, 40-byte record from id %d)", tick + 1, t->idx, t->id, t->src);
         }
     }
     return 0;

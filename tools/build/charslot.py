@@ -35,7 +35,7 @@ def main():
         if struct.unpack_from('<I', pofo, o)[0] == old_sid: struct.pack_into('<I', pofo, o, a.name_sid)
     assert pofo[0x20] == 1, 'source pofo is not flagged playable (+0x20)'
     out = {}
-    base = 'slots/%04d_%04d' % (a.index, a.id)
+    base = 'slots/%04d_%04d_%04d' % (a.index, a.id, a.source_id)   # 3rd number: id whose 40-byte per-slot record is cloned
     out['pofo'] = (base + '.pofo', bytes(pofo)); out['moveset'] = (base + '.moveset', mov)
 
     sp = open(os.path.join(G, STR), 'rb').read(); H = HSPC(sp); S = SHDC(H.files[0]['data'])
