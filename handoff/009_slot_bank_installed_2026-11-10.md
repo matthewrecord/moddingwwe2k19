@@ -52,3 +52,12 @@ A real song injected with Sound Editor into "THEME Custom 001" plays in game. Th
 once by us; Matthew fills them with Sound Editor (no prefetch fix needed) and assigns with Data Editor.
 Remaining optional: Data Editor dropdown names, CCT dropdown, rename slots to wrestler names, music-in-graphics help,
 write-up (Music_map.md, Status.md).
+
+## 13:05-13:10 rename to game ids (Matthew: names must match across menu, Data Editor, Sound Editor)
+Slots renamed "Custom <id>" (Custom 109 = Data Editor 109000 = Sound Editor "THEME Custom 109") with new
+`tools/build/rename.py --pattern "Custom %03d"`. Changed: string_win.pac 4677ddb2 -> 049d9cb2, Data Editor list
+bd8d7036 -> 2d4b8bf1, Sound Editor custom_data.xml 37369033 -> 1128d3da (backups `.bak_rename_20261110-180646`).
+patch_30.pck untouched (MD5 e9812399… before and after; it now holds Matthew's injected song, so it no longer matches
+the build output). slots.csv (Resources + build folder) and README updated. Menu drop-ins need no change (names come
+from strings). Note: install.py status will now report str/de/se/pck as OTHER; expected. Use rename.py for future
+wrestler names.
