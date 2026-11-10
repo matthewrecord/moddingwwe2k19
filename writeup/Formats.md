@@ -69,3 +69,10 @@ into one index; each header's second value is the running end (BGM: base 304/308
 p10 3/307; p20 1/308; p30 7/315). New entries must go at the END of the last list (p30), with both values +1.
 Appending to the base list puts the entry in a slot a DLC entry overwrites (CAE Item Adder only works where no
 patch list follows). Other lists show the same pattern (e.g. entrance.lsd base 218/222, p30 9/233).
+
+## MEMU music-info table (`pac/root/misc05_save_pNN.pac`, SHDC file id 6) — measured 2026-11-09
+
+`'MEMU', u32 count`, then 32-byte records: superstar/label string, song title string, album string (or 99999 = none),
+value (music id*1000 + variation digits; soundtrack 9001000…), type (0xFFFF0600 music; 0x000N0100 soundtrack items),
+u16 music id | u16 second id (0xFFFF = none), flags (0xFFFF base; 0x1EFFFF = DLC patch 30), 0. Base 202, p30 213.
+The CAE music menu hides BGM.lsd entries whose value has no record here (v7 diagnostic).

@@ -70,3 +70,14 @@ What changed (all verified by re-reading; bank also by wwiser):
   label 3100) SHOWED at the end; our 109000/3109 entry did not -> filtering is specific to our entry's content.
 - **v7diag installed:** p30 BGM ends with A (100000, label 3109), B (109000, label 3100), C (109000, label 3109).
   A shows 'ALEX SHELLEY (CUSTOM 109)' => new strings work; B shows a third 'THE ROCK' => music id 109 accepted.
+
+## v7 result and v8 (2026-11-09 23:59)
+
+- **v7diag:** A (100000 + label 3109) SHOWED as 'ALEX SHELLEY (CUSTOM 109)' and played The Rock; B (109000 + label
+  3100) hidden -> the menu rejects music id 109 itself. Not the VMUM lookup (The Rock, 100, is unreachable by bsearch
+  in vanilla yet listed).
+- Found the gate candidate: **MEMU music-info table** (`pac/root/misc05_save_pNN.pac`, SHDC file 6): 'MEMU', count,
+  32-byte records (superstar string, song title string, album/99999, value, type 0xFFFF0600 for music, u16 id|0xFFFF,
+  flags 0xFFFF or 0x1EFFFF (DLC p30), 0). Base 202 records, p30 213 (DLC music added). Every listed track has one.
+- **v8 installed** (clean, no diagnostics): v5 + MEMU record (3109 'ALEX SHELLEY (CUSTOM 109)', 13109 title, 99999,
+  109000, music, 109, base flags). MEMU 213 -> 214. Five files changed now (adds `pac/root/misc05_save_p30.pac`).

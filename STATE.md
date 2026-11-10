@@ -24,7 +24,8 @@
   v1: boots, but not in the CAE list -> **v2 installed** (entry in base cae_item.pac, Item Adder method).
   v2 not visible either: our pac writer appended past header word 15's data region -> fixed (Pac Editor-style
   relayout). v3 not listed; v4 markers proved our files are read; cause = CAE lists are one combined index (base
-  append overwritten by p10). **v5 installed (entry at the end of the p30 list); waiting on Matthew's check.**
+  append overwritten by p10). v5/v6/v7 diagnostics: menu rejects music id 109 -> missing MEMU music-info record (misc05_save_p30).
+  **v8 installed (adds the MEMU record); waiting on Matthew's check.**
 - **Latest handoff:** `handoff/005_slot109_built_2026-11-09.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
