@@ -52,3 +52,6 @@ Old snapshots + log moved to `_moddingwwe2k19_builds/logs/`. Next: Matthew boots
 
 ## 18:30 test1h installed (md5 d1f1f159...; remote snapshot trigger: create `slots_snapshot.request` in the game folder).
 Hang snapshots read (notes 1i). Chunk0.def re-sorted (md5 dfc88fa3...). Next: Matthew retries the match.
+
+## 18:35 Alex Shelley control match loads with the DLL; Test Wrestler hangs. test1i installed (md5 169e2089...):
+caller tracer (TRACE lines). Note: F11/F12 do not register once the game hangs; use the request file.
