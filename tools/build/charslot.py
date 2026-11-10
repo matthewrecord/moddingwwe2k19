@@ -56,6 +56,15 @@ def main():
             assert nl.lower() not in (x.lower() for x in cd), 'target already registered: %r' % nl
             new.append(nl); copies.append((line.decode().replace('\\', '/'), nl.decode().replace('\\', '/')))
     assert copies, 'no CCT assets for source id'
+    # Chunk0.def is kept sorted (case-insensitive) within each folder and the game appears to rely on it (lines
+    # appended out of order were never found: 2026-11-10 test1). Re-insert each new line at its sorted position.
+    added = [nl.replace('/', '\\').encode() for _, nl in copies]
+    new = [x for x in new if x.lower() not in {a.lower() for a in added}]
+    for nb in added:
+        k = nb.lower(); d = k.rsplit(b'\\', 1)[0] + b'\\'
+        idx = [i for i, y in enumerate(new) if y.lower().startswith(d) and y.lower().count(b'\\') == k.count(b'\\')]
+        pos = next((i for i in idx if new[i].lower() > k), idx[-1] + 1)
+        new.insert(pos, nb)
     out['chunk'] = ('Chunk0.def', b'\r\n'.join(new))
 
     man = {'args': vars(a), 'inputs': {}, 'outputs': {}, 'copies': copies}

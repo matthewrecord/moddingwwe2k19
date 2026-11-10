@@ -49,3 +49,6 @@ fall back to `_moddingwwe2k19_builds/testwrestler_v1/dinput8.dll.test1c` (known 
 Old snapshots + log moved to `_moddingwwe2k19_builds/logs/`. Next: Matthew boots test1f, tries the match again.
 
 ## 18:20 test1f hung too; test1g installed (md5 bb0f3fd9...), slot files renamed slots\0509_0937_0779.* (notes 1h)
+
+## 18:30 test1h installed (md5 d1f1f159...; remote snapshot trigger: create `slots_snapshot.request` in the game folder).
+Hang snapshots read (notes 1i). Chunk0.def re-sorted (md5 dfc88fa3...). Next: Matthew retries the match.
