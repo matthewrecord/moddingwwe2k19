@@ -33,3 +33,8 @@ writes minidumps to CrashDump\ (read with tools/exe/crashdump.py). Other install
 
 ## 17:50 test1c installed (dinput8.dll md5 235eb27a...), not yet booted
 = test1b fix + file-activity recorder (tools/slots/README.md "Diagnostics"). test1b was never booted.
+
+## 17:51 RESULT test1c: Test Wrestler APPEARS in the select screen (first character beyond 509 in game). Match start HANGS.
+No exception, no minidump; log (kept as wwe2k19_slots_test1c_hang.log) ends at boot; map rebuilt once at ~26 s
+(slot re-registered). test1d installed (md5 703b1130...): F12 also snapshots every thread (rip + exe stack addresses).
+Next: Matthew reproduces the hang, presses F12 twice ~5 s apart during it; read the snapshot.

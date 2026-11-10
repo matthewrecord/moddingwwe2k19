@@ -42,7 +42,7 @@
   +0x20) + no unowned store/showcase unlockable; **hard cap 509 superstar profiles** (beyond = exe patch). Test
   `charsel_v1` installed (unlock 160/335/330, playable 274); waiting on Matthew's select-screen check.
 - **2026-11-10 17:35 (handoff 011): character slots stage 1: test0 proxy `dinput8.dll` installed (behaviour-neutral patch mechanism check). Waiting on Matthew's boot + one match.**
-- **2026-11-10 ~18:00 (handoff 012): Test Wrestler (Alex Shelley clone) installed in overflow slot 509 (id 937) via slots proxy test1. Waiting on Matthew's boot.**
+- **2026-11-10 (handoff 012): Test Wrestler (slot 509, id 937) SHOWS in the select screen; match start hangs. Diagnosing with test1d (F12 thread snapshot).**
 - **Latest handoff:** `handoff/012_test_wrestler_2026-11-10.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
