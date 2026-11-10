@@ -81,3 +81,10 @@ What changed (all verified by re-reading; bank also by wwiser):
   flags 0xFFFF or 0x1EFFFF (DLC p30), 0). Base 202 records, p30 213 (DLC music added). Every listed track has one.
 - **v8 installed** (clean, no diagnostics): v5 + MEMU record (3109 'ALEX SHELLEY (CUSTOM 109)', 13109 title, 99999,
   109000, music, 109, base flags). MEMU 213 -> 214. Five files changed now (adds `pac/root/misc05_save_p30.pac`).
+
+## v8 result and v9 (2026-11-10 00:05)
+
+- **v8:** still hidden (MEMU record alone not enough).
+- **v9 installed:** DLC-style flags like Lio Rush/Ricochet: BGM last word 1, MEMU flags 0x1EFFFF. Hypothesis: base-style
+  items are gated by save-file unlock state (a new item has none); DLC-style items by DLC ownership (Matthew owns p30).
+- If v9 fails: trace the CAE BGM filter in the exe (code reading `/ENEX%d/LSD`), no more blind variants.
