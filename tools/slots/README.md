@@ -14,3 +14,7 @@ Build: `apt-get install gcc-mingw-w64-x86-64`, then
 | --- | --- | --- |
 | test0 (now) | Relocates the 3 static 509-entry tables (main movesets, 40-byte per-slot table, index->id) to 1024-entry buffers; detours the pofo getter's main path (idx >= 509 -> overflow array). No bound raised. | Identical to vanilla: boots, roster, a match with movesets intact. Log says `applied` and `30 s check: still in place`. |
 | test1 | Raise loader/consumer/getter caps to N; one test row (dat/mvs/pro) at index 509, cloned wrestler, fresh id. | Boot; clone in select screen?; can wrestle. |
+| test1 (now) | SLOT_CAP 510; lookup bounds raised in the pofo-by-id getter 0x1409656bb, moveset-by-id getter 0x1409657ef, index->id reader 0x1404c98e9. Thread: once the game's id map exists, copies `slots\IIII_DDDD.pofo/.moveset` into the overflow pofo / relocated moveset entry and registers id<->index (re-done if the map is rebuilt). The profile tables are NOT used for overflow slots. | Test Wrestler (index 509, id 937, Alex Shelley clone) in the select screen; can wrestle. |
+
+`tools/build/charslot.py` makes the slot files plus the name string (SuperString English table) and the Chunk0.def
+lines / CCT asset copies (models ch<id>xx, trons and renders 0<id>00) for a new id from a CCT export in the pictures folder.
