@@ -217,10 +217,15 @@ def add_memu_record(pac, mid, name_sid, title_sid):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--game', required=True); ap.add_argument('--wem', required=True)
-    ap.add_argument('--id', type=int, required=True); ap.add_argument('--name', required=True)
+    ap.add_argument('--id', type=int, action='append', required=True,
+                    help='repeat for several new slots in one build (same wem for all)')
+    ap.add_argument('--name', action='append', required=True,
+                    help='one per --id, in the same order')
     ap.add_argument('--out', required=True)
-    a = ap.parse_args(); G = a.game; mid = a.id
-    assert 0 < mid < 1000, 'ids < 1000 only (name rule 13000+id)'
+    a = ap.parse_args(); G = a.game; mids = a.id
+    assert len(a.name) == len(mids), 'give one --name per --id'
+    assert len(set(mids)) == len(mids), 'duplicate id'
+    for mid in mids: assert 0 < mid < 1000, 'ids < 1000 only (name rule 13000+id)'
     paths = {'pck': 'sound/patch_30.pck', 'vmum': 'mods/TitantronFix/pac/audio/assetconv_p30.pac',
              'str': 'mods/SuperString/pac/string/win/string_win.pac', 'cae': 'pac/menu/cae_item_p30.pac',
              'memu': 'pac/root/misc05_save_p30.pac'}
@@ -229,29 +234,29 @@ def main():
     # overwritten by p10's first entry (v2/v3/v4 evidence). New entries go at the END of the last list (p30).
     src = {k: open(os.path.join(G, v), 'rb').read() for k, v in paths.items()}
     wem = open(a.wem, 'rb').read(); wi = wem_info(wem)
-    man = {'id': mid, 'name': a.name, 'wem': a.wem, 'wem_md5': md5(wem), 'wem_info': wi,
-           'inputs': {k: {'path': paths[k], 'md5': md5(v), 'size': len(v)} for k, v in src.items()}}
-    # 1 audio
-    P = akpk_read(src['pck'])
-    src_id = fnv('wwe2k19mod_wem_%04d' % mid)
-    assert ('S', src_id) not in P['data']
-    newbank, ids = add_track(P['data'][('B', DLC30_BANK)], mid, src_id, wi['inmem'])
-    P['data'][('B', DLC30_BANK)] = newbank
-    P['streams'].append([src_id, 1, len(wem), 1 << 30, 0]); P['data'][('S', src_id)] = wem
+    man = {'ids': mids, 'names': a.name, 'wem': a.wem, 'wem_md5': md5(wem), 'wem_info': wi,
+           'inputs': {k: {'path': paths[k], 'md5': md5(v), 'size': len(v)} for k, v in src.items()}, 'slots': []}
+    P = akpk_read(src['pck']); vm, st, cae, memu = src['vmum'], src['str'], src['cae'], src['memu']
+    for mid, name in zip(mids, a.name):
+        src_id = fnv('wwe2k19mod_wem_%04d' % mid)
+        assert ('S', src_id) not in P['data']
+        newbank, ids = add_track(P['data'][('B', DLC30_BANK)], mid, src_id, wi['inmem'])
+        P['data'][('B', DLC30_BANK)] = newbank
+        P['streams'].append([src_id, 1, len(wem), 1 << 30, 0]); P['data'][('S', src_id)] = wem
+        vm, row = activate_row(vm, mid)
+        st, nstr = add_string(st, 13000 + mid, name)              # name (mixed case)
+        st, nstr2 = add_string(st, 3000 + mid, name.upper())      # menu label (upper case, as in BGM.lsd)
+        cae, bgm = add_bgm_entry(cae, mid)
+        memu, mrec = add_memu_record(memu, mid, 3000 + mid, 13000 + mid)
+        man['slots'].append({'id': mid, 'name': name, 'event_ids': ids, 'source_id': src_id, 'row': row,
+                             'bgm': bgm, 'memu': mrec})
     pck = akpk_write(P)
-    # 2 table, 3 name
-    vm, row = activate_row(src['vmum'], mid)
-    st, nstr = add_string(src['str'], 13000 + mid, a.name)            # name (mixed case)
-    st, nstr = add_string(st, 3000 + mid, a.name.upper())              # menu label (upper case, as in BGM.lsd)
-    cae, bgm = add_bgm_entry(src['cae'], mid)
-    memu, mrec = add_memu_record(src['memu'], mid, 3000 + mid, 13000 + mid)
     out = {'pck': pck, 'vmum': vm, 'str': st, 'cae': cae, 'memu': memu}
     for k, v in out.items():
         p = os.path.join(a.out, paths[k]); os.makedirs(os.path.dirname(p), exist_ok=True); open(p, 'wb').write(v)
-    man.update({'ids': ids, 'source_id': src_id, 'row': row, 'strings': nstr, 'bgm': bgm, 'memu': mrec,
-                'outputs': {k: {'path': paths[k], 'md5': md5(v), 'size': len(v)} for k, v in out.items()}})
-    open(os.path.join(a.out, 'manifest.json'), 'w').write(json.dumps(man, indent=1))
-    print(json.dumps({k: man[k] for k in ('ids', 'source_id', 'row', 'outputs')}, indent=1))
+    man['outputs'] = {k: {'path': paths[k], 'md5': md5(v), 'size': len(v)} for k, v in out.items()}
+    open(os.path.join(a.out, 'manifest.json'), 'w').write(json.dumps(man, indent=1, default=str))
+    print(json.dumps({'ids': mids, 'outputs': man['outputs']}, indent=1))
 
 if __name__ == '__main__':
     main()
