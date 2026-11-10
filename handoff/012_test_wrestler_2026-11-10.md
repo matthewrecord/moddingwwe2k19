@@ -38,3 +38,9 @@ writes minidumps to CrashDump\ (read with tools/exe/crashdump.py). Other install
 No exception, no minidump; log (kept as wwe2k19_slots_test1c_hang.log) ends at boot; map rebuilt once at ~26 s
 (slot re-registered). test1d installed (md5 703b1130...): F12 also snapshots every thread (rip + exe stack addresses).
 Next: Matthew reproduces the hang, presses F12 twice ~5 s apart during it; read the snapshot.
+
+## 18:04 test1d BLOCKED by Windows security (game would not start; DLL never ran: log untouched). Defender is off,
+so likely Smart App Control / reputation heuristics reacting to SuspendThread+GetThreadContext on all threads.
+test1e installed (md5 36f19407...): no thread suspension; F12 asks dbghelp.dll (game's own copy) for a minidump
+`slots_snapshot_<s>.dmp` in the game folder (read: tools/exe/crashdump.py <dmp> --all). If test1e is also blocked:
+fall back to `_moddingwwe2k19_builds/testwrestler_v1/dinput8.dll.test1c` (known to run).
