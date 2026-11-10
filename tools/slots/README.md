@@ -18,3 +18,13 @@ Build: `apt-get install gcc-mingw-w64-x86-64`, then
 
 `tools/build/charslot.py` makes the slot files plus the name string (SuperString English table) and the Chunk0.def
 lines / CCT asset copies (models ch<id>xx, trons and renders 0<id>00) for a new id from a CCT export in the pictures folder.
+
+## Diagnostics (from test1c, always on)
+- **Crash log**: a vectored exception handler writes access violations / illegal instructions / stack overflows /
+  fast-fail (0xC0000409) to `wwe2k19_slots.log`: exception address (exe/dll/other), registers, exe return addresses on
+  the stack (max 20 entries). The game also writes its own minidumps to `CrashDump\` (`tools/exe/crashdump.py`).
+- **File-activity recorder**: hooks the exe's kernel32 imports (CreateFileW/A, ReadFile, ReadFileEx, SetFilePointer,
+  CloseHandle, CreateFileMappingW) by IAT patch (re-checked every 2 s in case the Steam stub rewrites the IAT).
+  Keeps the last 1024 events in memory; writes them to the log on a crash (first 3 exceptions), on **F12**, and at
+  game exit. Failed opens (file not found etc.) are logged immediately. Not seen: file I/O done through the C
+  runtime (fopen) or by other DLLs (e.g. Wwise, Bink) with their own imports.

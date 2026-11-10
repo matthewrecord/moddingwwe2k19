@@ -22,7 +22,7 @@
 #define SLOT_CAP   510           /* slots 0..SLOT_CAP-1 pass the raised lookup checks (test1: one overflow slot) */
 #endif
 
-static FILE *g_log; static HMODULE g_real; static uintptr_t g_img;
+static FILE *g_log; static HMODULE g_real; static uintptr_t g_img; static DWORD g_t0;
 static void L(const char *f, ...) { if (!g_log) return; va_list a; va_start(a, f); vfprintf(g_log, f, a); va_end(a);
     fputc('\n', g_log); fflush(g_log); }
 
@@ -180,6 +180,98 @@ static DWORD WINAPI slot_thread(LPVOID p) {
     return 0;
 }
 
+
+/* ---- file-activity recorder: hooks the exe's kernel32 imports (IAT; the exe on disk is untouched).
+   Keeps the last RING_N file events in memory; written to the log on a crash, on F12, and at exit.
+   Failed opens are written immediately (a missing file is the usual reason "something doesn't work"). ---- */
+#define RING_N 1024
+#define NAMES 8192
+typedef struct { DWORD t, tid; char op; HANDLE h; uint64_t a, b; } Ev;
+static Ev g_ring[RING_N]; static volatile LONG g_ri;
+static struct { HANDLE h; wchar_t n[180]; } g_names[NAMES]; static CRITICAL_SECTION g_ncs;
+static void name_set(HANDLE h, const wchar_t *n) {
+    EnterCriticalSection(&g_ncs); unsigned k = ((uintptr_t)h >> 2) % NAMES;
+    for (unsigned i = 0; i < NAMES; i++, k = (k + 1) % NAMES) if (!g_names[k].h || g_names[k].h == h) {
+        g_names[k].h = h; wcsncpy(g_names[k].n, n, 179); g_names[k].n[179] = 0; break; }
+    LeaveCriticalSection(&g_ncs); }
+static const wchar_t *name_get(HANDLE h) {
+    unsigned k = ((uintptr_t)h >> 2) % NAMES;
+    for (unsigned i = 0; i < NAMES; i++, k = (k + 1) % NAMES) { if (g_names[k].h == h) return g_names[k].n; if (!g_names[k].h) break; }
+    return L"?"; }
+static void ev(char op, HANDLE h, uint64_t a, uint64_t b) {
+    LONG i = InterlockedIncrement(&g_ri) - 1; Ev *e = &g_ring[i % RING_N];
+    e->t = GetTickCount(); e->tid = GetCurrentThreadId(); e->op = op; e->h = h; e->a = a; e->b = b; }
+static void dump_ring(const char *why) {
+    LONG n = g_ri; LONG from = n > RING_N ? n - RING_N : 0;
+    L("---- last %ld file events (%s), oldest first; O=open R=read(size,offset) X=readex S=seek C=close M=map ----", n - from, why);
+    for (LONG i = from; i < n; i++) { Ev *e = &g_ring[i % RING_N];
+        L("  %8.2f t%-5lu %c %ls  %llx %llx", (e->t - g_t0) / 1000.0, e->tid, e->op, name_get(e->h), (unsigned long long)e->a, (unsigned long long)e->b); }
+    L("---- end of file events ----"); }
+
+typedef HANDLE (WINAPI *CFW)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
+typedef HANDLE (WINAPI *CFA)(LPCSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
+typedef BOOL (WINAPI *RF)(HANDLE, LPVOID, DWORD, LPDWORD, LPOVERLAPPED);
+typedef BOOL (WINAPI *RFX)(HANDLE, LPVOID, DWORD, LPOVERLAPPED, LPOVERLAPPED_COMPLETION_ROUTINE);
+typedef DWORD (WINAPI *SFP)(HANDLE, LONG, PLONG, DWORD);
+typedef BOOL (WINAPI *CH)(HANDLE);
+typedef HANDLE (WINAPI *CFMW)(HANDLE, LPSECURITY_ATTRIBUTES, DWORD, DWORD, DWORD, LPCWSTR);
+static CFW o_cfw; static CFA o_cfa; static RF o_rf; static RFX o_rfx; static SFP o_sfp; static CH o_ch; static CFMW o_cfmw;
+static HANDLE WINAPI h_cfw(LPCWSTR n, DWORD a, DWORD s, LPSECURITY_ATTRIBUTES sa, DWORD c, DWORD f, HANDLE t) {
+    HANDLE h = o_cfw(n, a, s, sa, c, f, t); DWORD err = GetLastError();
+    if (h != INVALID_HANDLE_VALUE) { name_set(h, n ? n : L"(null)"); ev('O', h, a, c); }
+    else if (n && wcsncmp(n, L"\\\\.\\", 4)) L("[%8.2f] OPEN FAILED (err %lu): %ls", (GetTickCount() - g_t0) / 1000.0, err, n);
+    SetLastError(err); return h; }
+static HANDLE WINAPI h_cfa(LPCSTR n, DWORD a, DWORD s, LPSECURITY_ATTRIBUTES sa, DWORD c, DWORD f, HANDLE t) {
+    HANDLE h = o_cfa(n, a, s, sa, c, f, t); DWORD err = GetLastError(); wchar_t w[180] = L"(null)";
+    if (n) MultiByteToWideChar(CP_ACP, 0, n, -1, w, 179);
+    if (h != INVALID_HANDLE_VALUE) { name_set(h, w); ev('O', h, a, c); }
+    else if (n) L("[%8.2f] OPEN FAILED (err %lu): %s", (GetTickCount() - g_t0) / 1000.0, err, n);
+    SetLastError(err); return h; }
+static BOOL WINAPI h_rf(HANDLE h, LPVOID b, DWORD n, LPDWORD got, LPOVERLAPPED o) {
+    ev('R', h, n, o ? ((uint64_t)o->OffsetHigh << 32 | o->Offset) : (uint64_t)-1); return o_rf(h, b, n, got, o); }
+static BOOL WINAPI h_rfx(HANDLE h, LPVOID b, DWORD n, LPOVERLAPPED o, LPOVERLAPPED_COMPLETION_ROUTINE cr) {
+    ev('X', h, n, o ? ((uint64_t)o->OffsetHigh << 32 | o->Offset) : (uint64_t)-1); return o_rfx(h, b, n, o, cr); }
+static DWORD WINAPI h_sfp(HANDLE h, LONG lo, PLONG hi, DWORD m) { ev('S', h, (uint64_t)(hi ? (uint64_t)*hi << 32 : 0) | (DWORD)lo, m); return o_sfp(h, lo, hi, m); }
+static BOOL WINAPI h_ch(HANDLE h) { ev('C', h, 0, 0); return o_ch(h); }
+static HANDLE WINAPI h_cfmw(HANDLE f, LPSECURITY_ATTRIBUTES sa, DWORD p, DWORD hi, DWORD lo, LPCWSTR n) {
+    HANDLE m = o_cfmw(f, sa, p, hi, lo, n); ev('M', f, (uint64_t)hi << 32 | lo, (uintptr_t)m); return m; }
+
+static int hook_iat(const char *fn, void *hook, void **orig) {
+    IMAGE_DOS_HEADER *d = (IMAGE_DOS_HEADER *)g_img; IMAGE_NT_HEADERS64 *nt = (IMAGE_NT_HEADERS64 *)(g_img + d->e_lfanew);
+    IMAGE_DATA_DIRECTORY dd = nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+    for (IMAGE_IMPORT_DESCRIPTOR *im = (void *)(g_img + dd.VirtualAddress); im->Name; im++) {
+        if (_stricmp((char *)(g_img + im->Name), "KERNEL32.dll")) continue;
+        IMAGE_THUNK_DATA64 *nm = (void *)(g_img + im->OriginalFirstThunk), *ad = (void *)(g_img + im->FirstThunk);
+        for (; nm->u1.AddressOfData; nm++, ad++) {
+            if (nm->u1.Ordinal & IMAGE_ORDINAL_FLAG64) continue;
+            if (strcmp((char *)((IMAGE_IMPORT_BY_NAME *)(g_img + nm->u1.AddressOfData))->Name, fn)) continue;
+            if ((void *)ad->u1.Function == hook) return 1;
+            if (!*orig) *orig = (void *)ad->u1.Function;
+            DWORD old; VirtualProtect(&ad->u1.Function, 8, PAGE_READWRITE, &old); ad->u1.Function = (uintptr_t)hook; VirtualProtect(&ad->u1.Function, 8, old, &old);
+            return 2;
+        }
+    }
+    return 0;
+}
+static int hook_all(void) {
+    int r = 0;
+    r += hook_iat("CreateFileW", h_cfw, (void **)&o_cfw) == 2; r += hook_iat("CreateFileA", h_cfa, (void **)&o_cfa) == 2;
+    r += hook_iat("ReadFile", h_rf, (void **)&o_rf) == 2; r += hook_iat("ReadFileEx", h_rfx, (void **)&o_rfx) == 2;
+    r += hook_iat("SetFilePointer", h_sfp, (void **)&o_sfp) == 2; r += hook_iat("CloseHandle", h_ch, (void **)&o_ch) == 2;
+    r += hook_iat("CreateFileMappingW", h_cfmw, (void **)&o_cfmw) == 2;
+    return r; }
+static DWORD WINAPI rec_thread(LPVOID p) {
+    (void)p; int down = 0;
+    for (int i = 0;; i++) {
+        Sleep(100);
+        if (i % 20 == 0) { int r = hook_all(); if (r) L("[%8.2f] file hooks (re)installed: %d", (GetTickCount() - g_t0) / 1000.0, r); }
+        int k = (GetAsyncKeyState(VK_F12) & 0x8000) != 0;
+        if (k && !down) dump_ring("F12 pressed");
+        down = k;
+    }
+    return 0;
+}
+
 /* ---- crash logger: vectored handler logs fatal-type exceptions raised in the exe or this DLL (first chance,
    so also ones the game later handles; capped at 20 entries). Registers, faulting address as exe offset, and
    exe return addresses found on the stack. ---- */
@@ -203,6 +295,7 @@ static LONG CALLBACK veh(PEXCEPTION_POINTERS e) {
         if (v >= g_img + 0x1000 && v < g_img + 0x1e06000) { n += sprintf(line + n, " %llx", (unsigned long long)v); k++; }
     }
     L("%s", line);
+    if (g_nexc <= 3) dump_ring("exception");
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
@@ -221,9 +314,12 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         char p[MAX_PATH]; GetModuleFileNameA(NULL, p, MAX_PATH); char *s = strrchr(p, '\\'); if (s) strcpy(s + 1, "wwe2k19_slots.log");
         g_log = fopen(p, "w");
         L("wwe2k19 slots proxy, build " __DATE__ " " __TIME__ ", image %p", (void *)g_img);
+        g_t0 = GetTickCount(); InitializeCriticalSection(&g_ncs);
         AddVectoredExceptionHandler(1, veh);
+        L("file hooks installed: %d of 7", hook_all()); CreateThread(0, 0, rec_thread, 0, 0, 0);
         if (g_img == 0x140000000ULL) { if (apply()) { CreateThread(0, 0, later_check, 0, 0, 0); load_slots(); if (g_nslots) CreateThread(0, 0, slot_thread, 0, 0, 0); } }
         else L("unexpected image base: NOTHING applied");
     }
+    if (why == DLL_PROCESS_DETACH && g_log) dump_ring("game exit");
     return TRUE;
 }
