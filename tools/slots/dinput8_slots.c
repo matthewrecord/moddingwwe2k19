@@ -318,7 +318,12 @@ static DWORD WINAPI rec_thread(LPVOID p) {
     for (int i = 0;; i++) {
         Sleep(100);
         if (i % 20 == 0) { int r = hook_all(); if (r) L("[%8.2f] file hooks (re)installed: %d", (GetTickCount() - g_t0) / 1000.0, r); }
-        int k = (GetAsyncKeyState(VK_F12) & 0x8000) != 0;
+        if (i % 100 == 0) L("[%8.2f] alive (file events so far %ld)", (GetTickCount() - g_t0) / 1000.0, g_ri);
+        if (i % 10 == 0) {   /* remote trigger: an agent creates slots_snapshot.request in the game folder */
+            char q[MAX_PATH]; GetModuleFileNameA(NULL, q, MAX_PATH); char *z = strrchr(q, '\\'); if (z) strcpy(z + 1, "slots_snapshot.request");
+            if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) { DeleteFileA(q); L("[%8.2f] snapshot requested by file", (GetTickCount() - g_t0) / 1000.0); dump_threads(); dump_ring("request file"); }
+        }
+        int k = (GetAsyncKeyState(VK_F12) & 0x8000) != 0 || (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
         if (k && !down) { L("[%8.2f] F12", (GetTickCount() - g_t0) / 1000.0); dump_threads(); dump_ring("F12 pressed"); }
         down = k;
     }
