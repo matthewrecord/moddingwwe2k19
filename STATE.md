@@ -30,6 +30,10 @@
   show in Create an Entrance > Entrance Music, play, and save/reload. The hidden-slot gate was the BGM entry's
   unlock-requirement fields (u16 +4..+0xC; -1 = none); `musicslot.py` now writes none. Found with an in-game telemetry
   DLL (`tools/telemetry/`). **Next: CCT check, then productise (real names, multiple songs).**
-- **Latest handoff:** `handoff/007_new_slots_validated_2026-11-10.md`.
+- **2026-11-10 midday (handoff 008): tool productised.** Validation now = works with **Data Editor and Sound Editor**
+  (Matthew: CCT is not his main assignment route). `musicslot.py --spec/--list-free/--tools` (per-song .wem, automatic
+  free ids, writes Data Editor `EntranceMusicID.data` + Sound Editor `custom_data.xml` names); `install.py --tools`.
+  Build `songs4_v15` (4 real songs, ids 109/116/117/807) ready, not installed; v14 still in the game.
+- **Latest handoff:** `handoff/008_productise_tools_2026-11-10.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
