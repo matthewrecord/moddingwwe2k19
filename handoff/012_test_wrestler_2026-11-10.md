@@ -58,3 +58,8 @@ caller tracer (TRACE lines). Note: F11/F12 do not register once the game hangs; 
 
 ## 18:55 ROOT CAUSE FOUND (notes 1j): copied pacs kept Alex's internal virtual names. All 10 renamed in place
 (models 00093702.., trons M093700, renders 59B44362/821CFB09). test1k DLL stays (md5 ab6d01bb...). Next: Matthew retries.
+
+## 18:54 RESULT: TEST WRESTLER LOADS INTO A MATCH (Matthew: "You did it"). First playable character beyond the 509 cap.
+Log: no exceptions; only /CASD misses (normal, vanilla characters have them too).
+Installed state: dinput8.dll test1k (ab6d01bb...), slots\0509_0937_0779.*, Chunk0.def dfc88fa3..., SuperString
+string_win.pac 54361b8d..., 10 renamed asset copies for id 937. Backups: *.orig_charslot.
