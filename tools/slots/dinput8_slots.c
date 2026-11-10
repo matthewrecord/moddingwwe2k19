@@ -403,6 +403,38 @@ static int install_tracer(uint8_t *mem, int idx_val, int id_val) {
     return 1;
 }
 
+/* ---- VFS lookup logger: the game's file-index lookup 0x141264010(char *path, out) (229 callers). Post-call hook:
+   logs every path the index does NOT find (deduplicated, max 400) and every lookup naming an overflow slot's id. ---- */
+uintptr_t g_vfs_tramp;
+static char g_vfs_seen[400][96]; static int g_nvfs; static char g_idtag[2][8];
+void __attribute__((ms_abi)) vfs_log(const char *path, int found) {
+    if (!path) return;
+    int ours = (g_idtag[0][0] && strstr(path, g_idtag[0])) || (g_idtag[1][0] && strstr(path, g_idtag[1]));
+    if (found && !ours) return;
+    EnterCriticalSection(&g_tcs);
+    int dup = 0; for (int i = 0; i < g_nvfs; i++) if (!strncmp(g_vfs_seen[i], path, 95)) { dup = 1; break; }
+    if (!dup && g_nvfs < 400) { strncpy(g_vfs_seen[g_nvfs], path, 95); g_vfs_seen[g_nvfs][95] = 0; g_nvfs++;
+        L("[%8.2f] VFS %s: %s", (GetTickCount() - g_t0) / 1000.0, found ? "found" : "NOT FOUND", path); }
+    LeaveCriticalSection(&g_tcs);
+}
+extern char stub_vfs[];
+__asm__(
+    ".globl stub_vfs\n stub_vfs:\n"
+    "  push rbx\n  push rsi\n  sub rsp, 0x28\n  mov rbx, rcx\n"
+    "  call qword ptr [rip + g_vfs_tramp]\n"
+    "  mov esi, eax\n  mov rcx, rbx\n  xor edx, edx\n  test esi, esi\n  setne dl\n  call vfs_log\n"
+    "  mov eax, esi\n  add rsp, 0x28\n  pop rsi\n  pop rbx\n  ret\n");
+static int install_vfs(uint8_t *mem) {
+    if (!same(0x141264010, "40555356574154")) { L("vfs: MISMATCH"); return 0; }
+    uint8_t *t = mem; const uint8_t pro[] = {0x40, 0x55, 0x53, 0x56, 0x57, 0x41, 0x54}; memcpy(t, pro, 7);   /* push rbp,rbx,rsi,rdi,r12 */
+    t[7] = 0xFF; t[8] = 0x25; memset(t + 9, 0, 4); uint64_t back = VA(0x141264017); memcpy(t + 13, &back, 8);
+    g_vfs_tramp = (uintptr_t)t;
+    uint8_t *j = mem + 32; j[0] = 0xFF; j[1] = 0x25; memset(j + 2, 0, 4); uint64_t st = (uint64_t)stub_vfs; memcpy(j + 6, &st, 8);
+    int64_t rel = (int64_t)(uintptr_t)j - (int64_t)(VA(0x141264010) + 5); if (rel > INT32_MAX || rel < INT32_MIN) return 0;
+    uint8_t c[7] = {0xE9}; int32_t r32 = (int32_t)rel; memcpy(c + 1, &r32, 4); c[5] = 0x90; c[6] = 0x90; put(0x141264010, c, 7);
+    return 1;
+}
+
 static DWORD WINAPI later_check(LPVOID p) {
     (void)p; Sleep(30000);
     uint8_t b[2]; memcpy(b, (void *)VA(0x140965760), 2);
@@ -423,7 +455,9 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         L("file hooks installed: %d of 7", hook_all()); CreateThread(0, 0, rec_thread, 0, 0, 0);
         if (g_img == 0x140000000ULL) { if (apply()) { CreateThread(0, 0, later_check, 0, 0, 0); load_slots(); if (g_nslots) { CreateThread(0, 0, slot_thread, 0, 0, 0);
             InitializeCriticalSection(&g_tcs); uint8_t *m = alloc_near(0x1000);
-            if (m && install_tracer(m, g_slots[0].idx, g_slots[0].id)) { DWORD old; VirtualProtect(m, 0x1000, PAGE_EXECUTE_READ, &old); L("tracer on for index %d / id %d", g_slots[0].idx, g_slots[0].id); } } } }
+            if (m && install_tracer(m, g_slots[0].idx, g_slots[0].id)) { DWORD old; VirtualProtect(m, 0x1000, PAGE_EXECUTE_READ, &old); L("tracer on for index %d / id %d", g_slots[0].idx, g_slots[0].id); }
+            sprintf(g_idtag[0], "%03d", g_slots[0].id); sprintf(g_idtag[1], "0%03d00", g_slots[0].id);
+            uint8_t *vm = alloc_near(0x1000); if (vm && install_vfs(vm)) { DWORD old; VirtualProtect(vm, 0x1000, PAGE_EXECUTE_READ, &old); L("vfs logger on"); } } } }
         else L("unexpected image base: NOTHING applied");
     }
     if (why == DLL_PROCESS_DETACH && g_log) dump_ring("game exit");
