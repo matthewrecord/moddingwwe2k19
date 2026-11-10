@@ -55,3 +55,6 @@ Hang snapshots read (notes 1i). Chunk0.def re-sorted (md5 dfc88fa3...). Next: Ma
 
 ## 18:35 Alex Shelley control match loads with the DLL; Test Wrestler hangs. test1i installed (md5 169e2089...):
 caller tracer (TRACE lines). Note: F11/F12 do not register once the game hangs; use the request file.
+
+## 18:55 ROOT CAUSE FOUND (notes 1j): copied pacs kept Alex's internal virtual names. All 10 renamed in place
+(models 00093702.., trons M093700, renders 59B44362/821CFB09). test1k DLL stays (md5 ab6d01bb...). Next: Matthew retries.
