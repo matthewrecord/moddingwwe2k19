@@ -30,3 +30,6 @@ Then read `wwe2k19_slots.log`. Unknowns: unlock (HID) entries for id 937; other 
 Cause and fix: notes step 1g (missed image-relative writes of the index->id table). test1b also logs exceptions
 (registers, exe stack addresses) to wwe2k19_slots.log. Old log kept as wwe2k19_slots_test1_crash.log. The game itself
 writes minidumps to CrashDump\ (read with tools/exe/crashdump.py). Other installed files unchanged.
+
+## 17:50 test1c installed (dinput8.dll md5 235eb27a...), not yet booted
+= test1b fix + file-activity recorder (tools/slots/README.md "Diagnostics"). test1b was never booted.
