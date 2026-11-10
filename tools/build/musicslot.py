@@ -179,7 +179,7 @@ def add_string(pac, sid, text, file_index=0):
     return H.replace(file_index, S.build()), len(ents)
 
 # ---------- Create-an-Entrance music menu (BGM.lsd = SHDC file id 2 in pac/menu/cae_item_pNN.pac) ----------
-DLC_STYLE = True   # v9: mimic patch-30 DLC entries (BGM dlc flag 1, MEMU flags 0x1EFFFF); base style was hidden (v8)
+DLC_STYLE = False  # v10 (ID 807) works without DLC flags; v9 DLC flags suspected of the CAE hang
 
 def add_bgm_entry(pac, mid):
     """BGM.lsd: u16 entries in this file, u16 cumulative total; entries of 10 x u32:
