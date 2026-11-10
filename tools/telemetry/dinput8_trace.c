@@ -163,6 +163,7 @@ static DWORD WINAPI watcher(LPVOID _) {
             for (int i = 0; i < g_ncp; i++) if (g_cp[i].alive & 1) {
                 if (g_cp[i].id == 100500 && n5 < 2) want[n5++] = g_cp[i].a;
                 else if (g_cp[i].id == 100109 && n1 < 2) want[2 + n1++] = g_cp[i].a; }
+            if (GetTickCount() - g_t0 < 90000) memset(want, 0, sizeof want);  /* stay clear of startup checks */
             if (memcmp((void *)want, (void *)g_watch, sizeof want)) {
                 static const char *nm[4] = {"str500#1", "str500#2", "str109#1", "str109#2"};
                 for (int k = 0; k < 4; k++) { g_watch[k] = want[k]; g_watch_type[k] = 3; g_watch_name[k] = nm[k]; }
@@ -183,11 +184,11 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
     if (why == DLL_PROCESS_ATTACH) {
         InitializeCriticalSection(&g_cs); g_t0 = GetTickCount();
         char p[MAX_PATH]; GetModuleFileNameA(NULL, p, MAX_PATH); char *s = strrchr(p, '\\'); if (s) s[1] = 0;
-        strcat(p, "wwe2k19_trace.log"); g_log = fopen(p, "w");
+        { char nm[64]; sprintf(nm, "wwe2k19_trace_%lu.log", GetTickCount()); strcat(p, nm); } g_log = fopen(p, "w");
         g_base = (uintptr_t)GetModuleHandleA(NULL);
         IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)(g_base + ((IMAGE_DOS_HEADER *)g_base)->e_lfanew);
         g_end = g_base + nt->OptionalHeader.SizeOfImage;
-        tlog("telemetry v5 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
+        tlog("telemetry v5c loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
         AddVectoredExceptionHandler(1, veh);
         CreateThread(NULL, 0, watcher, NULL, 0, NULL);
     } else if (why == DLL_THREAD_ATTACH) {
