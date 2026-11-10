@@ -179,6 +179,8 @@ def add_string(pac, sid, text, file_index=0):
     return H.replace(file_index, S.build()), len(ents)
 
 # ---------- Create-an-Entrance music menu (BGM.lsd = SHDC file id 2 in pac/menu/cae_item_pNN.pac) ----------
+DLC_STYLE = True   # v9: mimic patch-30 DLC entries (BGM dlc flag 1, MEMU flags 0x1EFFFF); base style was hidden (v8)
+
 def add_bgm_entry(pac, mid):
     """BGM.lsd: u16 entries in this file, u16 cumulative total; entries of 10 x u32:
     value (id*1000), u16 id | u16 0xFFFF, 0xFFFFFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, menu string (3000+id),
@@ -189,7 +191,8 @@ def add_bgm_entry(pac, mid):
     n, total = struct.unpack_from('<HH', d, 0); assert len(d) == 4 + 40 * n
     ents = [struct.unpack_from('<10I', d, 4 + 40 * k) for k in range(n)]
     assert all(e[0] != mid * 1000 for e in ents), 'entry already present'
-    new = (mid * 1000, 0xFFFF0000 | mid, 0xFFFFFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 3000 + mid, 0xFFFF0001, 0, 0)
+    new = (mid * 1000, 0xFFFF0000 | mid, 0xFFFFFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 3000 + mid, 0xFFFF0001, 0,
+           1 if DLC_STYLE else 0)
     ents.append(new)
     # both header u16s +1, exactly as CAE Item Adder 0.2.1 does ('<2h' read, +1 each)
     f['data'] = struct.pack('<HH', n + 1, total + 1) + b''.join(struct.pack('<10I', *e) for e in ents)
@@ -207,7 +210,7 @@ def add_memu_record(pac, mid, name_sid, title_sid):
     n = struct.unpack_from('<I', d, 4)[0]; assert len(d) == 8 + 32 * n
     R = [struct.unpack_from('<8I', d, 8 + 32 * k) for k in range(n)]
     assert all(r[3] != mid * 1000 for r in R), 'record already present'
-    rec = (name_sid, title_sid, 99999, mid * 1000, 0xFFFF0600, 0xFFFF0000 | mid, 0xFFFF, 0)
+    rec = (name_sid, title_sid, 99999, mid * 1000, 0xFFFF0600, 0xFFFF0000 | mid, 0x1EFFFF if DLC_STYLE else 0xFFFF, 0)
     f['data'] = b'MEMU' + struct.pack('<I', n + 1) + d[8:] + struct.pack('<8I', *rec)
     return H.replace(0, S.build()), {'records': n + 1, 'record': list(rec)}
 
