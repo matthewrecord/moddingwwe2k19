@@ -20,6 +20,13 @@ static uintptr_t g_base, g_end; static DWORD g_watcher_tid;
 static volatile uintptr_t g_watch[4]; static volatile int g_watch_type[4]; /* 1=write 3=rw */
 static const char *g_watch_name[4];
 
+#define RING 8192
+static char g_ring[RING][384]; static volatile LONG g_rw, g_rr;
+static void ring_put(const char *line) {
+    LONG k = InterlockedIncrement(&g_rw) - 1; if (k - g_rr >= RING) return;
+    char *d = g_ring[k % RING]; strncpy(d, line, 383); d[383] = 0; }
+static void tlog(const char *fmt, ...);
+static void ring_flush(void) { while (g_rr < g_rw) { char *d = g_ring[g_rr % RING]; if (d[0]) { tlog("%s", d); d[0] = 0; } g_rr++; } }
 static void tlog(const char *fmt, ...) {
     va_list ap; EnterCriticalSection(&g_cs);
     if (g_log) { fprintf(g_log, "[%7.2f t%5lu] ", (GetTickCount() - g_t0) / 1000.0, GetCurrentThreadId());
@@ -85,9 +92,12 @@ static LONG CALLBACK veh(PEXCEPTION_POINTERS ep) {
                 if (!ReadProcessMemory(GetCurrentProcess(), sp + j, &v, 8, &got)) break;
                 if (v > g_base && v < g_end) p += sprintf(rets + p, " +%llx", (unsigned long long)(v - g_base)); }
             rets[p] = 0;
-            tlog("HIT %s addr=%p rip=+%llx (%p) rcx=%llx rdx=%llx r8=%llx rax=%llx stack:%s", g_watch_name[i],
-                 (void *)g_watch[i], (unsigned long long)(rip - g_base), (void *)rip, (unsigned long long)c->Rcx,
-                 (unsigned long long)c->Rdx, (unsigned long long)c->R8, (unsigned long long)c->Rax, rets);
+            char line[384];
+            snprintf(line, sizeof line, "t%lu HIT %s addr=%p rip=+%llx rcx=%llx rdx=%llx r8=%llx rax=%llx stack:%s",
+                     GetCurrentThreadId(), g_watch_name[i], (void *)g_watch[i], (unsigned long long)(rip - g_base),
+                     (unsigned long long)c->Rcx, (unsigned long long)c->Rdx, (unsigned long long)c->R8,
+                     (unsigned long long)c->Rax, rets);
+            ring_put(line);
         }
     }
     c->Dr6 = 0;
@@ -95,8 +105,8 @@ static LONG CALLBACK veh(PEXCEPTION_POINTERS ep) {
 }
 
 /* ---------- memory scanner ---------- */
-#define MAXCOPIES 256
-static struct { uintptr_t a; int id; int alive; } g_cp[MAXCOPIES]; static int g_ncp;
+#define MAXCOPIES 2048
+static struct { uintptr_t a; int id; int alive; int first; } g_cp[MAXCOPIES]; static int g_ncp;
 static int find_copy(uintptr_t a) { for (int i = 0; i < g_ncp; i++) if (g_cp[i].a == a) return i; return -1; }
 static void scan(int pass) {
     static unsigned char buf[1 << 20]; uintptr_t a = 0x10000; MEMORY_BASIC_INFORMATION mi;
@@ -115,9 +125,14 @@ static void scan(int pass) {
                 for (int q = 0; q < NIDS; q++) if (IDS[q] == id && *(uint32_t *)(buf + k - 4) == (uint32_t)id * 1000) {
                     uintptr_t ea = p + k - 4;
                     int f = find_copy(ea);
-                    if (f < 0 && g_ncp < MAXCOPIES) { f = g_ncp++; g_cp[f].a = ea; g_cp[f].id = id; g_cp[f].alive = 0;
+                    if (f < 0 && g_ncp < MAXCOPIES) { f = g_ncp++; g_cp[f].a = ea; g_cp[f].id = id; g_cp[f].alive = 0; g_cp[f].first = pass;
                         tlog("NEW copy id=%d at %p (pass %d, region %p+%llx type %lx prot %lx)", id, (void *)ea, pass,
                              (void *)rb, (unsigned long long)mi.RegionSize, mi.Type, mi.Protect);
+                        { uint32_t prev = 0, nxt = 0; SIZE_T g2;
+                          ReadProcessMemory(GetCurrentProcess(), (void *)(ea - 36), &prev, 4, &g2);
+                          ReadProcessMemory(GetCurrentProcess(), (void *)(ea + 44), &nxt, 4, &g2);
+                          int pn = 0, nn = 0; for (int z = 0; z < NIDS; z++) { if (prev == (0xFFFF0000u | IDS[z])) pn = 1; if (nxt == (0xFFFF0000u | IDS[z])) nn = 1; }
+                          if (id != 109 && !pn) tlog("   PARTIAL? id=%d has no test entry before it", id); }
                         loghex(ea - 80, 200); }
                     if (f >= 0) g_cp[f].alive |= 3;
                 }
@@ -131,21 +146,22 @@ static void scan(int pass) {
 static DWORD WINAPI watcher(LPVOID _) {
     g_watcher_tid = GetCurrentThreadId(); SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
     int armed = 0;
-    for (int pass = 1; pass <= 900; pass++) {           /* ~30 min */
-        Sleep(pass < 60 ? 1000 : 2000);
+    for (int pass = 1; pass <= 1800; pass++) {          /* ~60 min */
+        Sleep(pass < 120 ? 1000 : 2000); ring_flush();
         scan(pass);
-        if (!armed) {   /* arm on the first copies of 109 (hidden) and 500 (shown) */
-            uintptr_t a109 = 0, a500 = 0, a807 = 0;
-            for (int i = 0; i < g_ncp; i++) { if (g_cp[i].id == 109 && !a109) a109 = g_cp[i].a;
-                if (g_cp[i].id == 500 && !a500) a500 = g_cp[i].a; if (g_cp[i].id == 807 && !a807) a807 = g_cp[i].a; }
-            if (a109 && a500) {
-                g_watch[0] = a109; g_watch_type[0] = 3; g_watch_name[0] = "raw109.value";
-                g_watch[1] = a500; g_watch_type[1] = 3; g_watch_name[1] = "raw500.value";
-                g_watch[2] = a109 + 24; g_watch_type[2] = 3; g_watch_name[2] = "raw109.label";
-                g_watch[3] = a807; g_watch_type[3] = 3; g_watch_name[3] = "raw807.value";
-                armed = 1; tlog("ARMED 109=%p 500=%p 807=%p", (void *)a109, (void *)a500, (void *)a807);
+        {   /* watch the two newest full sets (by their 109 entry) that have lived >= 8 passes */
+            int sets[2] = {-1, -1};
+            for (int i = g_ncp - 1; i >= 0; i--) if (g_cp[i].id == 109 && (g_cp[i].alive & 1) && pass - g_cp[i].first >= 8) {
+                if (sets[0] < 0) sets[0] = i; else if (sets[1] < 0) { sets[1] = i; break; } }
+            uintptr_t want[4] = {0, 0, 0, 0};
+            for (int k = 0; k < 2; k++) if (sets[k] >= 0) { want[k * 2] = g_cp[sets[k]].a; want[k * 2 + 1] = g_cp[sets[k]].a + 6 * 40; }
+            if (memcmp((void *)want, (void *)g_watch, sizeof want)) {
+                static const char *nm[4] = {"setA.109", "setA.500", "setB.109", "setB.500"};
+                for (int k = 0; k < 4; k++) { g_watch[k] = want[k]; g_watch_type[k] = 3; g_watch_name[k] = nm[k]; }
+                armed = 1; tlog("ARMED A109=%p A500=%p B109=%p B500=%p", (void *)want[0], (void *)want[1], (void *)want[2], (void *)want[3]);
             }
         }
+        ring_flush();
         if (armed) apply_all();
         if (pass % 30 == 0) tlog("heartbeat pass %d copies %d hits %ld unique %ld", pass, g_ncp, g_hits, g_nseen);
     }
@@ -161,7 +177,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         g_base = (uintptr_t)GetModuleHandleA(NULL);
         IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)(g_base + ((IMAGE_DOS_HEADER *)g_base)->e_lfanew);
         g_end = g_base + nt->OptionalHeader.SizeOfImage;
-        tlog("telemetry v1 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
+        tlog("telemetry v2 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
         AddVectoredExceptionHandler(1, veh);
         CreateThread(NULL, 0, watcher, NULL, 0, NULL);
     } else if (why == DLL_THREAD_ATTACH) {
