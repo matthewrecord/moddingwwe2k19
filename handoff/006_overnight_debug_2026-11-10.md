@@ -22,3 +22,6 @@ Progress lines are appended below as they happen.
 - 05:38Z Game is stuck at Create an Entrance > Superstar > (first wrestler) > "Easy Creation": no response to keys or
   clicks since ~05:19Z (i.e. before the debugger was attached). Installed build is v9 (DLC-style flags, never tested
   by Matthew). Suspect: v9 hangs CAE loading, or the game is waiting on something else. Checking main thread state.
+
+- 2026-11-10 ~06:00Z: x64dbg window found empty (no debuggee: registers all zero), so it is NOT attached and did not cause the hang. Game is still frozen on Create an Entrance > Superstar > Easy Creation (renders, ignores input). Paused overnight GUI debugging here: screen-driven x64dbg is too slow to be productive.
+  Next agent: (1) close the game, `install.py uninstall`, install v8 (no DLC flags) to rule out v9 as the hang cause; (2) prefer scripted debugging (x64dbg script file or a small Python/ptrace-style tracer via `dbgcmd`) over clicking: attach, `bphws` on the three BGM entry copies, open Entrance Music, dump the call stack to a log file, then read the log.
