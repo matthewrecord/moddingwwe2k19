@@ -92,7 +92,7 @@ def wem_info(w):
     assert codec == 0xFFFF and len(fmt) == 0x42, 'expected Wwise Vorbis (fmt 0xFFFF, size 0x42) like the game'
     audio_off = struct.unpack_from('<I', fmt, 0x2C)[0]
     # uInMemoryMediaSize: game files = header + seek/setup + ~0.81 s of audio (measured on 2 tracks; see Music_map 6b)
-    inmem = data_off + audio_off + int(0.81 * avg)
+    inmem = min(data_off + audio_off + int(0.81 * avg), len(w))   # never more than the file (tiny placeholders)
     return {'channels': ch, 'rate': sr, 'avg_bps': avg, 'data_off': data_off, 'audio_off': audio_off, 'inmem': inmem}
 
 def add_track(bank, mid, src_id, inmem):
@@ -168,18 +168,17 @@ def vmum_load_bytes(b):
     return b, o, h, recs
 
 # ---------- strings ----------
-def add_string(pac, sid, text, file_index=0):
-    H = HSPC(pac); d = H.files[file_index]['data']
-    S = SHDC(d)
+def add_strings(pac, new, file_index=0):
+    """new: {string id: text}. One parse/rebuild for any number of strings."""
+    H = HSPC(pac); S = SHDC(H.files[file_index]['data'])
     pre, ents = string_table_parse(S.files[0]['data'])
-    ids = [i for i, _ in ents]; assert ids == sorted(ids)
-    s = text.encode('latin1') + b'\0'
-    if sid in ids:
-        ents[ids.index(sid)] = (sid, s)
-    else:
-        ents.insert(bisect.bisect(ids, sid), (sid, s))
-    S.files[0]['data'] = string_table_build(pre, ents)
-    return H.replace(file_index, S.build()), len(ents)
+    d = dict(ents); assert [i for i, _ in ents] == sorted(d)
+    for sid, text in new.items(): d[sid] = text.encode('latin1') + b'\0'
+    S.files[0]['data'] = string_table_build(pre, sorted(d.items()))
+    return H.replace(file_index, S.build()), len(d)
+
+def add_string(pac, sid, text, file_index=0):
+    return add_strings(pac, {sid: text}, file_index)
 
 # ---------- Create-an-Entrance music menu (BGM.lsd = SHDC file id 2 in pac/menu/cae_item_pNN.pac) ----------
 NO_UNLOCK = True   # BGM entry u16 at +4..+0xC are unlock-requirement ids (-1 = none); the menu (0x140179a80 -> 0x140c1eb50/ec80) hides entries whose unlock id is locked. Using the music id there made 109 etc. hidden (2026-11-10 telemetry).
@@ -260,7 +259,7 @@ def string_ids(pac, file_index=0):
     _, ents = string_table_parse(S.files[0]['data'])
     return {i: t for i, t in ents}
 
-def free_ids(src, P):
+def free_ids(src, P, de=None):
     """IDs that are safe for a new slot. All must hold:
     - VMUM: exactly one row with field2 == id, and it is an empty slot (f0 = f1 = key = 0);
     - key id*100000 is above the sorted tail start (else the game's bsearch cannot reach it);
@@ -281,12 +280,17 @@ def free_ids(src, P):
     n = struct.unpack_from('<I', d, 4)[0]
     memu = {struct.unpack_from('<I', d, 8 + 32 * k + 12)[0] for k in range(n)}
     strs = string_ids(src['str'])
+    de_named = set()
+    if de is not None:   # ids the Data Editor list already names (community-reserved, e.g. 179000 Mark Henry) are taken
+        for ln in de.decode('latin1').split('\r\n'):
+            f = ln.split(' ', 1)
+            if f[0].isdigit() and len(f) == 2 and f[1].strip(): de_named.add(int(f[0]) // 1000)
     out = []
     for mid in range(100, 1000):
         if empty.get(mid) != [True]: continue
         if mid * 100000 <= tail0: continue
         if fnv('Play_MUS_%04d_00_0_0' % mid) in bank_ids: continue
-        if mid * 1000 in bgm or mid * 1000 in memu: continue
+        if mid * 1000 in bgm or mid * 1000 in memu or mid in de_named: continue
         if any(strs.get(s, b'\0').strip(b'\0') for s in (13000 + mid, 3000 + mid)): continue
         out.append(mid)
     return out
@@ -310,15 +314,23 @@ def main():
     ap.add_argument('--spec', help='JSON list of slots: [{"name": "Song", "wem": "song.wem", "id": 123 (optional)}]')
     ap.add_argument('--wem'); ap.add_argument('--id', type=int, action='append'); ap.add_argument('--name', action='append')
     ap.add_argument('--tools', help='modding folder holding Data Editor and Sound Editor; their name lists get the new songs')
+    ap.add_argument('--menu-steps', help='e.g. 300,400,500: also write drop-in cae_item_p30.pac files listing the first N '
+                    'slots in the Create-an-Entrance menu (slots with "menu": false are left out of the main build)')
+    ap.add_argument('--fill', help='create every free id: "<name pattern>,<wem>,<menu count>", e.g. "Custom %03d,ph.wem,200"')
     ap.add_argument('--out'); ap.add_argument('--list-free', action='store_true', help='print free ids and exit')
     a = ap.parse_args(); G = a.game
     src = {k: open(os.path.join(G, v), 'rb').read() for k, v in PATHS.items()}
     P = akpk_read(src['pck'])
-    free = free_ids(src, P)
+    tsrc = {k: open(os.path.join(a.tools, v), 'rb').read() for k, v in TOOL_PATHS.items()} if a.tools else {}
+    free = free_ids(src, P, tsrc.get('de'))
     if a.list_free:
         print(len(free), 'free ids:', ' '.join(map(str, free))); return
     assert a.out, '--out is required'
-    slots = load_slots(a)
+    if a.fill:
+        pat, wem, nmenu = a.fill.rsplit(',', 2); nmenu = int(nmenu)
+        slots = [{'id': m, 'name': pat % (k + 1), 'wem': wem, 'menu': k < nmenu} for k, m in enumerate(free)]
+    else:
+        slots = load_slots(a)
     taken = [s['id'] for s in slots if s.get('id') is not None]
     assert len(set(taken)) == len(taken), 'duplicate id in spec'
     for mid in taken: assert mid in free, 'id %d is not free (see --list-free)' % mid
@@ -329,27 +341,30 @@ def main():
             assert ord(ch) < 256, 'name must be Latin-1 (the string table is 8-bit): %r' % s['name']
     man = {'slots_spec': slots, 'inputs': {k: {'path': PATHS[k], 'md5': md5(v), 'size': len(v)} for k, v in src.items()},
            'slots': []}
-    tsrc = {k: open(os.path.join(a.tools, v), 'rb').read() for k, v in TOOL_PATHS.items()} if a.tools else {}
     for k, v in tsrc.items(): man['inputs'][k] = {'path': TOOL_PATHS[k], 'root': 'tools', 'md5': md5(v), 'size': len(v)}
     de, se = tsrc.get('de'), tsrc.get('se')
     vm, st, cae, memu = src['vmum'], src['str'], src['cae'], src['memu']
+    newstr = {}; wems = {}
     for s in slots:
         mid, name = s['id'], s['name']; label = s.get('label') or name.upper()
-        wem = open(s['wem'], 'rb').read(); wi = wem_info(wem)
+        if s['wem'] not in wems: wems[s['wem']] = open(s['wem'], 'rb').read()
+        wem = wems[s['wem']]; wi = wem_info(wem)
         src_id = fnv('wwe2k19mod_wem_%04d' % mid)
         assert ('S', src_id) not in P['data']
         newbank, ids = add_track(P['data'][('B', DLC30_BANK)], mid, src_id, wi['inmem'])
         P['data'][('B', DLC30_BANK)] = newbank
         P['streams'].append([src_id, 1, len(wem), 1 << 30, 0]); P['data'][('S', src_id)] = wem
         vm, row = activate_row(vm, mid)
-        st, _ = add_string(st, 13000 + mid, name)       # name (mixed case)
-        st, _ = add_string(st, 3000 + mid, label)       # menu label (upper case, as in BGM.lsd)
-        cae, bgm = add_bgm_entry(cae, mid)
+        newstr[13000 + mid] = name    # name (mixed case)
+        newstr[3000 + mid] = label    # menu label (upper case, as in BGM.lsd)
+        bgm = None
+        if s.get('menu', True): cae, bgm = add_bgm_entry(cae, mid)
         memu, mrec = add_memu_record(memu, mid, 3000 + mid, 13000 + mid)
         if de is not None: de = de_add(de, mid, name)
         if se is not None: se = se_add(se, src_id, name)
-        man['slots'].append({'id': mid, 'name': name, 'label': label, 'wem': s['wem'], 'wem_md5': md5(wem),
+        man['slots'].append({'id': mid, 'name': name, 'label': label, 'menu': bool(bgm), 'wem': s['wem'], 'wem_md5': md5(wem),
                              'wem_info': wi, 'event_ids': ids, 'source_id': src_id, 'row': row, 'bgm': bgm, 'memu': mrec})
+    st, _ = add_strings(st, newstr)
     pck = akpk_write(P)
     out = {'pck': pck, 'vmum': vm, 'str': st, 'cae': cae, 'memu': memu}
     for k, v in out.items():
@@ -359,6 +374,17 @@ def main():
         if v is None: continue
         p = os.path.join(a.out, 'tools', TOOL_PATHS[k]); os.makedirs(os.path.dirname(p), exist_ok=True); open(p, 'wb').write(v)
         man['outputs'][k] = {'path': TOOL_PATHS[k], 'root': 'tools', 'md5': md5(v), 'size': len(v)}
+    if a.menu_steps:
+        hidden = [x['id'] for x in man['slots'] if not x['menu']]; shown = len(man['slots']) - len(hidden)
+        man['menu_steps'] = {}
+        for n in sorted(int(v) for v in a.menu_steps.split(',')):
+            n = min(n, len(man['slots'])); c = cae
+            for mid in hidden[:max(0, n - shown)]: c, _ = add_bgm_entry(c, mid)
+            p = os.path.join(a.out, 'menu_steps', 'menu_%03d' % n, PATHS['cae']); os.makedirs(os.path.dirname(p), exist_ok=True)
+            open(p, 'wb').write(c); man['menu_steps'][n] = md5(c)
+    with open(os.path.join(a.out, 'slots.csv'), 'w', encoding='utf-8', newline='') as f:
+        f.write('id,music_value,name,in_menu,sound_editor_id\r\n')
+        for x in man['slots']: f.write('%d,%d,"%s",%s,%d\r\n' % (x['id'], x['id'] * 1000, x['name'], 'yes' if x['menu'] else 'no', x['source_id']))
     open(os.path.join(a.out, 'manifest.json'), 'w').write(json.dumps(man, indent=1, default=str))
     print(json.dumps({'slots': [(s['id'], s['name']) for s in man['slots']], 'outputs': man['outputs']}, indent=1))
 
