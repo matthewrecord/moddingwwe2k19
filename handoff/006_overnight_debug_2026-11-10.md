@@ -16,3 +16,9 @@ Granted apps (computer use): Steam, steamwebhelper, WWE2K19_x64.exe, File Explor
 Progress lines are appended below as they happen.
 
 ## Log
+- 05:30Z x64dbg attached to WWE2K19_x64.exe (PID 18212). `findallmem` for our BGM entry bytes (C8A90100 6D00FFFF)
+  found 3 copies in memory: 0x515C42C, 0x244A69CC, 0x3FE3E4AC (file buffer / loaded list / working copy, not yet
+  identified). Hardware read breakpoints set on all three. Software TLS breakpoints cleared (`bc`), game resumed.
+- 05:38Z Game is stuck at Create an Entrance > Superstar > (first wrestler) > "Easy Creation": no response to keys or
+  clicks since ~05:19Z (i.e. before the debugger was attached). Installed build is v9 (DLC-style flags, never tested
+  by Matthew). Suspect: v9 hangs CAE loading, or the game is waiting on something else. Checking main thread state.
