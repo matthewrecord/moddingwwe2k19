@@ -37,7 +37,7 @@
 - **2026-11-10 afternoon (handoff 009): SLOT BANK INSTALLED.** Plan (Matthew): create slots once, then Sound Editor
   fills songs and Data Editor assigns. All 589 free ids built with a silent placeholder, names "Custom 001..589",
   200 in the CAE menu; drop-in menu files (300/400/500/589/original) in `A - Resources\Extra Music Slots (moddingwwe2k19)`.
-  v14 TEST build removed. Waiting on Matthew's check, key item: Sound Editor replace -> plays in game.
+  v14 TEST build removed. **13:03: Matthew confirms a song injected with Sound Editor into Custom 001 plays in game. Workflow validated.**
 - **Latest handoff:** `handoff/009_slot_bank_installed_2026-11-10.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.

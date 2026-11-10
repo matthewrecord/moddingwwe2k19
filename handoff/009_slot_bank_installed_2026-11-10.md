@@ -46,3 +46,9 @@ help; write-up (Music_map.md, Status.md).
 Sound Editor sees all 599 streams of patch_30.pck (10 DLC + 589 slots, 413 bytes each) and, with its database set to
 **WWE 2K19** (it was on "WWE 2K23"), shows the names: DLC themes and "THEME Custom 001..589", IDs match slots.csv.
 Check 3 (Sound Editor names) passed. Still pending: 1 (CAE menu), 2 (Sound Editor replace plays in game), 3 (Data Editor).
+
+## Result 13:03 (Matthew): IT WORKS
+A real song injected with Sound Editor into "THEME Custom 001" plays in game. The routine is validated: slots created
+once by us; Matthew fills them with Sound Editor (no prefetch fix needed) and assigns with Data Editor.
+Remaining optional: Data Editor dropdown names, CCT dropdown, rename slots to wrestler names, music-in-graphics help,
+write-up (Music_map.md, Status.md).
