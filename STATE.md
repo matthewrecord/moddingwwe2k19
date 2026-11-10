@@ -26,6 +26,10 @@
   relayout). v3 not listed; v4 markers proved our files are read; cause = CAE lists are one combined index (base
   append overwritten by p10). v5/v6/v7 diagnostics: menu rejects music id 109 -> missing MEMU music-info record (misc05_save_p30).
   **v8 installed (adds the MEMU record); waiting on Matthew's check.**
-- **Latest handoff:** `handoff/005_slot109_built_2026-11-09.md`.
+- **2026-11-10 (handoffs 006, 007): NEW MUSIC SLOTS VALIDATED IN GAME.** All 8 test slots of `multi_v14_nounlock`
+  show in Create an Entrance > Entrance Music, play, and save/reload. The hidden-slot gate was the BGM entry's
+  unlock-requirement fields (u16 +4..+0xC; -1 = none); `musicslot.py` now writes none. Found with an in-game telemetry
+  DLL (`tools/telemetry/`). **Next: CCT check, then productise (real names, multiple songs).**
+- **Latest handoff:** `handoff/007_new_slots_validated_2026-11-10.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
