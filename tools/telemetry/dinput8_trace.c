@@ -113,11 +113,20 @@ static void scan(int pass) {
     for (int i = 0; i < g_ncp; i++) g_cp[i].alive &= ~2;
     while (a < 0x7FFFFFFF0000ull && VirtualQuery((void *)a, &mi, sizeof mi)) {
         uintptr_t rb = (uintptr_t)mi.BaseAddress, re = rb + mi.RegionSize;
-        int ok = mi.State == MEM_COMMIT && !(mi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) && mi.Type == MEM_PRIVATE &&
+        int ok = mi.State == MEM_COMMIT && !(mi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) && (mi.Type == MEM_PRIVATE || mi.Type == MEM_MAPPED) &&
                  (mi.Protect & (PAGE_READWRITE | PAGE_READONLY | PAGE_WRITECOPY | PAGE_EXECUTE_READWRITE));
         if (ok) for (uintptr_t p = rb; p < re; p += sizeof buf - 8) {
             SIZE_T n = re - p < sizeof buf ? re - p : sizeof buf, got = 0;
             if (!ReadProcessMemory(GetCurrentProcess(), (void *)p, buf, n, &got) || got < 8) break;
+            for (SIZE_T k = 0; k + 9 <= got; k++) {
+                if (buf[k] != 'T' || memcmp(buf + k, "TEST ", 5)) continue;
+                int sid = -1; if (!memcmp(buf + k + 5, "500", 4)) sid = 500; else if (!memcmp(buf + k + 5, "109", 4)) sid = 109;
+                if (sid < 0) continue;
+                uintptr_t ea = p + k; int f = find_copy(ea);
+                if (f < 0 && g_ncp < MAXCOPIES) { f = g_ncp++; g_cp[f].a = ea; g_cp[f].id = 100000 + sid; g_cp[f].alive = 0; g_cp[f].first = pass;
+                    tlog("NEW string 'TEST %d' at %p (pass %d, region %p type %lx)", sid, (void *)ea, pass, (void *)rb, mi.Type); }
+                if (f >= 0) g_cp[f].alive |= 3;
+            }
             for (SIZE_T k = 4; k + 4 <= got; k += 4) {
                 uint32_t hi = *(uint32_t *)(buf + k);
                 if ((hi >> 16) != 0xFFFF) continue;
@@ -147,25 +156,24 @@ static DWORD WINAPI watcher(LPVOID _) {
     g_watcher_tid = GetCurrentThreadId(); SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
     int armed = 0;
     for (int pass = 1; pass <= 20000; pass++) {          /* ~60 min */
-        Sleep(250); ring_flush();
+        Sleep(1000); ring_flush();
         scan(pass);
-        {   /* watch the two newest full sets (by their 109 entry) as soon as they appear */
-            int sets[2] = {-1, -1};
-            for (int i = g_ncp - 1; i >= 0; i--) if (g_cp[i].id == 109 && (g_cp[i].alive & 1) && pass - g_cp[i].first >= 0) {
-                if (sets[0] < 0) sets[0] = i; else if (sets[1] < 0) { sets[1] = i; break; } }
-            uintptr_t want[4] = {0, 0, 0, 0};
-            for (int k = 0; k < 2; k++) if (sets[k] >= 0) { want[k * 2] = g_cp[sets[k]].a; want[k * 2 + 1] = g_cp[sets[k]].a + 6 * 40; }
+        {   /* watch the two OLDEST alive copies of each label string (string table is long-lived) */
+            uintptr_t want[4] = {0, 0, 0, 0}; int n5 = 0, n1 = 0;
+            for (int i = 0; i < g_ncp; i++) if (g_cp[i].alive & 1) {
+                if (g_cp[i].id == 100500 && n5 < 2) want[n5++] = g_cp[i].a;
+                else if (g_cp[i].id == 100109 && n1 < 2) want[2 + n1++] = g_cp[i].a; }
             if (memcmp((void *)want, (void *)g_watch, sizeof want)) {
-                static const char *nm[4] = {"setA.109", "setA.500", "setB.109", "setB.500"};
+                static const char *nm[4] = {"str500#1", "str500#2", "str109#1", "str109#2"};
                 for (int k = 0; k < 4; k++) { g_watch[k] = want[k]; g_watch_type[k] = 3; g_watch_name[k] = nm[k]; }
-                armed = 1; tlog("ARMED A109=%p A500=%p B109=%p B500=%p", (void *)want[0], (void *)want[1], (void *)want[2], (void *)want[3]);
+                armed = 1; tlog("ARMED s500a=%p s500b=%p s109a=%p s109b=%p", (void *)want[0], (void *)want[1], (void *)want[2], (void *)want[3]);
             }
         }
         ring_flush();
         { static uintptr_t last[4]; static int lastpass;
           if (armed && (memcmp(last, (void *)g_watch, sizeof last) || pass - lastpass >= 20)) {
               apply_all(); memcpy(last, (void *)g_watch, sizeof last); lastpass = pass; } }
-        if (pass % 40 == 0) tlog("heartbeat pass %d copies %d hits %ld unique %ld", pass, g_ncp, g_hits, g_nseen);
+        if (pass % 10 == 0) tlog("heartbeat pass %d copies %d hits %ld unique %ld", pass, g_ncp, g_hits, g_nseen);
     }
     tlog("watcher done");
     return 0;
@@ -179,7 +187,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         g_base = (uintptr_t)GetModuleHandleA(NULL);
         IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)(g_base + ((IMAGE_DOS_HEADER *)g_base)->e_lfanew);
         g_end = g_base + nt->OptionalHeader.SizeOfImage;
-        tlog("telemetry v4 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
+        tlog("telemetry v5 loaded; exe base %p size %lx", (void *)g_base, nt->OptionalHeader.SizeOfImage);
         AddVectoredExceptionHandler(1, veh);
         CreateThread(NULL, 0, watcher, NULL, 0, NULL);
     } else if (why == DLL_THREAD_ATTACH) {
