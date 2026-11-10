@@ -406,14 +406,17 @@ static int install_tracer(uint8_t *mem, int idx_val, int id_val) {
 /* ---- VFS lookup logger: the game's file-index lookup 0x141264010(char *path, out) (229 callers). Post-call hook:
    logs every path the index does NOT find (deduplicated, max 400) and every lookup naming an overflow slot's id. ---- */
 uintptr_t g_vfs_tramp;
-static char g_vfs_seen[400][96]; static int g_nvfs; static char g_idtag[2][8];
+#define VFS_SEEN 16384
+static uint32_t g_vfs_hash[VFS_SEEN]; static int g_nvfs; static char g_idtag[2][8];
 void __attribute__((ms_abi)) vfs_log(const char *path, int found) {
     if (!path) return;
     int ours = (g_idtag[0][0] && strstr(path, g_idtag[0])) || (g_idtag[1][0] && strstr(path, g_idtag[1]));
     if (found && !ours) return;
     EnterCriticalSection(&g_tcs);
-    int dup = 0; for (int i = 0; i < g_nvfs; i++) if (!strncmp(g_vfs_seen[i], path, 95)) { dup = 1; break; }
-    if (!dup && g_nvfs < 400) { strncpy(g_vfs_seen[g_nvfs], path, 95); g_vfs_seen[g_nvfs][95] = 0; g_nvfs++;
+    uint32_t hv = 2166136261u; for (const char *q = path; *q; q++) hv = (hv ^ (uint8_t)*q) * 16777619u; hv |= 1;
+    unsigned k = hv % VFS_SEEN; int dup = 0;
+    for (int n = 0; n < VFS_SEEN; n++, k = (k + 1) % VFS_SEEN) { if (g_vfs_hash[k] == hv) { dup = 1; break; } if (!g_vfs_hash[k]) break; }
+    if (!dup && g_nvfs < VFS_SEEN - 64) { g_vfs_hash[k] = hv; g_nvfs++;
         L("[%8.2f] VFS %s: %s", (GetTickCount() - g_t0) / 1000.0, found ? "found" : "NOT FOUND", path); }
     LeaveCriticalSection(&g_tcs);
 }
