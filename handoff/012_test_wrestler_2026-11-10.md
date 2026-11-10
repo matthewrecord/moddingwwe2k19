@@ -25,3 +25,8 @@ Uninstall: restore the two `.orig_charslot` files, rename dinput8.dll; the new f
 Boot; superstar select: Test Wrestler (Alex's render)? Pick him in Exhibition: model, moveset, entrance.
 Then read `wwe2k19_slots.log`. Unknowns: unlock (HID) entries for id 937; other "idx <= 508" checks
 (48 jae/6 ja sites) may hide him in some menus or crash; the 40-byte per-slot table entry is left zero.
+
+## 17:36 crash -> test1b installed (dinput8.dll md5 eef5cca4...)
+Cause and fix: notes step 1g (missed image-relative writes of the index->id table). test1b also logs exceptions
+(registers, exe stack addresses) to wwe2k19_slots.log. Old log kept as wwe2k19_slots_test1_crash.log. The game itself
+writes minidumps to CrashDump\ (read with tools/exe/crashdump.py). Other installed files unchanged.
