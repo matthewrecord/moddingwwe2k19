@@ -34,6 +34,10 @@
   (Matthew: CCT is not his main assignment route). `musicslot.py --spec/--list-free/--tools` (per-song .wem, automatic
   free ids, writes Data Editor `EntranceMusicID.data` + Sound Editor `custom_data.xml` names); `install.py --tools`.
   Build `songs4_v15` (4 real songs, ids 109/116/117/807) ready, not installed; v14 still in the game.
-- **Latest handoff:** `handoff/008_productise_tools_2026-11-10.md`.
+- **2026-11-10 afternoon (handoff 009): SLOT BANK INSTALLED.** Plan (Matthew): create slots once, then Sound Editor
+  fills songs and Data Editor assigns. All 589 free ids built with a silent placeholder, names "Custom 001..589",
+  200 in the CAE menu; drop-in menu files (300/400/500/589/original) in `A - Resources\Extra Music Slots (moddingwwe2k19)`.
+  v14 TEST build removed. Waiting on Matthew's check, key item: Sound Editor replace -> plays in game.
+- **Latest handoff:** `handoff/009_slot_bank_installed_2026-11-10.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
