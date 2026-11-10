@@ -63,3 +63,10 @@ What changed (all verified by re-reading; bank also by wwiser):
   by p10's first entry. (Field-based filtering ruled out: listed tracks include rows identical in kind to row 109.)
 - **v5 installed** (`_moddingwwe2k19_builds\slot109_v5`): markers gone, base `cae_item.pac` original, entry appended to
   the p30 BGM list -> (8,316). Pac Editor-style relayout (file1 moved 5 -> 7, word 15 8192 -> 12288).
+
+## v5/v6 results and v7 diagnostic (2026-11-09 23:45)
+
+- **v5:** not listed. **v6diag:** Lio Rush relabel worked (p30 is read); an appended duplicate of The Rock (100000,
+  label 3100) SHOWED at the end; our 109000/3109 entry did not -> filtering is specific to our entry's content.
+- **v7diag installed:** p30 BGM ends with A (100000, label 3109), B (109000, label 3100), C (109000, label 3109).
+  A shows 'ALEX SHELLEY (CUSTOM 109)' => new strings work; B shows a third 'THE ROCK' => music id 109 accepted.
