@@ -1,6 +1,6 @@
 """Install / uninstall a build made by musicslot.py, with backups and MD5 checks.
 
-  python3 -I tools/build/install.py install   --build <dir> --game "<install>"
+  python3 -I tools/build/install.py install   --build <dir> --game "<install>" [--tools "<modding folder>"]
   python3 -I tools/build/install.py uninstall --build <dir> --game "<install>"
   python3 -I tools/build/install.py status    --build <dir> --game "<install>"
 
@@ -17,13 +17,19 @@ def md5f(p):
     return h.hexdigest()
 def main():
     cmd = sys.argv[1]; a = dict(zip(sys.argv[2::2], sys.argv[3::2]))
-    B, G = a['--build'], a['--game']
+    B, G, T = a['--build'], a['--game'], a.get('--tools')
     m = json.load(open(os.path.join(B, 'manifest.json')))
-    rows = []
+    rows = []; srcs = {}
     for k, o in m['outputs'].items():
-        i = m['inputs'][k]; tgt = os.path.join(G, o['path']); bak = tgt + '.orig_musicslot'
+        i = m['inputs'][k]
+        if o.get('root') == 'tools':
+            if not T: sys.exit('this build changes Data Editor/Sound Editor lists: pass --tools "<modding folder>"')
+            tgt = os.path.join(T, o['path']); srcp = os.path.join(B, 'tools', o['path'])
+        else:
+            tgt = os.path.join(G, o['path']); srcp = os.path.join(B, o['path'])
+        bak = tgt + '.orig_musicslot'
         cur = md5f(tgt) if os.path.exists(tgt) else None
-        rows.append((k, tgt, bak, i['md5'], o['md5'], cur))
+        rows.append((k, tgt, bak, i['md5'], o['md5'], cur)); srcs[k] = srcp
     if cmd == 'status':
         for k, tgt, bak, imd5, omd5, cur in rows:
             st = 'MODDED' if cur == omd5 else 'ORIGINAL' if cur == imd5 else 'OTHER'
@@ -45,7 +51,7 @@ def main():
             if cur == omd5: print(k, 'already installed'); continue
             if not os.path.exists(bak): shutil.copyfile(tgt, bak)
             assert md5f(bak) == imd5, 'backup mismatch ' + bak
-            shutil.copyfile(os.path.join(B, m['outputs'][k]['path']), tgt)
+            shutil.copyfile(srcs[k], tgt)
             assert md5f(tgt) == omd5, 'copy mismatch ' + tgt
             print(k, 'installed', tgt)
     elif cmd == 'uninstall':
