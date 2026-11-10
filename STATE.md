@@ -38,6 +38,9 @@
   fills songs and Data Editor assigns. All 589 free ids built with a silent placeholder, names "Custom 001..589",
   200 in the CAE menu; drop-in menu files (300/400/500/589/original) in `A - Resources\Extra Music Slots (moddingwwe2k19)`.
   v14 TEST build removed. **13:03: Matthew confirms a song injected with Sound Editor into Custom 001 plays in game. Workflow validated.**
-- **Latest handoff:** `handoff/009_slot_bank_installed_2026-11-10.md`.
+- **2026-11-10 afternoon (survey 001, handoff 010): character slots.** Exe: select screen = playable flag (pofo
+  +0x20) + no unowned store/showcase unlockable; **hard cap 509 superstar profiles** (beyond = exe patch). Test
+  `charsel_v1` installed (unlock 160/335/330, playable 274); waiting on Matthew's select-screen check.
+- **Latest handoff:** `handoff/010_charsel_test_2026-11-10.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
