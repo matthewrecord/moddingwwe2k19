@@ -357,6 +357,52 @@ static LONG CALLBACK veh(PEXCEPTION_POINTERS e) {
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
+
+/* ---- caller tracer: hooks the slot/id lookup functions and logs each NEW caller (return address) that asks
+   about an overflow slot (id or index of a loaded slot). The last new caller before a hang is the suspect. ---- */
+typedef struct { uint64_t va; const char *orig; int n; int by_index; const char *name; } Hook;
+static const Hook HOOKS[] = {
+    {0x1404c97d0, "48895c240848897c2410", 10, 0, "id->index 1404c97d0"},
+    {0x1404c98d0, "48895c2408", 5, 1, "index->id 1404c98d0"},
+    {0x140965640, "40534883ec40", 6, 0, "pofo by id 140965640"},
+    {0x140965770, "40534883ec40", 6, 0, "moveset by id 140965770"},
+    {0x140965710, "4c63c183faff", 6, 1, "pofo by index 140965710"},
+    {0x140965860, "4883ec28448bc9", 7, 0, "40-byte rec by id 140965860"},
+};
+#define NHOOKS (int)(sizeof HOOKS / sizeof HOOKS[0])
+static uint64_t g_seen[512]; static volatile LONG g_nseen; static CRITICAL_SECTION g_tcs;
+static void __attribute__((ms_abi)) trace_hit(uint64_t ret, uint32_t hook) {
+    EnterCriticalSection(&g_tcs);
+    uint64_t key = ret ^ ((uint64_t)hook << 56); int found = 0;
+    for (LONG i = 0; i < g_nseen; i++) if (g_seen[i] == key) { found = 1; break; }
+    if (!found && g_nseen < 512) { g_seen[g_nseen++] = key;
+        L("[%8.2f] TRACE %s called for slot from %llx (thread %lu)", (GetTickCount() - g_t0) / 1000.0, HOOKS[hook].name, (unsigned long long)ret, GetCurrentThreadId()); }
+    LeaveCriticalSection(&g_tcs);
+}
+static int install_tracer(uint8_t *mem, int idx_val, int id_val) {
+    for (int h = 0; h < NHOOKS; h++) if (!same(HOOKS[h].va, HOOKS[h].orig)) { L("tracer: MISMATCH %llx, tracer off", HOOKS[h].va); return 0; }
+    for (int h = 0; h < NHOOKS; h++) {
+        const Hook *k = &HOOKS[h]; uint8_t *c = mem + 128 * h; int o = 0; uint8_t orig[16]; hexb(k->orig, orig);
+        int32_t v = k->by_index ? idx_val : id_val;
+        c[o++] = 0x81; c[o++] = 0xF9; memcpy(c + o, &v, 4); o += 4;                 /* cmp ecx, v */
+        c[o++] = 0x75; int jne = o++;                                                /* jne go */
+        const uint8_t push[] = {0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53}; memcpy(c + o, push, 10); o += 10;
+        const uint8_t pre[] = {0x48, 0x83, 0xEC, 0x28, 0x48, 0x8B, 0x4C, 0x24, 0x58}; memcpy(c + o, pre, 9); o += 9;   /* sub rsp,28; mov rcx,[rsp+58] */
+        c[o++] = 0xBA; uint32_t hid = h; memcpy(c + o, &hid, 4); o += 4;            /* mov edx, h */
+        c[o++] = 0x48; c[o++] = 0xB8; uint64_t fn = (uint64_t)trace_hit; memcpy(c + o, &fn, 8); o += 8;
+        c[o++] = 0xFF; c[o++] = 0xD0;                                                /* call rax */
+        c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xC4; c[o++] = 0x28;
+        const uint8_t pop[] = {0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59}; memcpy(c + o, pop, 10); o += 10;
+        c[jne] = (uint8_t)(o - jne - 1);
+        memcpy(c + o, orig, k->n); o += k->n;                                        /* original prologue */
+        c[o++] = 0xFF; c[o++] = 0x25; memset(c + o, 0, 4); o += 4; uint64_t back = VA(k->va) + k->n; memcpy(c + o, &back, 8); o += 8;
+        int64_t rel = (int64_t)(uintptr_t)c - (int64_t)(VA(k->va) + 5);
+        if (rel > INT32_MAX || rel < INT32_MIN) { L("tracer: out of range"); return 0; }
+        uint8_t j[16]; j[0] = 0xE9; int32_t r32 = (int32_t)rel; memcpy(j + 1, &r32, 4); memset(j + 5, 0x90, k->n - 5); put(k->va, j, k->n);
+    }
+    return 1;
+}
+
 static DWORD WINAPI later_check(LPVOID p) {
     (void)p; Sleep(30000);
     uint8_t b[2]; memcpy(b, (void *)VA(0x140965760), 2);
@@ -375,7 +421,9 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         g_t0 = GetTickCount(); InitializeCriticalSection(&g_ncs);
         AddVectoredExceptionHandler(1, veh);
         L("file hooks installed: %d of 7", hook_all()); CreateThread(0, 0, rec_thread, 0, 0, 0);
-        if (g_img == 0x140000000ULL) { if (apply()) { CreateThread(0, 0, later_check, 0, 0, 0); load_slots(); if (g_nslots) CreateThread(0, 0, slot_thread, 0, 0, 0); } }
+        if (g_img == 0x140000000ULL) { if (apply()) { CreateThread(0, 0, later_check, 0, 0, 0); load_slots(); if (g_nslots) { CreateThread(0, 0, slot_thread, 0, 0, 0);
+            InitializeCriticalSection(&g_tcs); uint8_t *m = alloc_near(0x1000);
+            if (m && install_tracer(m, g_slots[0].idx, g_slots[0].id)) { DWORD old; VirtualProtect(m, 0x1000, PAGE_EXECUTE_READ, &old); L("tracer on for index %d / id %d", g_slots[0].idx, g_slots[0].id); } } } }
         else L("unexpected image base: NOTHING applied");
     }
     if (why == DLL_PROCESS_DETACH && g_log) dump_ring("game exit");
