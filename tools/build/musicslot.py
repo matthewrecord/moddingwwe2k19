@@ -179,6 +179,7 @@ def add_string(pac, sid, text, file_index=0):
     return H.replace(file_index, S.build()), len(ents)
 
 # ---------- Create-an-Entrance music menu (BGM.lsd = SHDC file id 2 in pac/menu/cae_item_pNN.pac) ----------
+NO_UNLOCK = True   # BGM entry u16 at +4..+0xC are unlock-requirement ids (-1 = none); the menu (0x140179a80 -> 0x140c1eb50/ec80) hides entries whose unlock id is locked. Using the music id there made 109 etc. hidden (2026-11-10 telemetry).
 DLC_STYLE = False  # v10 (ID 807) works without DLC flags; v9 DLC flags suspected of the CAE hang
 
 def add_bgm_entry(pac, mid):
@@ -191,7 +192,7 @@ def add_bgm_entry(pac, mid):
     n, total = struct.unpack_from('<HH', d, 0); assert len(d) == 4 + 40 * n
     ents = [struct.unpack_from('<10I', d, 4 + 40 * k) for k in range(n)]
     assert all(e[0] != mid * 1000 for e in ents), 'entry already present'
-    new = (mid * 1000, 0xFFFF0000 | mid, 0xFFFFFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 3000 + mid, 0xFFFF0001, 0,
+    new = (mid * 1000, 0xFFFFFFFF if NO_UNLOCK else (0xFFFF0000 | mid), 0xFFFFFFFF, 0xFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 3000 + mid, 0xFFFF0001, 0,
            1 if DLC_STYLE else 0)
     ents.append(new)
     # both header u16s +1, exactly as CAE Item Adder 0.2.1 does ('<2h' read, +1 each)
