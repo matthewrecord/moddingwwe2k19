@@ -195,6 +195,22 @@ def add_bgm_entry(pac, mid):
     f['data'] = struct.pack('<HH', n + 1, total + 1) + b''.join(struct.pack('<10I', *e) for e in ents)
     return H.replace(0, S.build()), {'entries': n + 1, 'total': total + 1, 'entry': list(new)}
 
+# ---------- music info registry (MEMU, SHDC file id 6 in pac/root/misc05_save_pNN.pac) ----------
+def add_memu_record(pac, mid, name_sid, title_sid):
+    """MEMU: 'MEMU', u32 count, count x 32-byte records:
+    (superstar/label string, song title string, album string or 99999, value, type, u16 id | u16 id2, flags, 0).
+    Music records: type 0xFFFF0600, flags 0xFFFF (base) or 0x1EFFFF (DLC patch 30). Every music the CAE menu lists has a
+    record; without one the menu hides the entry (v7 diagnostic, 2026-11-09)."""
+    H = HSPC(pac); S = SHDC(H.files[0]['data'])
+    f = [x for x in S.files if x['id'] == 6]; assert len(f) == 1, 'MEMU (id 6) not found'
+    f = f[0]; d = f['data']; assert d[:4] == b'MEMU'
+    n = struct.unpack_from('<I', d, 4)[0]; assert len(d) == 8 + 32 * n
+    R = [struct.unpack_from('<8I', d, 8 + 32 * k) for k in range(n)]
+    assert all(r[3] != mid * 1000 for r in R), 'record already present'
+    rec = (name_sid, title_sid, 99999, mid * 1000, 0xFFFF0600, 0xFFFF0000 | mid, 0xFFFF, 0)
+    f['data'] = b'MEMU' + struct.pack('<I', n + 1) + d[8:] + struct.pack('<8I', *rec)
+    return H.replace(0, S.build()), {'records': n + 1, 'record': list(rec)}
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--game', required=True); ap.add_argument('--wem', required=True)
@@ -203,7 +219,8 @@ def main():
     a = ap.parse_args(); G = a.game; mid = a.id
     assert 0 < mid < 1000, 'ids < 1000 only (name rule 13000+id)'
     paths = {'pck': 'sound/patch_30.pck', 'vmum': 'mods/TitantronFix/pac/audio/assetconv_p30.pac',
-             'str': 'mods/SuperString/pac/string/win/string_win.pac', 'cae': 'pac/menu/cae_item_p30.pac'}
+             'str': 'mods/SuperString/pac/string/win/string_win.pac', 'cae': 'pac/menu/cae_item_p30.pac',
+             'memu': 'pac/root/misc05_save_p30.pac'}
     # CAE lists are one combined index filled in order: base entries, then p10, p20, p30 (each header = (own count,
     # running end): base (304,308), p10 (3,307), p20 (1,308), p30 (7,315)). A base append lands at 304 and is
     # overwritten by p10's first entry (v2/v3/v4 evidence). New entries go at the END of the last list (p30).
@@ -224,10 +241,11 @@ def main():
     st, nstr = add_string(src['str'], 13000 + mid, a.name)            # name (mixed case)
     st, nstr = add_string(st, 3000 + mid, a.name.upper())              # menu label (upper case, as in BGM.lsd)
     cae, bgm = add_bgm_entry(src['cae'], mid)
-    out = {'pck': pck, 'vmum': vm, 'str': st, 'cae': cae}
+    memu, mrec = add_memu_record(src['memu'], mid, 3000 + mid, 13000 + mid)
+    out = {'pck': pck, 'vmum': vm, 'str': st, 'cae': cae, 'memu': memu}
     for k, v in out.items():
         p = os.path.join(a.out, paths[k]); os.makedirs(os.path.dirname(p), exist_ok=True); open(p, 'wb').write(v)
-    man.update({'ids': ids, 'source_id': src_id, 'row': row, 'strings': nstr, 'bgm': bgm,
+    man.update({'ids': ids, 'source_id': src_id, 'row': row, 'strings': nstr, 'bgm': bgm, 'memu': mrec,
                 'outputs': {k: {'path': paths[k], 'md5': md5(v), 'size': len(v)} for k, v in out.items()}})
     open(os.path.join(a.out, 'manifest.json'), 'w').write(json.dumps(man, indent=1))
     print(json.dumps({k: man[k] for k in ('ids', 'source_id', 'row', 'outputs')}, indent=1))
