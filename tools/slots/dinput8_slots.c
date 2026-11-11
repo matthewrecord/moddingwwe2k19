@@ -629,9 +629,31 @@ static volatile LONG g_nseed;
 static void __attribute__((ms_abi)) seed_hit(uint64_t buf, uint64_t size, uint64_t ret) {
     LONG n = InterlockedIncrement(&g_nseed);
     char d[MAX_PATH]; GetModuleFileNameA(NULL, d, MAX_PATH); char *z = strrchr(d, '\\'); if (z) z[1] = 0;
+    /* test8: roster-choice mode = *(int*)[[0x1425E7E20]+0x4600] (read by the superstar import 0x140FFE480 just before:
+       1 or 2). universe_teams.ini next to the exe: line 1 = mode value that means "import MyWWE superstars",
+       line 2 = path of a 27,216-byte LBTS team table; when the mode matches, that table replaces the default one. */
+    { uint64_t g0 = 0, mp = 0; int mode = -1; SIZE_T gg = 0;
+      if (ReadProcessMemory(GetCurrentProcess(), (void *)0x1425E7E20, &g0, 8, &gg) && g0 &&
+          ReadProcessMemory(GetCurrentProcess(), (void *)(g0 + 0x4600), &mp, 8, &gg) && mp)
+          ReadProcessMemory(GetCurrentProcess(), (void *)mp, &mode, 4, &gg);
+      L("SEED roster mode %d", mode);
+      char ini[MAX_PATH]; snprintf(ini, sizeof ini, "%suniverse_teams.ini", d); FILE *fi = fopen(ini, "r");
+      if (fi) { char l1[32] = {0}, l2[MAX_PATH] = {0}; int want = -2;
+          if (fgets(l1, sizeof l1, fi) && fgets(l2, sizeof l2, fi)) { want = atoi(l1); trimnl(l2); }
+          fclose(fi);
+          if (want == mode && (uint32_t)size == 27216) {
+              FILE *ft = fopen(l2, "rb"); uint8_t t[27216];
+              if (ft && fread(t, 1, sizeof t, ft) == sizeof t && !memcmp(t, "LBTS", 4)) {
+                  DWORD old; if (VirtualProtect((void *)buf, sizeof t, PAGE_READWRITE, &old)) { memcpy((void *)buf, t, sizeof t); VirtualProtect((void *)buf, sizeof t, old, &old);
+                      L("SEED: MyWWE roster -> team table replaced from %s", l2); } }
+              else L("SEED: team file %s missing or not LBTS", l2);
+              if (ft) fclose(ft);
+          } else L("SEED: default teams (mode %d, want %d)", mode, want);
+      } }
     L("[%8.2f] SEED call %ld buf %llx size %llu from %llx", (GetTickCount() - g_t0) / 1000.0, n, (unsigned long long)buf,
       (unsigned long long)(uint32_t)size, (unsigned long long)ret);
     char o[MAX_PATH]; SIZE_T got = 0; void *m;
+    snprintf(o, sizeof o, "%sseed_dump.flag", d); if (GetFileAttributesA(o) == INVALID_FILE_ATTRIBUTES) return;   /* dumps only on request */
     if ((uint32_t)size && (uint32_t)size < (16u << 20) && (m = malloc((uint32_t)size))) {
         if (ReadProcessMemory(GetCurrentProcess(), (void *)buf, m, (uint32_t)size, &got)) {
             snprintf(o, sizeof o, "%sseed_%ld_buf.bin", d, n); FILE *f = fopen(o, "wb"); if (f) { fwrite(m, 1, got, f); fclose(f); } }

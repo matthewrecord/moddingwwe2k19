@@ -421,3 +421,13 @@
   Next to tie teams to the choice: find where the roster choice is stored (memory find/diff while toggling the option
   in the creation menu) or hook the MyWWE superstar-import routine and re-seed teams there with Matthew's table.
   Seed dumps kept in the game folder (seed_1/2_buf.bin, seed_1/2_blob.bin).
+- 2026-11-11 01:45 **Superstar import routine found** (watchpoints on the slot-3 Universe pofo array 0x143208788):
+  0x140FFE480 (state step of the Universe-creation state machine at 0x140FFE9B9, caller chain 0x140BF2741 ->
+  0x1406BC794) copies superstars into the Universe pofo/moveset arrays (CAW indexes < 100 via 0x140FFEFA0, others
+  via the pofo getter 0x140965640 with a source argument). It runs for BOTH choices (default run hit the same rip
+  0x140FFF019). The choice is the mode value `*(int*)[[0x1425E7E20]+0x4600]` (1 or 2), read by that routine; the
+  object is freed after creation (reads 0 now). The team seeder runs ~50 ms after the import in the same flow.
+  **DLL test8** (md5 e169779d...): seeder hook reads the mode, logs `SEED roster mode N`, and when it equals line 1
+  of `universe_teams.ini` replaces the 27,216-byte default team table with line 2's file
+  (`universe_teams_mine.lbts` = LBTS from teamimport_v1). Guess: 2 = MyWWE (to verify from the log). Seed dumps
+  now only when `seed_dump.flag` exists. Needs the teamimport_v1 string_win.pac installed for the new team names.
