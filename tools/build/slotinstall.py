@@ -31,7 +31,10 @@ Same conventions as Test Wrestler (handoff 012, notes/characters step 1j):
 - render: the folder's .OODL (Oodle Tools output) if there is exactly one, else its .dds (stored, ~1 MB pac);
   several -> name one in spec field 6. Written as custom_typea and custom_typeb\0<id>00.pac (renderpac.py).
   `--renders 511 512 514=Darby_Allin_New.dds ...` adds/replaces renders for installed slots.
-Titantrons are not built yet (.bk2 -> MVS pac writer still to do).
+- `--from-game 511=925 512=799 ...`: copy the renders AND Titantrons the wrestler already has in the game (CCT id
+  on the right) to the slot's id, with internal names rewritten (renders: MD5 name; trons: M0<id>00). Preferred
+  when the wrestler is installed with CCT: the exact in-game assets, plus Titantrons.
+Titantrons from .bk2 are not built yet (MVS pac writer still to do).
 """
 import argparse, glob, json, os, re, shutil, struct, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -151,6 +154,7 @@ def main():
     ap.add_argument('--list', action='store_true'); ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--remove', type=int, nargs='+', metavar='SLOT')
     ap.add_argument('--renders', nargs='+', metavar='SLOT[=file]')
+    ap.add_argument('--from-game', nargs='+', metavar='SLOT=ID')
     a = ap.parse_args(); G = a.game
     sdir = os.path.join(G, 'slots'); os.makedirs(sdir, exist_ok=True)
     logp = os.path.join(sdir, 'installed.json')
@@ -177,7 +181,10 @@ def main():
             for kind in 'ab':
                 f = os.path.join(G, RENDER_DIR, 'custom_type%s' % kind, '0%03d00.pac' % cid)
                 if os.path.exists(f): shutil.move(f, os.path.join(trash, 'render_type%s_0%03d00.pac' % (kind, cid)))
-            chunk = [l for l in chunk if not (l.lower().startswith(b'mods\\cct\\renders\\') and l.lower().endswith(b'\\0%03d00.pac' % cid))]
+            for t in ('ss_apron', 'ss_mini', 'ss_ramp', 'ss_wall'):
+                f = os.path.join(G, 'mods/CCT/movies/pac/mov', t, '0%03d00.pac' % cid)
+                if os.path.exists(f): shutil.move(f, os.path.join(trash, 'tron_%s_0%03d00.pac' % (t, cid)))
+            chunk = [l for l in chunk if not ((l.lower().startswith(b'mods\\cct\\renders\\') or l.lower().startswith(b'mods\\cct\\movies\\')) and l.lower().endswith(b'\\0%03d00.pac' % cid))]
             chunk = [l for l in chunk if not re.search(rb'\\ch%03d\d\d\.pac$' % cid, l.lower()) or not l.lower().startswith(b'mods\\cct\\characters\\')]
             info = next((x for x in inst if x['index'] == idx), {})
             if info.get('sid') in strings and info.get('sid') != 39370: del strings[info['sid']]
@@ -185,6 +192,38 @@ def main():
             print('removed slot %d (index %d, id %d) %s' % (slot, idx, cid, info.get('name', '')))
         S.files[0]['data'] = string_table_build(pre, sorted(strings.items()))
         open(os.path.join(G, STR), 'wb').write(H.replace(0, S.build()))
+        open(os.path.join(G, 'Chunk0.def'), 'wb').write(b'\r\n'.join(chunk)); json.dump(inst, open(logp, 'w'), indent=1)
+        return
+    if a.from_game:
+        try: open(os.path.join(G, 'Chunk0.def'), 'r+b').close()
+        except OSError: die('game files are locked: close the game first')
+        TRONS = ('ss_apron', 'ss_mini', 'ss_ramp', 'ss_wall'); MOV = 'mods/CCT/movies/pac/mov'
+        todo = []
+        for arg in a.from_game:
+            slot, _, src = arg.partition('=')
+            info = next((x for x in inst if x['index'] == int(slot) - 1), None)
+            if not info or not src.isdigit(): die('bad %s (slot not installed, or no source id)' % arg)
+            src = int(src); cid = info['id']; files = []
+            for kind in 'ab':
+                f = '%s/custom_type%s/0%03d00.pac' % (RENDER_DIR, kind, src)
+                if os.path.exists(os.path.join(G, f)): files.append((f, f.replace('0%03d00' % src, '0%03d00' % cid), renderpac.render_name(kind, src), renderpac.render_name(kind, cid)))
+            for t in TRONS:
+                f = '%s/%s/0%03d00.pac' % (MOV, t, src)
+                if os.path.exists(os.path.join(G, f)): files.append((f, '%s/%s/0%03d00.pac' % (MOV, t, cid), b'M0%03d00' % src, b'M0%03d00' % cid))
+            if not files: die('id %d has no CCT renders or Titantrons' % src)
+            for f, _, old, _ in files:
+                with open(os.path.join(G, f), 'rb') as fh: fh.seek(NAME_OFF); cur = fh.read(len(old))
+                if cur != old: die('%s: internal name %r, expected %r' % (f, cur, old))
+            todo.append((slot, info, src, files))
+        backup(os.path.join(G, 'Chunk0.def')); chunk = open(os.path.join(G, 'Chunk0.def'), 'rb').read().split(b'\r\n')
+        for slot, info, src, files in todo:
+            for f, d, old, new in files:
+                shutil.copyfile(os.path.join(G, f), os.path.join(G, d))
+                with open(os.path.join(G, d), 'r+b') as fh: fh.seek(NAME_OFF); fh.write(new)
+                chunk_insert(chunk, d.replace('/', '\\').lower().encode())
+            info['assets_from_id'] = src
+            print('slot %s (id %d) %s: %d files from id %d (%s)' % (slot, info['id'], info['name'], len(files), src,
+                  ', '.join(sorted({x[0].split('/')[-2] for x in files}))))
         open(os.path.join(G, 'Chunk0.def'), 'wb').write(b'\r\n'.join(chunk)); json.dump(inst, open(logp, 'w'), indent=1)
         return
     if a.renders:
