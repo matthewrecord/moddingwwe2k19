@@ -75,3 +75,8 @@ does real Alex (id 779) skip in the same arenas (then not slot-related), else en
   160 folders installable as-is (`_moddingwwe2k19_builds/tools/ready_wrestlers.txt`), 220 not
   (`not_ready_wrestlers.txt`: 106 no .pofo, 21/17 several pofo/moveset -> name one in the spec, 10 no EPK8 model, ...).
 - slots\installed.json seeded with Test Wrestler. Next: Matthew names the first wrestlers; renders/trons writers.
+
+## 19:35 Test Wrestler 2-6 installed with slotinstall.py (spec `_moddingwwe2k19_builds/tools/spec_test2-6.txt`)
+slot 511 id 938 Rhea Ripley | 512 939 Angel Garza | 513 940 Ace Austin | 514 941 Darby Allin | 515 942 Toni Storm.
+Chunk0.def f39c7626..., string_win.pac 1f2738e9..., dinput8.dll test2 a1ef925e.... No renders/trons for 938-942.
+Matthew's check: all six in the select screen; matches with several of them (incl. two new ones against each other).
