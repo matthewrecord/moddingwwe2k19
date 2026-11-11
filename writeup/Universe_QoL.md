@@ -99,3 +99,7 @@
 - 2026-11-10 21:27 test3b probe: 0x140bbe5e0 called at 200 s with obj 0x76c24d20 for ids 689-756 only (no overflow
   ids); reading obj later gave all zeros (temporary object, freed). So this lookup is not the roster table; it was a
   wrong lead. Matthew's match in progress (Angel Garza vs a vanilla wrestler, title): entrances normal.
+- 2026-11-10 21:30 **Angel Garza vs vanilla wrestler, title match: normal** (entrances + match). No exceptions in the
+  log. So no single overflow wrestler breaks a title match; the only broken setup so far is **two overflow wrestlers
+  in the same title match** (Keith Lee vs Angel Garza, twice). To confirm with a different pair: Keith Lee vs Ace
+  Austin (title), with a log mark before/after so the new TRACE callers of that match can be isolated.
