@@ -92,3 +92,7 @@
   0x450 id table found **no** contiguous table (only noise). So the object passed to 0x140bbe5e0 is not where we
   guessed, or that table is only built while booking a show. Static: its caller 0x140bbef80 receives it as arg 3.
   => test3b DLL (md5 ad10100d...) adds a probe on 0x140bbe5e0 logging each new (object, id) pair (`UNIV lookup`).
+- 2026-11-10 21:21 Correction (Matthew): the broken matches were **Keith Lee (champion) vs Angel Garza (slot 512)**,
+  title on the line (Raw and SmackDown). Ace Austin was a champion but never wrestled. Works: Keith Lee vs HHH (title),
+  and the non-title control. Open split: Angel Garza vs a vanilla wrestler (title / non-title) -> is it Angel's slot,
+  or two overflow wrestlers in one title match?
