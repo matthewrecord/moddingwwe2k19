@@ -28,7 +28,8 @@ TEMPLATE = {2: 2, 3: 4}                # member count -> template entry; 4+ -> 2
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('--game', required=True); ap.add_argument('--main', required=True)
-    ap.add_argument('--out', default='.'); ap.add_argument('--dry-run', action='store_true'); a = ap.parse_args()
+    ap.add_argument('--out', default='.'); ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--mine-only', action='store_true', help='only the MyWWE teams (no vanilla defaults kept)'); a = ap.parse_args()
     wp = os.path.join(a.game, 'pac', 'universe', 'wunistable.pac')
     orig = os.path.join(a.game, 'pac', 'universe', 'wunistable.pac.orig_teams')
     b = bytearray(open(orig if os.path.exists(orig) else wp, 'rb').read())   # always start from the vanilla file
@@ -43,18 +44,23 @@ def main():
     for i in range(NENT):
         nid = struct.unpack_from('<I', b, B + i * ENT + 0x100)[0]
         if nid != 0xFFFFFFFF: used.add(i); default_names.add((text(nid) or '').upper())
+    templates = {k: bytes(b[B + v * ENT:B + (v + 1) * ENT]) for k, v in list(TEMPLATE.items()) + [(4, 22)]}
+    if a.mine_only:                                    # clear every entry (empty entry = vanilla entry 23's layout)
+        empty = bytes(b[B + 23 * ENT:B + 24 * ENT])
+        for i in range(NENT): b[B + i * ENT:B + (i + 1) * ENT] = empty
+        used, default_names = set(), set()
     free = [i for i in range(NENT) if i not in used]
     # MyWWE teams
     m = open(a.main, 'rb').read(); teams = []
-    for r in range(min(200, len(m) // MREC)):
+    for r in range(min(100 if a.mine_only else 200, len(m) // MREC)):   # mine-only: MyWWE created-team rows 0-99 (rows 100+ = vanilla leftovers)
         rec = m[r * MREC:(r + 1) * MREC]
         name = rec[0x100:0x158].split(b'\0')[0].decode('latin-1').strip()
         mem = [v for v in struct.unpack_from('<5H', rec, 0) if v != 0x400]
         if not name or not name.isprintable() or len(mem) < 2 or any(v >= 0x400 for v in mem): continue
-        if name.upper() in default_names or any(t['name'].upper() == name.upper() for t in teams): continue
+        if name.upper() in default_names or (not a.mine_only and any(t['name'].upper() == name.upper() for t in teams)): continue
         teams.append(dict(row=r, name=name, members=mem, graphic=struct.unpack_from('<H', rec, 0x10)[0]))
     by_text = {}
-    for i in range(16000, 16200):
+    for i in list(range(16000, 16200)) + list(range(NEW_BASE, NEW_BASE + 400)):
         t = text(i)
         if t: by_text.setdefault(t.upper(), i)
     nxt = NEW_BASE; plan = []
@@ -63,8 +69,8 @@ def main():
         if sid is None:
             while nxt in strings: nxt += 1
             sid = nxt; strings[sid] = t['name'].encode('latin-1', 'replace') + b'\0'; nxt += 1; t['new_string'] = True
-        e_i = free.pop(0); tpl = TEMPLATE.get(len(t['members']), 22)
-        e = bytearray(b[B + tpl * ENT:B + (tpl + 1) * ENT])
+        e_i = free.pop(0)
+        e = bytearray(templates[min(len(t['members']), 4)])
         for k in range(5): struct.pack_into('<H', e, 2 * k, t['members'][k] if k < len(t['members']) else 0x400)
         e[0x0E] = len(t['members']); struct.pack_into('<H', e, 0x10, t['graphic'])
         struct.pack_into('<2I', e, 0x100, sid, sid)

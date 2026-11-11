@@ -431,3 +431,11 @@
   of `universe_teams.ini` replaces the 27,216-byte default team table with line 2's file
   (`universe_teams_mine.lbts` = LBTS from teamimport_v1). Guess: 2 = MyWWE (to verify from the log). Seed dumps
   now only when `seed_dump.flag` exists. Needs the teamimport_v1 string_win.pac installed for the new team names.
+- 2026-11-11 01:55 **Test8 worked** (log: `SEED roster mode 2` -> table replaced): **mode 2 = import MyWWE superstars**.
+  Matthew's feedback: wants **his teams only**. v1 (defaults kept + additions) brought back vanilla teams he had
+  deleted (Bella Twins, Deleters of Worlds), duplicated Street Profits, and skipped his versions of teams whose name
+  matched a default. Fix: `teamimport.py --mine-only` clears all 100 entries and adds only MyWWE created-team rows
+  0-99 (rows 100+ in the main table are vanilla leftovers: War Raiders, Titus Worldwide, Breezango, KO & Sami Zayn,
+  AOP, Gallows & Anderson, Rusev Day, Usos, Street Profits, Undisputed Era, Bella Twins, Evolution). Result: 68
+  teams, names reuse the strings already installed. `universe_teams_mine.lbts` replaced in place (read at each
+  creation, no restart needed). Open question for Matthew: are any rows 100+ teams he actually keeps?
