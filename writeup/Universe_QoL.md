@@ -245,3 +245,12 @@
   SmackDown Live, NXT, AEW Dynamite, Sun = PPV). history.csv gains show, date ("May wk 2 Mon"), season, offseason.
   Tonight's test shows are correctly flagged OFFSEASON, so the standings tables are empty by design
   (count_offseason no); they still appear in results/history.
+- 2026-11-10 22:50 Tracker v1.3 (Matthew: selectable roster filter; tabs; PPV results; title histories with defenses
+  like his "History and Ideas" sheet, cols Z..: reign line [date, champion, event] + indented defenses):
+  standings.html tabs = Standings (champion cards + table) | By show (sub-tab per weekly show: standings + results) |
+  Pay-per-views (Sunday shows) | Title history (per title: reign rows, indented defense rows: date, opponent, show)
+  | All results | All-time. "Roster only" + per-brand checkboxes filter every standings table (remembered between
+  visits). titles.csv now in his sheet layout (reign row, then "   vs. opponent" defense rows). Verified in headless
+  Chrome (no JS errors; screenshots checked).
+  Idea from his sheets for later: per-title contender rankings (Main Roster Stats: C + ranked contenders with W, L,
+  PPV W/L, pct).

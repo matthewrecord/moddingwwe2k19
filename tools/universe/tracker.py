@@ -175,25 +175,36 @@ def build_reports(hist, out):
         w = csv.DictWriter(fh, ['person', 'brand', 'matches', 'W', 'L', 'pins_scored', 'pinned', 'title_matches', 'streak', 'form'])
         w.writeheader(); w.writerows(sorted(rec.values(), key=lambda r: (-r['W'], r['L'], r['person'])))
     # title reigns: the winning side of a title match holds the title afterwards
+    def when(k):
+        dl, sn = day_label(DAY.get(k), cfg); return dl, sn
     champ, reigns = {}, []
     for k in order:
         hs = bym[k]; h0 = hs[0]
         if h0['title_id'] == '': continue
         win = sorted({h['person'] for h in hs if h['result'] == 'W' and h['role'] == 'wrestler'})
-        holder = ' & '.join(win); t = h0['title']
+        lose = ' & '.join(sorted({h['person'] for h in hs if h['result'] == 'L' and h['role'] == 'wrestler'}))
+        holder = ' & '.join(win); t = h0['title']; dl, sn = when(k)
         cur = champ.get(t)
-        if cur and cur['champion'] == holder: cur['defenses'] += 1; cur['last_match'] = k
+        if cur and cur['champion'] == holder:
+            cur['defenses'] += 1; cur['defense_list'].append(dict(opponent=lose, date=dl, show=sn, season=season[k]))
         else:
-            if cur: cur['lost_capture'] = h0['capture']; cur['lost_to'] = holder
-            cur = dict(title=t, champion=holder, won_capture=h0['capture'], won_day=h0['universe_day'],
-                       won_from=' & '.join(sorted({h['person'] for h in hs if h['result'] == 'L' and h['role'] == 'wrestler'})),
-                       defenses=0, lost_capture='', lost_to='', last_match=k)
+            if cur: cur['lost_to'] = holder; cur['lost_date'] = dl; cur['lost_show'] = sn
+            cur = dict(title=t, champion=holder, won_from=lose, won_date=dl, won_show=sn, season=season[k], defenses=0,
+                       defense_list=[], lost_to='', lost_date='', lost_show='')
             champ[t] = cur; reigns.append(cur)
+    # titles.csv in Matthew's sheet layout: a reign row, then one indented row per defense
     with wopen(os.path.join(out, 'titles.csv'), encoding='utf-8-sig', newline='') as fh:
-        w = csv.DictWriter(fh, ['title', 'champion', 'won_from', 'won_capture', 'won_day', 'defenses', 'lost_capture', 'lost_to'],
-                           extrasaction='ignore')
-        w.writeheader(); w.writerows(reigns)
-    write_html(rec, alltime, cfg, season_now, season, offseason, reigns, order, bym, out)
+        w = csv.writer(fh); w.writerow(['title', 'date', 'champion / defense vs.', 'show', 'season', 'defenses', 'lost to'])
+        for rg in reigns:
+            w.writerow([rg['title'], rg['won_date'], rg['champion'], rg['won_show'], rg['season'], rg['defenses'], rg['lost_to'] or 'current'])
+            for d in rg['defense_list']: w.writerow(['', d['date'], '   ' + d['opponent'], d['show'], d['season'], '', ''])
+    # per-show standings (current season, same counting rule)
+    byshow = {}
+    for k in counted:
+        if season[k] != season_now: continue
+        byshow.setdefault(when(k)[1] or 'Unknown', []).append(k)
+    show_rec = {sn: tally(ks) for sn, ks in byshow.items()}
+    write_html(rec, alltime, show_rec, cfg, season_now, season, offseason, reigns, order, bym, out)
     with wopen(os.path.join(out, 'log.md')) as fh:
         fh.write('# Universe match log\n\n'); last = None
         for k in order:
@@ -281,67 +292,121 @@ def write_matches(order, bym, out, cfg, season, offseason):
                             winner_managers=' & '.join(h['person'] for h in _who(hs, 'W', 'manager')),
                             loser_managers=' & '.join(h['person'] for h in _who(hs, 'L', 'manager'))))
 
-def write_html(rec, alltime, cfg, season_no, season, offseason, reigns, order, bym, out):
-    """standings.html: a self-contained page (open in any browser), rebuilt on every run."""
-    import html as H
+def write_html(rec, alltime, show_rec, cfg, season_no, season, offseason, reigns, order, bym, out):
+    """standings.html: self-contained tabbed page (any browser), rebuilt on every run.
+    Tabs: Standings | By show | Pay-per-views | Title history | All results | All-time. A checkbox on the standings
+    tabs hides people who are not on a roster (brand outside settings.tsv roster_brands)."""
+    import html as H, json
     e = H.escape
+    brands = cfg['brands']
     def form(f): return ''.join(f'<span class="f {c}">{c}</span>' for c in f)
-    HDR = ('<tr><th>#</th><th style="text-align:left">Superstar</th>{b}<th>W</th><th>L</th><th>Win %</th><th>Pins</th>'
-           '<th>Pinned</th><th>Title matches</th><th>Streak</th><th>Last 5</th></tr>')
-    def table(rs, brandcol=False):
+    def table(rs, tid):
         rs = sorted(rs, key=lambda r: (-(r['W'] / r['matches'] if r['matches'] else 0), -r['W'], r['L'], r['person']))
-        body = ''.join(f"<tr><td class=n>{i}</td><td class=p>{e(r['person'])}</td>"
-                       + (f"<td>{e(r['brand'] or '—')}</td>" if brandcol else '')
-                       + f"<td>{r['W']}</td><td>{r['L']}</td><td>{(100 * r['W'] / r['matches']):.0f}%</td><td>{r['pins_scored']}</td>"
-                         f"<td>{r['pinned']}</td><td>{r['title_matches']}</td><td><b>{e(r['streak'])}</b></td><td>{form(r['form'])}</td></tr>"
-                       for i, r in enumerate(rs, 1))
-        return '<table>' + HDR.format(b='<th>Brand</th>' if brandcol else '') + (body or '<tr><td colspan=11 class=sub>No matches yet.</td></tr>') + '</table>'
-    st = ''.join(f"<h3>{e(b)}</h3>" + table([r for r in rec.values() if r['brand'] == b]) for b in cfg['brands'])
-    others = [r for r in rec.values() if r['brand'] not in cfg['brands']]
-    if others: st += f"<details><summary>Not on a roster ({len(others)}): enhancement talent, tournaments, inactive</summary>{table(others, True)}</details>"
-    at = table(list(alltime.values()), True)
+        body = ''.join(
+            f"<tr class='{'' if r['brand'] in brands else 'nr'}' data-brand='{e(r['brand'] if r['brand'] in brands else 'none')}'>"
+            f"<td class=n></td><td class=p>{e(r['person'])}</td><td>{e(r['brand'] or '—')}</td><td>{r['W']}</td><td>{r['L']}</td>"
+            f"<td>{(100 * r['W'] / r['matches']):.0f}%</td><td>{r['pins_scored']}</td><td>{r['pinned']}</td><td>{r['title_matches']}</td>"
+            f"<td><b>{e(r['streak'])}</b></td><td>{form(r['form'])}</td></tr>" for r in rs)
+        return (f"<table class=st id={tid}><tr><th>#</th><th class=l>Superstar</th><th>Brand</th><th>W</th><th>L</th><th>Win %</th>"
+                f"<th>Pins</th><th>Pinned</th><th>Title matches</th><th>Streak</th><th>Last 5</th></tr>"
+                + (body or "<tr><td colspan=11 class=sub>No counted matches yet.</td></tr>") + "</table>")
+    filt = ("<div class=filters><label><input type=checkbox class=roster checked> Roster only</label>"
+            + ''.join(f"<label><input type=checkbox class=brand value='{e(b)}' checked> {e(b)}</label>" for b in brands)
+            + "</div>")
+    def match_line(k):
+        hs = bym[k]; h0 = hs[0]
+        def side(r):
+            ws = ' & '.join(e(h['person']) + (' <small>(pin)</small>' if str(h['pinfall']) == '1' and r == 'W' else '')
+                            for h in hs if h['result'] == r and h['role'] == 'wrestler')
+            m = [h['person'] for h in hs if h['result'] == r and h['role'] == 'manager']
+            return ws + (f" <small>w/ {e(' & '.join(m))}</small>" if m else '')
+        return (f"<div class=m>{side('W')} <span class=def>def.</span> {side('L')}"
+                + (f" <span class=tt>{e(h0['title'])}</span>" if h0['title'] else '') + '</div>')
+    def cards(keys):
+        out_, last = [], None
+        for k in reversed(keys):
+            dl, sn = day_label(DAY.get(k), cfg); hdr = (sn, dl, season[k])
+            if hdr != last:
+                out_.append(f"<h3>{e(sn or 'Show')} <small>{e(dl)} · season {season[k]}{' · OFFSEASON' if offseason[k] else ''}</small></h3>")
+                last = hdr
+            out_.append(match_line(k))
+        return ''.join(out_) or "<p class=sub>Nothing yet.</p>"
+    # champions + title history (Matthew's layout: reign line, then indented defenses)
     cur = {}
     for rg in reigns: cur[rg['title']] = rg
     champs = ''.join(f"<div class=belt><div class=t>{e(t)}</div><div class=c>{e(rg['champion'])}</div>"
-                     f"<div class=d>won from {e(rg['won_from']) or '—'} · {rg['defenses']} defense{'s' if rg['defenses'] != 1 else ''}</div></div>"
+                     f"<div class=d>since {e(rg['won_date'] or '?')} · {rg['defenses']} defense{'s' if rg['defenses'] != 1 else ''}</div></div>"
                      for t, rg in sorted(cur.items()))
-    th = ''.join(f"<tr><td>{e(rg['title'])}</td><td class=p>{e(rg['champion'])}</td><td>{e(rg['won_from'])}</td>"
-                 f"<td>show {rg['won_capture']}</td><td>{rg['defenses']}</td><td>{e(rg['lost_to']) or '<i>current</i>'}</td></tr>"
-                 for rg in reigns)
-    res, last = [], None
-    for k in reversed(order):
-        hs = bym[k]; h0 = hs[0]
-        if h0['capture'] != last:
-            dl, sn = day_label(DAY.get(k), cfg)
-            res.append(f"<h3>{e(sn or 'Show')} <small>{e(dl)} · season {season[k]}{' · OFFSEASON' if offseason[k] else ''} · {e(h0['captured_at'][:16].replace('T', ' '))}"
-                       f"{' · day ' + str(h0['universe_day']) if h0['universe_day'] else ''}</small></h3>"); last = h0['capture']
-        def side(r):
-            ws = ' & '.join(e(h['person']) + (' <small>(pin)</small>' if str(h['pinfall']) == '1' and r == 'W' else '')
-                            for h in _who(hs, r))
-            m = _who(hs, r, 'manager')
-            return ws + (f" <small>w/ {e(' & '.join(h['person'] for h in m))}</small>" if m else '')
-        res.append(f"<div class=m>{side('W')} <span class=def>def.</span> {side('L')}"
-                   + (f" <span class=tt>{e(h0['title'])}</span>" if h0['title'] else '') + '</div>')
+    th = ''
+    for t in sorted({rg['title'] for rg in reigns}):
+        rows = ''
+        for rg in [r for r in reigns if r['title'] == t]:
+            rows += (f"<tr class=reign><td>{e(rg['won_date'])}</td><td class=l><b>{e(rg['champion'])}</b> <small>def. {e(rg['won_from'])}</small></td>"
+                     f"<td>{e(rg['won_show'])}</td><td>{rg['defenses']}</td><td>{e(rg['lost_to']) or '<i>current</i>'}</td></tr>")
+            rows += ''.join(f"<tr class=defense><td>{e(d['date'])}</td><td class=l>&nbsp;&nbsp;&nbsp;vs. {e(d['opponent'])}</td>"
+                            f"<td>{e(d['show'])}</td><td></td><td></td></tr>" for d in rg['defense_list'])
+        th += (f"<h3>{e(t)}</h3><table class=th><tr><th>Date</th><th class=l>Champion / defense</th><th>Show</th>"
+               f"<th>Defenses</th><th>Lost to</th></tr>{rows}</table>")
+    # tabs
+    shows_sorted = [sn for sn in cfg['shows'] if sn and sn in show_rec and sn != 'PPV'] + \
+                   [sn for sn in show_rec if sn not in cfg['shows'] and sn != 'PPV']
+    show_tabs = ''.join(f"<button class=sub-tab data-sub='show{i}'>{e(sn)}</button>" for i, sn in enumerate(shows_sorted))
+    show_panes = ''.join(
+        f"<div class=sub-pane id='show{i}'>{table(show_rec[sn].values(), f'st_show{i}')}"
+        f"<h2>Results</h2>{cards([k for k in order if day_label(DAY.get(k), cfg)[1] == sn])}</div>"
+        for i, sn in enumerate(shows_sorted))
+    ppv_keys = [k for k in order if day_label(DAY.get(k), cfg)[1] == cfg['shows'][6] and cfg['shows'][6]]
+    tabs = [('standings', f"Standings · season {season_no}"), ('shows', 'By show'), ('ppv', 'Pay-per-views'),
+            ('titles', 'Title history'), ('results', 'All results'), ('alltime', 'All-time')]
+    nav = ''.join(f"<button class=tab data-tab='{i}'>{e(n)}</button>" for i, n in tabs)
+    panes = {
+        'standings': f"<h2>Champions</h2><div class=belts>{champs or '<span class=sub>No title matches yet.</span>'}</div>"
+                     f"<h2>Standings · season {season_no}{'' if cfg['count_offseason'] else ' (offseason not counted)'}</h2>{filt}{table(rec.values(), 'st_main')}",
+        'shows': f"{filt}<div class=subnav>{show_tabs or '<span class=sub>No counted shows this season yet.</span>'}</div>{show_panes}",
+        'ppv': cards(ppv_keys),
+        'titles': th or "<p class=sub>No title matches yet.</p>",
+        'results': cards(order),
+        'alltime': f"{filt}{table(alltime.values(), 'st_all')}",
+    }
+    body = ''.join(f"<section class=pane id='{i}'>{panes[i]}</section>" for i, _ in tabs)
     page = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Universe standings</title><style>
-body{{font:15px/1.45 system-ui,Segoe UI,sans-serif;background:#111418;color:#e8e8e8;margin:0;padding:28px 40px}}
-h1{{margin:0 0 4px;font-size:28px;letter-spacing:.5px}} h2{{margin:34px 0 10px;font-size:18px;text-transform:uppercase;letter-spacing:1.5px;color:#d4af37}}
-h3{{margin:18px 0 6px;font-size:15px;color:#aab}} small{{color:#8a8f98;font-weight:normal}} .sub{{color:#8a8f98}}
-table{{border-collapse:collapse;width:100%;max-width:1100px}} th,td{{padding:7px 10px;text-align:center;border-bottom:1px solid #262b33}}
-th{{font-size:12px;text-transform:uppercase;color:#8a8f98;letter-spacing:1px}} td.p{{text-align:left;font-weight:600}} td.n{{color:#8a8f98}}
-tr:hover td{{background:#1a1f26}} .f{{display:inline-block;width:18px;margin:0 1px;border-radius:3px;font-size:11px;font-weight:700}}
-.f.W{{background:#1f6f43}} .f.L{{background:#7a2530}} .belts{{display:flex;flex-wrap:wrap;gap:14px}}
-.belt{{background:linear-gradient(135deg,#2a2410,#17140a);border:1px solid #6b5a1e;border-radius:10px;padding:14px 18px;min-width:220px}}
+body{{font:15px/1.45 system-ui,Segoe UI,sans-serif;background:#111418;color:#e8e8e8;margin:0;padding:24px 40px}}
+h1{{margin:0 0 4px;font-size:28px}} h2{{margin:26px 0 10px;font-size:17px;text-transform:uppercase;letter-spacing:1.5px;color:#d4af37}}
+h3{{margin:18px 0 6px;font-size:15px;color:#cfd3da}} small{{color:#8a8f98;font-weight:normal}} .sub{{color:#8a8f98}}
+nav{{margin:18px 0 6px;border-bottom:1px solid #2c323b}} .tab,.sub-tab{{background:none;border:0;color:#9aa1ab;font:inherit;padding:9px 16px;cursor:pointer;border-bottom:3px solid transparent}}
+.tab.on{{color:#fff;border-bottom-color:#d4af37}} .subnav{{margin:10px 0}} .sub-tab{{border:1px solid #2c323b;border-radius:16px;margin:0 6px 6px 0;padding:5px 14px}}
+.sub-tab.on{{background:#d4af37;color:#111;border-color:#d4af37}} .pane,.sub-pane{{display:none}} .pane.on,.sub-pane.on{{display:block}}
+table{{border-collapse:collapse;width:100%;max-width:1150px}} th,td{{padding:7px 10px;text-align:center;border-bottom:1px solid #262b33}}
+th{{font-size:12px;text-transform:uppercase;color:#8a8f98;letter-spacing:1px}} .l,td.p{{text-align:left}} td.p{{font-weight:600}} td.n{{color:#8a8f98}}
+tr:hover td{{background:#1a1f26}} tr.nr td.p{{color:#9aa1ab;font-weight:400}}
+.f{{display:inline-block;width:18px;margin:0 1px;border-radius:3px;font-size:11px;font-weight:700}} .f.W{{background:#1f6f43}} .f.L{{background:#7a2530}}
+.filters{{margin:4px 0 10px;color:#aab}} .filters label{{margin-right:16px;cursor:pointer}}
+.belts{{display:flex;flex-wrap:wrap;gap:14px}} .belt{{background:linear-gradient(135deg,#2a2410,#17140a);border:1px solid #6b5a1e;border-radius:10px;padding:14px 18px;min-width:220px}}
 .belt .t{{color:#d4af37;font-size:12px;text-transform:uppercase;letter-spacing:1px}} .belt .c{{font-size:20px;font-weight:700;margin:4px 0}} .belt .d{{color:#a99f80;font-size:12px}}
-.m{{padding:5px 0;border-bottom:1px solid #1d2229;max-width:1100px}} .def{{color:#8a8f98;margin:0 6px}}
-details{{margin:10px 0}} summary{{cursor:pointer;color:#aab}}
+tr.reign td{{background:#1b1a12}} tr.defense td{{color:#b9bec6;font-size:14px}}
+.m{{padding:5px 0;border-bottom:1px solid #1d2229;max-width:1150px}} .def{{color:#8a8f98;margin:0 6px}}
 .tt{{margin-left:8px;font-size:11px;background:#6b5a1e;color:#fff;padding:2px 7px;border-radius:9px}}
 </style></head><body><h1>Universe standings</h1><div class=sub>{len(order)} matches recorded · updated {datetime.datetime.now():%Y-%m-%d %H:%M}</div>
-<h2>Champions</h2><div class=belts>{champs or '<span class=sub>No title matches yet.</span>'}</div>
-<h2>Standings · season {season_no}{'' if cfg['count_offseason'] else ' (offseason not counted)'}</h2>{st}
-<h2>All-time records</h2><details><summary>Show all-time table ({len(alltime)} superstars)</summary>{at}</details>
-<h2>Title history</h2><table><tr><th>Title</th><th style="text-align:left">Champion</th><th>Won from</th><th>Won</th><th>Defenses</th><th>Lost to</th></tr>{th or '<tr><td colspan=6>—</td></tr>'}</table>
-<h2>Results</h2>{''.join(res)}</body></html>"""
+<nav>{nav}</nav>{body}
+<script>
+function show(id){{document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab==id));
+ document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==id));try{{localStorage.setItem('tab',id)}}catch(e){{}}}}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+document.querySelectorAll('.sub-tab').forEach(b=>b.onclick=()=>{{document.querySelectorAll('.sub-tab').forEach(x=>x.classList.toggle('on',x==b));
+ document.querySelectorAll('.sub-pane').forEach(p=>p.classList.toggle('on',p.id==b.dataset.sub))}});
+function apply(){{const ro=document.querySelector('.roster').checked;const on=[...document.querySelectorAll('.brand')].filter(c=>c.checked).map(c=>c.value);
+ document.querySelectorAll('table.st').forEach(t=>{{let n=0;t.querySelectorAll('tr[data-brand]').forEach(r=>{{const b=r.dataset.brand;
+  const vis=(b=='none')?!ro:on.includes(b);r.style.display=vis?'':'none';if(vis)r.querySelector('.n').textContent=++n;}})}});
+ try{{localStorage.setItem('flt',JSON.stringify({{ro,on}}))}}catch(e){{}}}}
+function sync(src){{document.querySelectorAll('.'+[...src.classList][0]).forEach(c=>{{if(c.value==src.value)c.checked=src.checked}});apply()}}
+document.querySelectorAll('.roster,.brand').forEach(c=>c.onchange=()=>sync(c));
+try{{const f=JSON.parse(localStorage.getItem('flt')||'null');if(f){{document.querySelectorAll('.roster').forEach(c=>c.checked=f.ro);
+ document.querySelectorAll('.brand').forEach(c=>c.checked=f.on.includes(c.value))}}}}catch(e){{}}
+apply();let t='standings';try{{t=localStorage.getItem('tab')||t}}catch(e){{}};show(t);
+const fs=document.querySelector('.sub-tab');if(fs)fs.click();
+</script></body></html>"""
     with wopen(os.path.join(out, 'standings.html')) as fh: fh.write(page)
+
 
 if __name__ == '__main__':
     main()
