@@ -119,3 +119,24 @@ names, dates, the notes and spreadsheets; individual packs were not opened) plus
   definitions (Extra Attires.xlsx, about 40 wrestlers) are probably not in the live file now.
 - Baseline for the entrances/victory module: `snapshot_after_attire_20261111` (manifest; MD5 of 9,669 files in
   pac/menu, audio, gimmick, particle, prop and most of pac/evt; key-file MD5s incl. string_win).
+
+## J. Genesis "Ported Entrance & Victory Motions Pack" (installed 14:09, existing strings kept)
+- Source per Genesis log: archive.org "Ported entrance and victory motions from 2k20 and previous games.zip"
+  (567 MB), 924 files overlaid, 46 extra files from 30 "additional entrance" options, 920+ originals backed up to
+  `genesis_backups\Ported_Entrance_&_Victory_Motions_Pack`. Exe, string_win untouched (only a readme added).
+- Check of Matthew's guess ("same as what I installed years ago"): each of the 929 backed-up originals compared
+  with the file now live (`snapshot_after_entrances_20261111\entrance_pack_compare.tsv`):
+  **897 identical, 32 different.**
+- The 32 that changed (Matthew's previous versions are in the Genesis backup):
+  - **`pac\menu\cae_item_p20.pac` 59,392 -> 45,056**: Matthew's version held his own menu-list edits (tron lists
+    0000/0001/002A/002B/002C, entrances, victories; 124 entries per tron list). The pack's stock file replaced it.
+  - **`pac\audio\sound_p30.pac`** (same size, content differs): Matthew's 2025-05 announcer/commentary corrections
+    were in this file.
+  - `pac\evt\evt_light.pac`; 14 entrance files with a different size (00150, 00288, 00358, 00377, 00432 Steve
+    Austin 2k20, 00469 + 00483 + 00681 CM Punk, 00560 Tazz, 00967 Dean Ambrose Shield, 01033 Daniel Bryan Champ,
+    01049 Roman Reigns champ, 01811, 08100); 13 `pac\evt\effect` files; `pac\gimmick\gmev0636_TakerwithDruids.pac`;
+    `pac\prop\6342.pac`. Whether Matthew's or the pack's version is the better one for these is not known.
+- Recommendation: restore Matthew's cae_item_p20.pac and sound_p30.pac from the Genesis backup (clear losses);
+  decide the other 30 after an in-game look. Not done yet (waiting for Matthew).
+- Baseline for the moves pack: key-file MD5s (89 files) in `snapshot_after_entrances_20261111`; full-tree listing
+  became too slow to repeat, so the next diff relies on Genesis's own backup folder + log, as done here.
