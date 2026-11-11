@@ -68,3 +68,9 @@
   *before* XOR (e.g. `WWE2K17*(UYHDAKJ`), so the key may change per block: next step is to map block boundaries in
   the tail and confirm the key per block, then diff against a save taken after show 2.
   Decoder scratch: device `/tmp/sav.xor` (not kept). Exe anchors: `CUserSaveDataIOThread`, `CDefaultSaveDataMaker`.
+- 2026-11-10 21:05 Correction (Matthew): managers were removed in **every** match, including the broken ones. So the
+  only difference between the broken matches (no entrance, falling/glitching) and the normal control match is
+  **title vs non-title**. Leading hypothesis now: the title-match path (champion entrance / belt / title data) looks
+  up the champion in a 509-wide table or asset index and gets bad data for overflow slots. The phantom-manager bug
+  is a separate default-data bug. Next tests: same overflow wrestler in a title match vs a vanilla opponent, and a
+  vanilla champion in a title match (control), with snapshots + TRACE lines during the entrance.
