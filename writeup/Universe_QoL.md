@@ -166,3 +166,14 @@
     show/brand (rosters).
   Needed next: a complete id -> name table (game string table / SuperString, name string = 13000-range per id?) so
   every id in these structures can be named; then field-by-field decode against tonight's card.
+- 2026-11-10 22:40 **id -> name table** from CCT's `A - CCT\data.xml` (original slots: slotNumber, slotId, name) +
+  `replaced_data.xml` (current names): `tools/universe/idnames.py` (613 ids + overflow 937-942). Pair list at 0x31aee8
+  named: Angel Garza>Finn Balor, Angel Garza>Cedric Alexander, Bianca Belair>Lars Sullivan, **Angel Garza>Keith Lee**,
+  Ace Austin>Judgment Day(883), Carmella>Charlotte, Jeff Hardy>Shinsuke Nakamura, AJ Styles=AJ Styles,
+  Daniel Bryan=Daniel Bryan, AJ Styles>Uhaa Nation, Uhaa Nation>Kenny King, Kenny King>Bayley, KENOH>John Cena.
+  Self-pairs and pairs that never wrestled tonight (KENOH-Cena, Kenny King-Bayley) => **not results**: this looks
+  like relationship/rivalry or card-generation data. Segment log: 629 Becky Lynch vs Carmella, 653 Kairi Sane vs Bianca
+  Belair, 391 Ace Austin vs Keith Lee, 799 AVAILABLE GFX(214) & ... vs Karl Anderson & Marufuji/Dominik(400/401),
+  185 Jeff Hardy vs Shinsuke Nakamura, 653 Seth Rollins vs KENOH. These are earlier (AI/sim) shows + tonight's promo;
+  tonight's played matches (Garza-Lee title etc.) are NOT in it -> the real results store is still to be found
+  (next: diff show-3 save against show-2 at the u16 level for tonight's participant ids).
