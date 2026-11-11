@@ -61,3 +61,8 @@ Universe blob) next to the exe. Purpose: find the roster-choice flag (default vs
 LBTS file, test8 behaviour). With `live`, the seeder hook swaps the seeder's return address for a post stub that,
 after the default seeding, copies the live MyWWE team table (0x14287C860, rows 0-99 x 0x1B8) over the new
 Universe's team records (blob + 0x31BF54). Always current; names inline; no string edits needed.
+
+## test10 (2026-11-11 02:50): memory poke
+`slots_poke.request`: lines `<hex VA> <old hex> <new hex>`; writes only when memory equals `old`. First use: clear
+stale superstar manager links in the live superstar records (base 0x142e6f9b0 + k*0x1EA9C8, k=0..2; 0xD88 per index;
+manager u16 at +0x58; 1024 = none), then the game saves them on the next edit-save. md5 92e6b9d5...

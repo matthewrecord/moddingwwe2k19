@@ -490,3 +490,12 @@
   original occupant). Edit screen's working copy: 0x143790008 (manager u16 +0, team byte +0x18).
 - Fix plan: a save tool that sets +0x58 to 1024 for the records Matthew marks "clear", in all copies (backup first,
   game closed). Main team: find its source next.
+- 02:50 Matthew's rule: clear a manager link if either side's slot was replaced (CCT data.xml vs replaced_data.xml),
+  plus also clear Hardy/Wyatt, Ziggler/McIntyre, Sheamus/Cesaro. Kept: Brie/Nikki, Owens/Zayn, Mickie/Alexa,
+  Liv/Sarah Logan, Hanson/Rowe, Diesel->HBK '97. 72 records to clear (Trent already done by hand).
+- The save body has an unknown hash in MAINHEAD/MAINBIGH (+0x10 u32, +0x18 8 bytes; not crc32/adler/md5/sha1 of the
+  body), so no offline save edit. Instead: live memory copies found at 0x142e6f9b0 + k*0x1EA9C8 (k=0..2), same layout;
+  DLL test10 pokes them (old-value checked) and the game writes them out on the next save. Save backed up as
+  `_moddingwwe2k19_builds\SAVEDATA.before_manager_fix`.
+- Main team: not saved and not in the team member lists; watchpoint on the edit-screen field caught nothing when
+  opening Trent / A-Kid (that buffer is reused only by the edit flow). Open.
