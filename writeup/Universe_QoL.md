@@ -138,3 +138,15 @@
   at ~0x3ab80 (rosters/brand lists). => record keeping can be read straight from the save; a tracker that copies this
   log after every save never loses history. Next: decode each field (type, show, winner, title) against known
   matches, then the champion/title-history table and the manager table.
+- 2026-11-10 22:20 Match-log record layout, refined (0x28 bytes, start 4 bytes earlier than first guessed):
+  +0 u32 **kind** (10005 = promo segment; 629/653/391/799/185 = match kinds, probably match type id), +4 u32 **day**
+  (113, 114, 118, 119: Universe calendar day), +8 u16 0, +0xA 5 x u16 **participants** (0x400 empty), +0x14 5 x u16
+  second group (identical to participants so far; winner order / sides still to check), +0x1E..: flags (0x400/0xff
+  pattern), u32 (0, 1, 2, 10: likely match rating/quality or show slot). Promo records: participant + promo id
+  (56, 53, 150) + 0xff padding. Overflow ids map: **937 Alex Shelley (slot 510), 938 Keith Lee, 939 Angel Garza,
+  940 Ace Austin, 941 Darby Allin, 942 Moose** (slots 510-515 = index 509-514; the 40-byte source ids in the log).
+  Matthew's show tonight (to decode winner/title fields once saved): Angel Garza def. Keith Lee (custom "AEW US
+  Championship"); Uhaa Nation & Kenny King def. Tyler Breeze (pinned) & Bo Dallas? [see chat]; Jon/Curtis (Fandango)
+  def. Alexa Bliss; Dash Wilder (pin) & Scott Dawson def. Hikuleo (pinned) & Bo Dallas; Seth Rollins vs KENOH promo
+  (KENOH won); Brock Lesnar (with Marq Quen as manager although the image showed Paul Heyman) def. Triple H (with Kylie
+  Rae); Roman Reigns def. John Cena. Latest SAVEDATA (md5 d970fe63...) does not contain this show yet.
