@@ -263,3 +263,14 @@
 3. Tag-team import (custom teams into Universe; source: Matthew's Wrestlers/team list).
 4. Title contender rankings (like his Main Roster Stats sheet), MOTN/star ratings if the save holds them.
 5. Save-based rosters (catch sheet drift); in-game display of records (long term).
+- 2026-11-10 22:50 Phantom managers, status: Matthew cannot reproduce them in the current Universe. Save evidence:
+  overflow ids 937/941/942 never appear in the Universe blob (show-1 or show-3 save) and no manager pairing for
+  Brock(343)/Heyman(374) exists in the blob -> manager assignments are not Universe-blob data; they likely come from
+  the per-superstar profile copies (CCT data.xml: universe1/2/3 superstar pofo arrays = the 509-wide per-save copies,
+  getter 0x1409655a0 returns null for index >= 509) and/or defaults applied at Universe creation. Hypothesis: at
+  creation the game reads manager defaults for every roster entry; for overflow slots it reads outside the 509-wide
+  copy (or a zeroed field) -> id 0 = CAW slot 0 "Marq Quen", and the choice is then cleared by the reload/edit.
+  2K19 has 3 Universe save slots (universe1/2/3 in CCT data.xml), so a reproduction can use a spare slot without
+  touching the current Universe. Plan: (a) static: find the manager fields in the pofo (compare vanilla pofos that
+  have managers) and the code that copies them on Universe creation; (b) Matthew creates a fresh Universe in a spare
+  slot with the TRACE/UNIV probes on; (c) patch: give overflow slots "none" (0x400) or extend the copy.
