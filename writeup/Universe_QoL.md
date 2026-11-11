@@ -87,3 +87,8 @@
 - 2026-11-10 21:12 (Matthew) **Keith Lee (overflow, champion) vs HHH (vanilla), title match: works** (entrance + match
   normal). So a title match with one overflow champion is fine. Hypotheses narrowed to the specific broken setup:
   two overflow wrestlers in one title match, or champion vs champion (two belts), or that specific opponent/slot.
+- 2026-11-10 21:25 Live reads (test3) work: [0x1425e7e20] = heap 0x4dcc1150, [0x1425e6968] = 0x5330010. A full-memory
+  dump (slots_full_107.dmp, 2.0 GB, Universe main screen) scanned with `tools/universe/dmpscan.py` for the 509 x
+  0x450 id table found **no** contiguous table (only noise). So the object passed to 0x140bbe5e0 is not where we
+  guessed, or that table is only built while booking a show. Static: its caller 0x140bbef80 receives it as arg 3.
+  => test3b DLL (md5 ad10100d...) adds a probe on 0x140bbe5e0 logging each new (object, id) pair (`UNIV lookup`).
