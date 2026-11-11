@@ -128,3 +128,13 @@
   show 1 -> 2 -> 3 change bytes only in the UNVS area (plus header/time and a small block at 0x29b6f40) and the file
   grows each show -> results appear to be appended. Next: map the Universe blob (rosters, titles, managers, match
   history) by diffing UNVSBODY0001 across the three backed-up saves.
+- 2026-11-10 22:10 **The Universe save keeps a MATCH LOG** (no in-game screen for it). In UNVSBODY0001 at ~0x19a0f0:
+  records of **0x28 bytes**: +0 u32 (varies: 0x275, 0x2715, 0x28d, 0x187, 0x31f, 0xb9: match type/stipulation or
+  rating?), +4 u32 small increasing (0x71, 0x72, 0x76: show/date index), +8 5 x u16 participant ids (0x400 = empty;
+  0x38/0x35 + 0xff entries look like team or title refs), +0x12 5 x u16 (copy of the first group in all records so far:
+  likely winners or side B), +0x1C u32 (0, 2, 0xa), +0x20 u8 1, u8 x2 (0x1f/0x03), pad. Empty slot = ff..ff pattern.
+  Show-1 save had none of these filled; the current save (after shows with Keith Lee 939 / Angel Garza 940 /
+  Ace Austin 938 / HHH ...) has 7. Overflow ids appear normally (u16 0x3aa-0x3ac). Also u16 id lists with 0x400 = empty
+  at ~0x3ab80 (rosters/brand lists). => record keeping can be read straight from the save; a tracker that copies this
+  log after every save never loses history. Next: decode each field (type, show, winner, title) against known
+  matches, then the champion/title-history table and the manager table.
