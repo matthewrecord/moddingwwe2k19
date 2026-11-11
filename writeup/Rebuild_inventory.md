@@ -164,3 +164,21 @@ names, dates, the notes and spreadsheets; individual packs were not opened) plus
 - Seen in `A - Genesis\_internal\Mods`: **"1000 Extra Music Slots.zip"**, "Additional Universe Mode Matches.zip",
   "Womens Tag Team and Extra Championships", "Dark Mode", "Empty Attire Slots.zip", PerfectPlextra1.5, SuperString,
   TitantronFix.
+
+## L. Genesis "1000 Extra Music Slots" (package read 14:45, NOT installed)
+- `A - Genesis\_internal\Mods\1000 Extra Music Slots.zip` (10 KB, packaged 2026-10-25): `tools/MusicSlots/
+  music_slots.py`, README, `EntranceMusicID_additions.txt` (500 lines, 9013000..9512000; README says 1000 slots
+  9013..10012, script default count 500), empty `slots/`.
+- Method (script read in full): never touches the exe. Clones the stock theme event `Play_MUS_8005_00_9_0`
+  (event/action/container/sound) once per slot into the main music bank 0xE85DDA21 inside `sound\music_e_s.pck`
+  (events for mode 0 and 9 + an alias name for the raw stream id), adds the new containers to the parent ActorMixer,
+  and appends one stream per slot (id 0x6D000000 + n, silent 0.1 s placeholder) to `sound\music_3_m.pck`. Rebuilds
+  always start from its own backup of those two files; keeps audio injected earlier; `sync` fixes PCM/Vorbis plugin
+  tags; `verify`, `restore` commands. Moveset music value = ID*1000 + 9.
+- **It adds no in-game menu entries**: no BGM list entry in cae_item, no assetconv/VMUM row, no MEMU record, no
+  name string. Assignment is done outside the game, in Genesis's moveset editor ("Open Theme NNNN").
+- Versus our bank (589 slots): ours lives in `sound\patch_30.pck` (DLC_30 bank), ids from the free 100-999 pool,
+  with VMUM rows, menu entries and registry records so slots are selectable in Create an Entrance in game.
+  **No file overlap and no id overlap** between the two; they can coexist. Same core idea (clone a stock theme's
+  Wwise objects, append a stream).
+- Untested: whether a moveset value in the 9013+ range plays in game without a VMUM row; Genesis's Audio tab flow.
