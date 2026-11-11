@@ -153,3 +153,16 @@
   (KENOH won); Brock Lesnar (with Marq Quen as manager although the image showed Paul Heyman: a vanilla wrestler with a wrong manager
   -> manager mix-up is not only an overflow-slot problem) def. Triple H (with Kylie
   Rae); Roman Reigns def. John Cena. Latest SAVEDATA (md5 d970fe63...) does not contain this show yet.
+- 2026-11-10 22:30 Save after tonight's show (21:53, md5 d970fe63..., backup `saves\20261110_2155_after_show3`).
+  Partial id names from notes/characters/cct_superstar_slots_with_notes.tsv: 625 Uhaa Nation (Apollo Crews slot),
+  371 Kenny King (Titus slot), 608 KENOH (Elias slot), 369 Seth Rollins, 708 Cedric Alexander, 883 Mark Davis.
+  * 0x19a0ec log (0x28 records): day 119 holds `kind 653: 369 vs 608` = **Seth Rollins vs KENOH promo battle**
+    (Matthew: KENOH won) and `kind 10005` promo by 939. So it is a segment log, but only ~9 entries: possibly a
+    rolling/recent list or only some segment kinds. Field +0x1E u16 (0,2,10,1) still unknown.
+  * Second structure at 0x31aee8: **u16 pairs** (939,576) (939,708) (753,715) **(939,938)** (940,883) (623,612)
+    (112,630) (610,610) (324,324) (610,625) **(625,371)** (371,622) (608,139): contains tonight's Angel Garza (939)
+    over Keith Lee (938) and Uhaa Nation (625) / Kenny King (371). Another list at 0x31b57c with (938,939) reversed.
+    Candidates: win/loss pairs, rivalry/feud links, or match-card pairings. 0x31a8b8..: u16 lists of ids per
+    show/brand (rosters).
+  Needed next: a complete id -> name table (game string table / SuperString, name string = 13000-range per id?) so
+  every id in these structures can be named; then field-by-field decode against tonight's card.
