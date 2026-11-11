@@ -146,7 +146,10 @@
   (56, 53, 150) + 0xff padding. Overflow ids map: **937 Alex Shelley (slot 510), 938 Keith Lee, 939 Angel Garza,
   940 Ace Austin, 941 Darby Allin, 942 Moose** (slots 510-515 = index 509-514; the 40-byte source ids in the log).
   Matthew's show tonight (to decode winner/title fields once saved): Angel Garza def. Keith Lee (custom "AEW US
-  Championship"); Uhaa Nation & Kenny King def. Tyler Breeze (pinned) & Bo Dallas? [see chat]; Jon/Curtis (Fandango)
-  def. Alexa Bliss; Dash Wilder (pin) & Scott Dawson def. Hikuleo (pinned) & Bo Dallas; Seth Rollins vs KENOH promo
-  (KENOH won); Brock Lesnar (with Marq Quen as manager although the image showed Paul Heyman) def. Triple H (with Kylie
+  Championship"); Uhaa Nation & Kenny King def. Tyler Breeze (pinned) & Jon Curtis (Fandango) & Alexa Bliss & Bayley?
+  [chat: "Uhaa Nation and Kenny King beat Tyler Breeze who took the pin and Jon y Curtis (Fandango) barely [= Bayley]
+  beat Alexa Bliss" -> read as: Uhaa Nation & Kenny King def. Tyler Breeze (pinned) & ...; Jon Curtis (Fandango) &
+  Bayley def. Alexa Bliss - to confirm against the log]; Dash Wilder (pin) & Scott Dawson def. Hikuleo (pinned) & Bo Dallas; Seth Rollins vs KENOH promo
+  (KENOH won); Brock Lesnar (with Marq Quen as manager although the image showed Paul Heyman: a vanilla wrestler with a wrong manager
+  -> manager mix-up is not only an overflow-slot problem) def. Triple H (with Kylie
   Rae); Roman Reigns def. John Cena. Latest SAVEDATA (md5 d970fe63...) does not contain this show yet.
