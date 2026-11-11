@@ -45,3 +45,12 @@
      repeated the same on SmackDown. (Hypothesis: the manager/run-in AI or a bad Universe per-superstar record.)
   Slots log for this session: no crash/exception records; TRACE lines only from known getters.
   The previous throwaway Universe save was overwritten by this one (only one Universe save slot file).
+- 2026-11-10 20:55 **Matthew's tracker** `D:\Documents\wrestling ratings.xlsx` (read-only look). Sheets: KOTR Rules,
+  Size (height/weight class), Events (month -> show/PPV per brand WWE/WCW/NXT, WHC), Ratings / Ratings (2) / Sheet3
+  (per-wrestler brand, team, tier, est. rating + attribute columns), Music, **Wrestlers** (968 rows: Wrestler, Brand,
+  Team, Mod/CC/CAW, Gen, **Character Slot** e.g. "408 - Robert Gibson" for Dalton Castle, Tron, Music; plus a team
+  list with trons/songs/motions), History and Ideas (draft notes), and per-PPV sheets (Aug - Summerslam, Sep - NXT
+  Takeover, Oct|Nov - AEW PPV ...) with results by year ("X def. Y", champion marked ©).
+  => The **Wrestlers sheet is already the person -> game slot map** the tracker needs (fixes the HHH/slot-reuse
+  problem), and the **team list** is the source for the tag-team import (step 4). PPV sheets = his existing
+  results/title-history format; tracker output should extend that, not replace it.
