@@ -54,3 +54,8 @@
   => The **Wrestlers sheet is already the person -> game slot map** the tracker needs (fixes the HHH/slot-reuse
   problem), and the **team list** is the source for the tag-team import (step 4). PPV sheets = his existing
   results/title-history format; tracker output should extend that, not replace it.
+- 2026-11-10 20:59 Reload test (Matthew): champions were **Keith Lee (slot 511) and Ace Austin (slot 513)** (correction:
+  not Angel Garza). After quit + relaunch + load both are **still champions**: overflow slots survive save/reload at
+  least for title holders. Universe has no screen for past results (confirms the need for an external/in-game log).
+  **Control match** (managers removed, non-title): entrances play and the match is normal. So bugs 2+3 come from
+  either the phantom managers or the title match path; next split: title match without managers.
