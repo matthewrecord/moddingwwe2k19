@@ -90,3 +90,11 @@ Create an Entrance. Matthew got 9 selectable with Wrestleminus.
   over all levels). Names: 229 new strings 44000+id "<CCT NAME> (id)" (47000+ for variants) in SuperString
   string_win.pac. Verified by re-parse (other lists byte-identical in content, strings read back).
   Inputs: cae_item_p30 62f61519..., string_win 7ae21680...; outputs in the build manifest.
+- 08:12 **gfx_v1 INSTALLED** (game closed: slots log last written 04:07). Build copy `_moddingwwe2k19_builds\gfx_v1`
+  (entries.tsv = value, string id, name, lists).
+  | file | before (backup `.bak_gfx_v1_20261111`) | after |
+  | --- | --- | --- |
+  | pac/menu/cae_item_p30.pac | 62f61519032a1056145a09f63cb8b96c | 4a39af1ac73d5053e503ea8aca481521 |
+  | mods/SuperString/pac/string/win/string_win.pac | 7ae21680c28a5c747ca60438e0bca06b | 734eec144ea46dc4eddb67fba16999ae |
+  Uninstall: copy the two backups back. Matthew's check: Create an Entrance, the four video menus: do the new
+  "<NAME> (id)" entries appear (about 230 per menu, at the end), does the menu scroll normally, does one play.
