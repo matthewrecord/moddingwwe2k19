@@ -73,3 +73,20 @@ Create an Entrance. Matthew got 9 selectable with Wrestleminus.
   CCT inject into overflow slots unpatched; the DLL then copies changes into its overflow arrays and writes them back
   to `slots\*.pofo/.moveset` so they survive a restart. To verify next in CCT's code (it is the staged
   Custom_Character_Tools.exe): what it reads before writing, universe copies, file copies by slotId.
+
+## 08:45 Menu gate decoded; build gfx_v1 (not installed until the game is closed)
+- Create an Entrance list builder 0x1403b2d80: count -> dynamic index array (count*4) -> items pushed to a vector of
+  0x240-byte items. **No fixed capacity in the builder** either.
+- Per-entry filter 0x140c1eb50 (entry u16 view): +4..+0xC = five owner/unlock character ids, +0xE "all" flag;
+  if any id is set: listed when that character exists (0x1404c9460) and is unlocked (0x1404bef50) (id 0x18F special);
+  **if all five are -1: listed when u16 +0x16 != 0** (three DLC ids at +0x10.. are also -1 then). Second filter
+  0x1403b4f00 on u16 +0x20/+0x22 (exclusion list; 0 = pass). So an entry with no owner ids always shows. Matthew's
+  Wrestleminus entries have exactly this form (value, -1, -1, 0x0000FFFF, -1, -1, string, 0xFFFF0001, 0, 0).
+- Entrance data references: list 0 (+0x40), list 1 (+0x44), list 44 (+0x48), list 42 (+0x50), list 43 (+0x54)
+  (validator around 0x140c2010c). Which list is which screen is still open (vanilla contents match all four video
+  folders about equally); list 0 left untouched (Matthew's file has it near vanilla).
+- `tools/build/gfxslots.py` -> build **gfx_v1**: for lists 1/42/43/44, one entry per video set on disk (any of the four
+  screens) that the list lacks, appended to `cae_item_p30.pac`: +228/+230/+229/+228 entries (each list 569 in total
+  over all levels). Names: 229 new strings 44000+id "<CCT NAME> (id)" (47000+ for variants) in SuperString
+  string_win.pac. Verified by re-parse (other lists byte-identical in content, strings read back).
+  Inputs: cae_item_p30 62f61519..., string_win 7ae21680...; outputs in the build manifest.
