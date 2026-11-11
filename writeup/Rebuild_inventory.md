@@ -140,3 +140,27 @@ names, dates, the notes and spreadsheets; individual packs were not opened) plus
   decide the other 30 after an in-game look. Not done yet (waiting for Matthew).
 - Baseline for the moves pack: key-file MD5s (89 files) in `snapshot_after_entrances_20261111`; full-tree listing
   became too slow to repeat, so the next diff relies on Genesis's own backup folder + log, as done here.
+- Entrance pack, new vs already present (zip listing vs Genesis backup): the zip has 924 files; **920 overwrote a
+  file Matthew already had** (pac/evt 755, particle 57, gimmick 54, prop 43, mov 8, menu 2, audio 1), of which 897
+  identical; new from the core pack = `pac\audio\sound_evt.pac` only (+ readme; its string_win was declined).
+  The **"Additional entrances" options (46 files from 30 options) are the new material**: 37 new files, 9 replaced
+  existing ones (pac/evt 00150, 00288, 00358, 00377, 01811, 08100, two effect files, prop 6342). Matthew's old
+  install kept those options out ("OPTIONAL FILES - do not copy"). So of the 32 differing files, 9 are options and
+  23 are core-pack files where his copy differed.
+
+## K. Genesis "Ported Moves & Animations Pack" (installed 14:32)
+- Source: archive.org "Ported moves mod pack from 2k15-2k20.zip" (121 MB). Installed as its own mod folder
+  `mods\Ported Moves and Animations Pack` (66 files, zip root `pac/` stripped); nothing in `pac\` overwritten, no
+  backup folder needed.
+- All 66 shadow an existing base file: `ingame\motion\body\NN_mpc/_param.pac` (34), `ingame\mot_*_patch_p10/p20`,
+  `motion_param_pcdb`, `diving_param(+_p30)`, `peoples_script`, `root\createmode(+p10/p20/p30)`, `audio\attr\*` (19),
+  `audio\sound_p30.pac`. Compared with Matthew's `pac\` copies: **61 differ (49 larger), 5 identical** = this pack
+  was not in his game before; it is new material.
+- chunk0.def now lists both copies (e.g. `pac\audio\sound_p30.pac` and `mods\ported moves and animations
+  pack\audio\sound_p30.pac`); which one the game loads is untested.
+- **Three different sound_p30.pac now exist**: Matthew's with the announcer corrections (Genesis backup, 4054b49f),
+  the entrance pack's (live in pac\audio, 27564138), the moves pack's (mods folder, de0741ff). Each carries its own
+  sound entries, so the end state needs a merge, not a pick.
+- Seen in `A - Genesis\_internal\Mods`: **"1000 Extra Music Slots.zip"**, "Additional Universe Mode Matches.zip",
+  "Womens Tag Team and Extra Championships", "Dark Mode", "Empty Attire Slots.zip", PerfectPlextra1.5, SuperString,
+  TitantronFix.
