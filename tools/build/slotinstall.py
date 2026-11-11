@@ -32,7 +32,9 @@ Same conventions as Test Wrestler (handoff 012, notes/characters step 1j):
   several -> name one in spec field 6. Written as custom_typea and custom_typeb\0<id>00.pac (renderpac.py).
   `--renders 511 512 514=Darby_Allin_New.dds ...` adds/replaces renders for installed slots.
 - `--from-game 511=925 512=799 ...`: copy the renders AND Titantrons the wrestler already has in the game (CCT id
-  on the right) to the slot's id, with internal names rewritten (renders: MD5 name; trons: M0<id>00). Preferred
+  on the right) to the slot's id, with internal names rewritten (renders: MD5 name; trons: M0<id>00), plus the big
+  Titantron videos movies\titantron\ent_<id>_*.bk2 (loose Bink files named by character id, copied as is).
+  The five Titantron parts: apron, wall, mini (banner), ramp = ss_* pacs; main screen = ent_ videos. Preferred
   when the wrestler is installed with CCT: the exact in-game assets, plus Titantrons.
 Titantrons from .bk2 are not built yet (MVS pac writer still to do).
 """
@@ -184,6 +186,7 @@ def main():
             for t in ('ss_apron', 'ss_mini', 'ss_ramp', 'ss_wall'):
                 f = os.path.join(G, 'mods/CCT/movies/pac/mov', t, '0%03d00.pac' % cid)
                 if os.path.exists(f): shutil.move(f, os.path.join(trash, 'tron_%s_0%03d00.pac' % (t, cid)))
+            for f in glob.glob(os.path.join(G, 'movies/titantron', 'ent_%04d_*.bk2' % cid)): shutil.move(f, os.path.join(trash, os.path.basename(f)))
             chunk = [l for l in chunk if not ((l.lower().startswith(b'mods\\cct\\renders\\') or l.lower().startswith(b'mods\\cct\\movies\\')) and l.lower().endswith(b'\\0%03d00.pac' % cid))]
             chunk = [l for l in chunk if not re.search(rb'\\ch%03d\d\d\.pac$' % cid, l.lower()) or not l.lower().startswith(b'mods\\cct\\characters\\')]
             info = next((x for x in inst if x['index'] == idx), {})
@@ -210,20 +213,24 @@ def main():
             for t in TRONS:
                 f = '%s/%s/0%03d00.pac' % (MOV, t, src)
                 if os.path.exists(os.path.join(G, f)): files.append((f, '%s/%s/0%03d00.pac' % (MOV, t, cid), b'M0%03d00' % src, b'M0%03d00' % cid))
-            if not files: die('id %d has no CCT renders or Titantrons' % src)
+            ents = sorted(glob.glob(os.path.join(G, 'movies/titantron', 'ent_%04d_*.bk2' % src)))
+            if not files and not ents: die('id %d has no CCT renders or Titantrons' % src)
             for f, _, old, _ in files:
                 with open(os.path.join(G, f), 'rb') as fh: fh.seek(NAME_OFF); cur = fh.read(len(old))
                 if cur != old: die('%s: internal name %r, expected %r' % (f, cur, old))
-            todo.append((slot, info, src, files))
+            todo.append((slot, info, src, files, ents))
         backup(os.path.join(G, 'Chunk0.def')); chunk = open(os.path.join(G, 'Chunk0.def'), 'rb').read().split(b'\r\n')
-        for slot, info, src, files in todo:
+        for slot, info, src, files, ents in todo:
+            for e in ents:
+                d = os.path.join(os.path.dirname(e), os.path.basename(e).replace('ent_%04d_' % src, 'ent_%04d_' % info['id'], 1))
+                if not os.path.exists(d): shutil.copyfile(e, d)
             for f, d, old, new in files:
                 shutil.copyfile(os.path.join(G, f), os.path.join(G, d))
                 with open(os.path.join(G, d), 'r+b') as fh: fh.seek(NAME_OFF); fh.write(new)
                 chunk_insert(chunk, d.replace('/', '\\').lower().encode())
             info['assets_from_id'] = src
-            print('slot %s (id %d) %s: %d files from id %d (%s)' % (slot, info['id'], info['name'], len(files), src,
-                  ', '.join(sorted({x[0].split('/')[-2] for x in files}))))
+            print('slot %s (id %d) %s: %d files from id %d (%s) + %d big-Titantron videos' % (slot, info['id'], info['name'],
+                  len(files), src, ', '.join(sorted({x[0].split('/')[-2] for x in files})), len(ents)))
         open(os.path.join(G, 'Chunk0.def'), 'wb').write(b'\r\n'.join(chunk)); json.dump(inst, open(logp, 'w'), indent=1)
         return
     if a.renders:
