@@ -500,3 +500,12 @@
 - Main team: not saved and not in the team member lists; watchpoint on the edit-screen field caught nothing when
   opening Trent / A-Kid (that buffer is reused only by the edit flow). Open.
 - 02:47 **Manager fix applied and saved.** Save read back: all 3 copies now hold only the 11 kept links (Brie/Nikki, Owens/Zayn, Mickie/Alexa, Liv/Sarah, Hanson/Rowe, Diesel->HBK). Existing Universes keep their own copies (made at creation); new Universes inherit the clean data.
+- 02:55 **Main team root cause found.** Display code 0x140d32eb7: team = f_0x140d29590(id) (a runtime field
+  rec+0x3D0, kept only if still valid); else first team 0..99 where 0x1404ca690/0x1404ca980 says "member". Membership
+  compares **pofo +4** (a "person id") of each team member with the wrestler's pofo +4, not the slot id.
+  53 person ids are shared across different wrestlers (CAW/CCT imports carried another character's +4). Examples:
+  225 = A-Kid, Trent Beretta, Bad Luck Fale (Fale is in GOD -> both show GOD); 224 = Rosemary, Beth Phoenix, Pac (Pac in
+  Death Triangle); 386 = Bunny, Brie Bella (Butcher & Blade); 500 = Ortiz, AJ Lee (LAX); 606 = Brian Myers, Max Caster.
+  Same mechanism likely drives other "same person" logic (and maybe phantom managers / title attribution).
+- Fix: give every non-variant wrestler a unique pofo +4 (own slot id where free). Needs the pofo source (profile pac /
+  CCT .pofo) changed, list of the 53 groups to be checked for genuine same-person variants (e.g. Raven x2, Marq Quen x2).
