@@ -344,3 +344,16 @@
     live Universe team table while the Universe is loaded and let the game save it itself (no save-format risk).
     Preferred: (b), with (a) as fallback. Next: pin the main team record layout (CCT data.xml offsets + live memory
     read with slots_mem.request), then Universe table base/count, then a dry-run diff tool.
+- 2026-11-10 23:55 **Team tables pinned** (live read of CCT's main team table 0x14287C860, game open):
+  * Record = **0x1B8 bytes**: +0x00 5 x u16 member ids (0x400 = empty), +0x0E u8 member count (2/3/4), +0x10 u16
+    team value (logo/graphic id; same value in main and Universe copies, e.g. THE REVIVAL 0x079E), +0x100 name
+    (NUL-terminated, 0x58 bytes), +0x158 second name copy. Main table = **200 records** (0-99 custom/edited teams,
+    100+ vanilla). Snapshot kept: `_moddingwwe2k19_builds\main_teams_20261110.bin`.
+  * **Universe team table** (UNVSBODY0002, slot-2 test Universe): same record layout, records from 0x31A8FC + 13*0x1B8
+    (100 slots); only **25 vanilla teams** filled, **75 free**. Dry run: of Matthew's 80 main-table teams,
+    **63 are missing** from the Universe (e.g. #DIY, American Wolves, Time Splitters, Bullet Club, The Bloodline,
+    The Shield, Judgment Day, The Elite, Imperium, LAX, Golden Lovers, War Raiders, Evolution, ...); 17 exist by name
+    (names match, members may differ). 63 fit in the 75 free slots.
+  * Next: writer. Preferred = offline save edit on the test Universe first (format fully understood: chunk tag,
+    u32 size, "ZLIB", 0x1230, csize, usize, zlib; XOR key), with game closed and Steam Cloud considered; verify in
+    game that the teams appear and matches load. Live-memory route stays as alternative.
