@@ -274,3 +274,14 @@
   touching the current Universe. Plan: (a) static: find the manager fields in the pofo (compare vanilla pofos that
   have managers) and the code that copies them on Universe creation; (b) Matthew creates a fresh Universe in a spare
   slot with the TRACE/UNIV probes on; (c) patch: give overflow slots "none" (0x400) or extend the copy.
+- 2026-11-10 23:05 Phantom managers, static pass 1:
+  * Not in the pofo. Compared all 301 Data Editor template pofos (484 bytes) with the six overflow pofos: the only
+    u16 fields where templates are mostly 0x400 (none) are 0x60-0x74 = an 11-entry **relationship list** (e.g. Alexa
+    Bliss -> Becky 611, 355, 613, Bayley 622; Angel Garza clone -> Zelina Vega 762, Andrade 687, 123, 805). Overflow
+    pofos hold 0x400 or real ids there, never 0. So the pofo does not carry a "manager = 0".
+  * Not as a pair in the Universe blob (no Brock 343 <-> Heyman 374 link anywhere).
+  * Candidate: UNVSBODY0001 ~0x3c280+ holds many u16 0 ("Marq Quen" when read as ids) in a regular pattern with
+    "170"/0x400 fields: possibly per-superstar Universe records where 0 is a default that the game treats as a real
+    id when the record is missing/out of range. Not confirmed.
+  Conclusion: static search is slow without a reproduction; next step is a controlled repro (fresh Universe in a
+  spare slot) with save captures before/after creation + DLL memory reads, then diff for the three id-0 fields.
