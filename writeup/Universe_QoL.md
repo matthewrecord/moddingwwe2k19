@@ -59,3 +59,12 @@
   least for title holders. Universe has no screen for past results (confirms the need for an external/in-game log).
   **Control match** (managers removed, non-title): entrances play and the match is normal. So bugs 2+3 come from
   either the phantom managers or the title match path; next split: title match without managers.
+- 2026-11-10 21:10 **Save decode, first layer.** XOR with the 4-byte key `37 36 35 36` (position mod 4) turns the
+  header into magic `VCGD`, then a directory of tagged chunks: 738 tags of the form 4+4 letters + 4 digits
+  (`CAASADDT0000`, `CASSBODY0001`, `CCACBIGH0000`, `CASSDHHW7367`, ...), each followed by a u32 size and a 4-byte
+  hash; many payloads start `ZLIB` (zlib) or carry 0x40/0x80 flags. These are the creation-suite assets (CAW/CAA/
+  CAE images, bodies, heads) in roughly 0x0-0x2200000 (high entropy). The structured tail 0x2200000-0x2600000
+  (~4 MB, 40% zero after XOR) is the candidate for profile + Universe data. Caveat: some tail runs read as clear ASCII
+  *before* XOR (e.g. `WWE2K17*(UYHDAKJ`), so the key may change per block: next step is to map block boundaries in
+  the tail and confirm the key per block, then diff against a save taken after show 2.
+  Decoder scratch: device `/tmp/sav.xor` (not kept). Exe anchors: `CUserSaveDataIOThread`, `CDefaultSaveDataMaker`.
