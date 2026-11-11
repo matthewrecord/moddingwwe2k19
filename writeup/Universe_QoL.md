@@ -217,3 +217,13 @@
 - 2026-11-10 23:20 Matthew installed Python (Store, `C:\Users\Acer\AppData\Local\Python\pythoncore-3.15-64\python.exe`)
   + openpyxl. `universe_capture.ini` line 3 now runs `tracker_auto.cmd` (hidden; output to `last_run.txt`) after
   every capture -> **fully automatic**. `Update tracker.cmd` = same with a visible window, for manual runs.
+- 2026-11-10 23:35 Tracker v1.1 (Matthew: one row per match, drop md5/match_key, nicer standings):
+  `history.csv` = **one row per match** (show, captured, day, title, winners, losers, pinfall_by, pinned, managers);
+  per-participant store moved to `_data\participants.csv` (dedupe keys live there; v1 file copied to
+  `_data\history_v1.csv`). New **`standings.html`** (self-contained, dark theme): champions cards, standings table
+  (W, L, win %, pins, pinned, title matches, streak, last-5 form chips), title history, results by show (newest
+  first). If a report is open in Excel, the tracker writes `<name> (new).csv` instead of failing. First automatic
+  run (22:17, show 2 simmed: Jeff Hardy, Randy Orton, Mistico, Daniel Bryan, Carmella, Andrade, AJ Styles winners)
+  worked: 14 matches in history.
+  Show names: the Universe blob holds the show list (SMACKDOWN LIVE, AEW DYNAMITE, PPV names) and cards sit in
+  separate blocks (0x58500, 0x66400, 0x6ae00, 0x6f880, 0x195xxx) -> mapping block -> show is the next decode item.
