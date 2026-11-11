@@ -620,6 +620,51 @@ static void watch_request(const char *q) {
     g_wact = n; w_apply_all(); L("WATCH armed: %d", n);
 }
 
+
+/* ---- test7: Universe team-seeder probe. Hooks 0x140FFF130(buffer, size) = handler of data type 4 that fills a
+   new Universe's team table from pac/universe/wunistable.pac. On each call: logs args + caller, writes the buffer
+   to seed_<n>_buf.bin and the current Universe blob ([[0x1425E7E20]+0x22F0]+8, 0x326DF0 bytes) to
+   seed_<n>_blob.bin, so two creations (default roster vs MyWWE roster) can be diffed for the roster-choice flag. ---- */
+static volatile LONG g_nseed;
+static void __attribute__((ms_abi)) seed_hit(uint64_t buf, uint64_t size, uint64_t ret) {
+    LONG n = InterlockedIncrement(&g_nseed);
+    char d[MAX_PATH]; GetModuleFileNameA(NULL, d, MAX_PATH); char *z = strrchr(d, '\\'); if (z) z[1] = 0;
+    L("[%8.2f] SEED call %ld buf %llx size %llu from %llx", (GetTickCount() - g_t0) / 1000.0, n, (unsigned long long)buf,
+      (unsigned long long)(uint32_t)size, (unsigned long long)ret);
+    char o[MAX_PATH]; SIZE_T got = 0; void *m;
+    if ((uint32_t)size && (uint32_t)size < (16u << 20) && (m = malloc((uint32_t)size))) {
+        if (ReadProcessMemory(GetCurrentProcess(), (void *)buf, m, (uint32_t)size, &got)) {
+            snprintf(o, sizeof o, "%sseed_%ld_buf.bin", d, n); FILE *f = fopen(o, "wb"); if (f) { fwrite(m, 1, got, f); fclose(f); } }
+        free(m); }
+    uint64_t g = 0, u = 0, blob = 0;
+    if (ReadProcessMemory(GetCurrentProcess(), (void *)0x1425E7E20, &g, 8, &got) && g &&
+        ReadProcessMemory(GetCurrentProcess(), (void *)(g + 0x22F0), &u, 8, &got) && u &&
+        ReadProcessMemory(GetCurrentProcess(), (void *)(u + 8), &blob, 8, &got) && blob) {
+        SIZE_T len = 0x326DF0; void *bb = malloc(len);
+        if (bb && ReadProcessMemory(GetCurrentProcess(), (void *)blob, bb, len, &got)) {
+            snprintf(o, sizeof o, "%sseed_%ld_blob.bin", d, n); FILE *f = fopen(o, "wb"); if (f) { fwrite(bb, 1, got, f); fclose(f); } }
+        free(bb); L("SEED blob %llx (obj %llx)", (unsigned long long)blob, (unsigned long long)u);
+    } else L("SEED: no Universe blob pointer");
+}
+static int install_seedprobe(uint8_t *c) {
+    const uint64_t va = 0x140FFF130; const char *orig = "488bc455574155"; const int n = 7;
+    if (!same(va, orig)) { L("seedprobe: MISMATCH, off"); return 0; }
+    int o = 0; uint8_t ob[8]; hexb(orig, ob);
+    const uint8_t push[] = {0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53}; memcpy(c + o, push, 10); o += 10;
+    c[o++] = 0x4C; c[o++] = 0x8B; c[o++] = 0x44; c[o++] = 0x24; c[o++] = 0x30;   /* mov r8, [rsp+0x30] = return address */
+    c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xEC; c[o++] = 0x28;
+    c[o++] = 0x48; c[o++] = 0xB8; uint64_t fn = (uint64_t)seed_hit; memcpy(c + o, &fn, 8); o += 8;
+    c[o++] = 0xFF; c[o++] = 0xD0;
+    c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xC4; c[o++] = 0x28;
+    const uint8_t pop[] = {0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59}; memcpy(c + o, pop, 10); o += 10;
+    memcpy(c + o, ob, n); o += n;
+    c[o++] = 0xFF; c[o++] = 0x25; memset(c + o, 0, 4); o += 4; uint64_t back = VA(va) + n; memcpy(c + o, &back, 8); o += 8;
+    int64_t rel = (int64_t)(uintptr_t)c - (int64_t)(VA(va) + 5);
+    if (rel > INT32_MAX || rel < INT32_MIN) { L("seedprobe: out of range"); return 0; }
+    uint8_t j[8]; j[0] = 0xE9; int32_t r32 = (int32_t)rel; memcpy(j + 1, &r32, 4); j[5] = 0x90; j[6] = 0x90; put(va, j, n);
+    L("seedprobe installed at %llx", (unsigned long long)va); return 1;
+}
+
 /* ---- VFS lookup logger: the game's file-index lookup 0x141264010(char *path, out) (229 callers). Post-call hook:
    logs every path the index does NOT find (deduplicated, max 400) and every lookup naming an overflow slot's id. ---- */
 uintptr_t g_vfs_tramp;
@@ -678,7 +723,8 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
             for (int q = 0; q < g_nslots; q++) g_isslot[g_slots[q].id] = 1;
             if (m && install_tracer(m)) { DWORD old; VirtualProtect(m, 0x1000, PAGE_EXECUTE_READ, &old); L("tracer on for %d overflow slots", g_nslots); }
             uint8_t *vm = alloc_near(0x1000); if (vm && install_vfs(vm)) { DWORD old; VirtualProtect(vm, 0x1000, PAGE_EXECUTE_READ, &old); L("vfs logger on"); }
-            uint8_t *um = alloc_near(0x1000); if (um && install_uniprobe(um)) { DWORD old; VirtualProtect(um, 0x1000, PAGE_EXECUTE_READ, &old); } } } }
+            uint8_t *um = alloc_near(0x1000); if (um && install_uniprobe(um)) { DWORD old; VirtualProtect(um, 0x1000, PAGE_EXECUTE_READ, &old); }
+            uint8_t *sm = alloc_near(0x1000); if (sm && install_seedprobe(sm)) { DWORD old; VirtualProtect(sm, 0x1000, PAGE_EXECUTE_READ, &old); } } } }
         else L("unexpected image base: NOTHING applied");
     }
     if (why == DLL_PROCESS_DETACH && g_log) dump_ring("game exit");

@@ -50,3 +50,8 @@ hidden. Read-only on the save. `tools/universe/tracker.py --archive <folder>` tu
 - `slots_find.request` (one line of text) -> `FIND hit <addr>` lines for every occurrence in committed memory (max 64).
 - `slots_watch.request`: up to 4 lines `<hex addr> <1|2|4|8> <w|rw> <name>` -> DR0-DR3 on all threads (re-applied
   every 2 s); each new instruction that hits is logged once as `WATCH <name> rip=... stack: <exe return addresses>`.
+
+## test7 (2026-11-11 00:00): Universe team-seeder probe
+Hooks 0x140FFF130 (type-4 data handler that fills a new Universe's teams from wunistable.pac): logs `SEED call`
+with buffer/size/caller and writes `seed_<n>_buf.bin` (the data handed in) and `seed_<n>_blob.bin` (current
+Universe blob) next to the exe. Purpose: find the roster-choice flag (default vs MyWWE superstars) at seeding time.

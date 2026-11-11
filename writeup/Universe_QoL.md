@@ -407,3 +407,8 @@
   WAR RAIDERS 16085, EVOLUTION 16003), 57 new strings 39600-39656. Template per size: 2 -> Revival, 3 -> Titus
   Worldwide, 4 -> Undisputed Era. Notes: TABERNAK DE TEAM uses CAW slots 3/1; TIME SPLITTERS includes overflow id 937
   (Test Wrestler 1). Outputs verified by re-parsing (27,915 strings vs 27,858). Install waits for the game to close.
+- 2026-11-11 01:20 (Matthew) Wants the team choice to piggyback on the game's own Universe-creation choice
+  (import MyWWE superstars vs default superstars), not a separate switch. Plan: DLL hook on the seeder 0x140FFF130:
+  when the MyWWE roster was chosen, hand it Matthew's team table (teamimport.py output) instead of the default
+  buffer; otherwise leave the default. Step 1 = DLL test7 (seeder probe, md5 2efc7298...) + two Universe creations
+  (default roster, then MyWWE roster) -> diff the blob/args at seeding time for the roster-choice flag.
