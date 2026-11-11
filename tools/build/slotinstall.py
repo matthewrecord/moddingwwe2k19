@@ -4,6 +4,9 @@ tools/slots proxy dinput8.dll. Runs on Matthew's PC (plain Python 3, no packages
   python3 slotinstall.py --game "<WWE 2K19 folder>" --pictures "<pictures WWE 2K19 folder>" --spec slots_to_add.txt
   python3 slotinstall.py --game ... --list                 # installed overflow slots
   python3 slotinstall.py --game ... --dry-run --spec ...   # check everything, write nothing
+  python3 slotinstall.py --game ... --remove 511 [515 ...]  # remove installed slots (slot numbers as listed)
+    removal moves the slot files and the slot's model pacs to _to_delete\ in the game folder (the agent shell
+    cannot delete), drops their Chunk0.def lines and the name string; the slot number and id become free again.
 
 Spec file: one wrestler per line, fields separated by '|', only the first is required; '#' starts a comment.
   Folder | Display name | pofo file | moveset file | model files (comma separated)
@@ -118,6 +121,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--game', required=True); ap.add_argument('--pictures'); ap.add_argument('--spec')
     ap.add_argument('--list', action='store_true'); ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--remove', type=int, nargs='+', metavar='SLOT')
     a = ap.parse_args(); G = a.game
     sdir = os.path.join(G, 'slots'); os.makedirs(sdir, exist_ok=True)
     logp = os.path.join(sdir, 'installed.json')
@@ -126,6 +130,30 @@ def main():
     for p in glob.glob(os.path.join(sdir, '*.pofo')):
         m = re.match(r'(\d{4})_(\d{4})(?:_(\d{4}))?\.pofo$', os.path.basename(p))
         if m: present.append({'index': int(m.group(1)), 'id': int(m.group(2))})
+    if a.remove:
+        try:
+            for p in (os.path.join(G, STR), os.path.join(G, 'Chunk0.def')): open(p, 'r+b').close()
+        except OSError: die('game files are locked: close the game first')
+        for p in (STR, 'Chunk0.def'): backup(os.path.join(G, p))
+        trash = os.path.join(G, '_to_delete'); os.makedirs(trash, exist_ok=True)
+        sp = open(os.path.join(G, STR), 'rb').read(); H = HSPC(sp); S = SHDC(H.files[0]['data'])
+        pre, ents = string_table_parse(S.files[0]['data']); strings = dict(ents)
+        chunk = open(os.path.join(G, 'Chunk0.def'), 'rb').read().split(b'\r\n')
+        for slot in a.remove:
+            idx = slot - 1; s_ = next((x for x in present if x['index'] == idx), None)
+            if not s_: die('no installed slot %d' % slot)
+            cid = s_['id']
+            for f in glob.glob(os.path.join(sdir, '%04d_%04d*' % (idx, cid))): shutil.move(f, os.path.join(trash, os.path.basename(f)))
+            for f in glob.glob(os.path.join(G, CH_DIR, 'ch%03d??.pac' % cid)): shutil.move(f, os.path.join(trash, os.path.basename(f)))
+            chunk = [l for l in chunk if not re.search(rb'\\ch%03d\d\d\.pac$' % cid, l.lower()) or not l.lower().startswith(b'mods\\cct\\characters\\')]
+            info = next((x for x in inst if x['index'] == idx), {})
+            if info.get('sid') in strings and info.get('sid') != 39370: del strings[info['sid']]
+            inst = [x for x in inst if x['index'] != idx]
+            print('removed slot %d (index %d, id %d) %s' % (slot, idx, cid, info.get('name', '')))
+        S.files[0]['data'] = string_table_build(pre, sorted(strings.items()))
+        open(os.path.join(G, STR), 'wb').write(H.replace(0, S.build()))
+        open(os.path.join(G, 'Chunk0.def'), 'wb').write(b'\r\n'.join(chunk)); json.dump(inst, open(logp, 'w'), indent=1)
+        return
     if a.list or not a.spec:
         for s in sorted(present, key=lambda s: s['index']):
             info = next((x for x in inst if x['index'] == s['index']), {})
