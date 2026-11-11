@@ -570,3 +570,12 @@
   carry a manager (83 before the fix), Cass -> [760], Sky -> [130, 445], Trent -> [8]. Script
   `tools/universe/verify_mgr_ids.py SAVEDATA [...]`. test12 installed (aa5b46ef...), test10 backup present in
   `_moddingwwe2k19_builds`. Next: Matthew's in-game sync test (log line "manager sync: N records updated").
+- 04:30 **Re-adding Dark Order / Private Party / The Kingdom (prep).** Saved MyWWE team table (MAINBODY, 0x1B8 records,
+  #DIY record at 0x3c280) has free records in the custom range (e.g. at 0x40588, 0x40ab0, 0x41190, 0x41870, 0x42630,
+  0x427e8, 0x441b0+), so no slot has to be sacrificed. None of the three names is in the save. CCT still lists them
+  (replaced_data.xml teams slots 22/39/50). Candidate members (CCT names -> ids): Dark Order = Evil Uno 688, Stu
+  Grayson 766, Alex Reynolds 866, John Silver 867, Preston Vance 197, Anna Jay 274, Colt Cabana 617, Alan Angels (CAW
+  slot 53); a team record holds at most 5. Private Party = Marq Quen (CAW slot 20, and CAW slot 0 is also named Marq
+  Quen) + Isaiah Kassidy (CAW slot 2). The Kingdom = Matt Taven 407 + Mike Bennett 731 (+ Vincent 160, now in The
+  Righteous); no Maria in the roster (CCT slot 42 "AVAILABLE (The Kanellis)"). Plan: live poke into the team table
+  (0x14287C860 + i*0x1B8) with the game open, then Matthew saves. Waiting on member + manager picks.
