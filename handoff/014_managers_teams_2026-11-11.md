@@ -23,6 +23,9 @@ Branch `claude/universe-qol` (pushed; not yet merged to main this round). Full l
    450->194, Scorpio Sky 978->210, idx 156 767->255). Fixed live (save layer). CCT source pofos still wrong.
 
 ## State at handoff (verify first)
+- **04:12 update: save verified** (163 records with managers; Cass->Enzo, Sky->[Daniels, Kazarian]; 6 ids fixed) and
+  **DLL test12 installed** (aa5b46ef...; test10 backed up as `dinput8.dll.test10_installed_bak`). Next: the in-game
+  sync test. Points below kept for history.
 - Game was running with everything poked live. **Matthew was asked to save "everywhere" and quit.** Check the save
   (decode MAINBODY, copy-0 managers at 0x88e5b0-170*0xD88 + idx*0xD88 + 0x58; pofo array at 0x117f0 - 148*484)
   contains the new managers and the 6 id fixes. If not, re-apply the poke files (old-value checked) and have him save.
