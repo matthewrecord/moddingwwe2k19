@@ -42,7 +42,7 @@
   +0x20) + no unowned store/showcase unlockable; **hard cap 509 superstar profiles** (beyond = exe patch). Test
   `charsel_v1` installed (unlock 160/335/330, playable 274); waiting on Matthew's select-screen check.
 - **2026-11-10 17:35 (handoff 011): character slots stage 1: test0 proxy `dinput8.dll` installed (behaviour-neutral patch mechanism check). Waiting on Matthew's boot + one match.**
-- **2026-11-10 18:54 (handoff 012): FIRST CHARACTER BEYOND THE 509 CAP PLAYS A MATCH.** Test Wrestler (Alex Shelley clone) in overflow slot 509, id 937, via `tools/slots` proxy dinput8.dll (test1k) + `tools/build/charslot.py`. Root cause of the earlier hangs: copied asset pacs must carry their new internal names (notes/characters step 1j). The DLL also carries permanent diagnostics (crash log, file log, code trace, VFS not-found log, remote snapshot).
+- **2026-11-10 18:54-19:07 (handoff 012): FIRST CHARACTER BEYOND THE 509 CAP WORKS (Exhibition singles + tag, Universe).** Open: entrance skipped in some arenas. Test Wrestler (Alex Shelley clone) in overflow slot 509, id 937, via `tools/slots` proxy dinput8.dll (test1k) + `tools/build/charslot.py`. Root cause of the earlier hangs: copied asset pacs must carry their new internal names (notes/characters step 1j). The DLL also carries permanent diagnostics (crash log, file log, code trace, VFS not-found log, remote snapshot).
 - **Latest handoff:** `handoff/012_test_wrestler_2026-11-10.md`.
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.

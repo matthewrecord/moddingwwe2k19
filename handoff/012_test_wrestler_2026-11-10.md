@@ -63,3 +63,7 @@ caller tracer (TRACE lines). Note: F11/F12 do not register once the game hangs; 
 Log: no exceptions; only /CASD misses (normal, vanilla characters have them too).
 Installed state: dinput8.dll test1k (ab6d01bb...), slots\0509_0937_0779.*, Chunk0.def dfc88fa3..., SuperString
 string_win.pac 54361b8d..., 10 renamed asset copies for id 937. Backups: *.orig_charslot.
+
+## 19:07 Matthew: Test Wrestler works in Exhibition singles, Exhibition tag, and Universe mode.
+Open (not priority, Matthew): in some arenas his entrance (Alex Shelley's) plays, in others it is skipped. To check:
+does real Alex (id 779) skip in the same arenas (then not slot-related), else entrance/CAE lookups for id 937.
