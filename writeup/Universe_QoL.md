@@ -382,3 +382,8 @@
     music work) so every new Universe seeds Matthew's teams; (B) DLL hook on 0x140FFF130 that, after the default
     seeding, appends the MyWWE custom teams into the free Universe slots. Next: identify the file (log VFS/file opens
     during Universe creation; trace caller of the type-4 handler) and the entry format of 0x1404cc410.
+- 2026-11-11 00:45 Candidate data file for the default Universe teams: **`pac\universe\wunistable.pac`** (38,912 bytes,
+  HSPC container) with patch **`wunistable_p10.pac`** (12,288 bytes); neighbours `wunidata.pac` / `wunidata_p30.pac`
+  (Universe defaults). "stable" = teams/stables in 2K19's naming. Not yet confirmed: next = unpack with the repo's
+  HSPC/BPE tools, match entries against the 25 default teams (members 113/398 = Deleters, 618/615 = Revival), and
+  confirm with a VFS open log during Universe creation. The highest patch level present wins (p10 here).
