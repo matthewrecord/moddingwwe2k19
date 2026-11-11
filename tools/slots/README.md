@@ -70,3 +70,9 @@ manager u16 at +0x58; 1024 = none), then the game saves them on the next edit-sa
 ## test11 (2026-11-11 03:15): persistent pokes
 `slots_poke_always.txt` (same line format as slots_poke.request) is re-applied every 5 s and never deleted; lines whose
 old bytes don't match are silently skipped. Used for the manager table the game rebuilds each launch (0x143700360).
+
+## test12 (2026-11-11 03:55): manager sync (save -> panel table)
+Every 5 s after 30 s: reads the 3 manager slots of each MyWWE record (0x142e6f9b0 + idx*0xD88 + 0x58) and copies them
+into the panel table rebuilt from profile_pro.pac (0x143700000 + idx*0xD88 + 0x3B8): all records once, then only records
+whose saved managers changed. Skips if the panel table header isn't 08 00 88 04 or values look invalid.
+md5 aa5b46ef... (includes test11's slots_poke_always.txt; unused).

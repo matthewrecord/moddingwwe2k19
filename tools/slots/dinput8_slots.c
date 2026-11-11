@@ -323,6 +323,33 @@ static void poke_file(const char *q, int keep) {
     else if (ok) L("poke_always: %d written", ok);
 }
 static void poke_request(const char *q) { poke_file(q, 0); }
+/* test12: manager sync. The info panel / edit screen reads superstar records from a table rebuilt every launch from
+   profile_pro.pac (NGlobalData::InitCharProfile -> 0x143700000 + idx*0xD88, managers = 3 x u32 at +0x3B8), while the
+   in-game edits are saved in the MyWWE copy (0x142e6f9b0 + idx*0xD88 + 0x58). Copy the saved managers into the panel
+   table once after load, and again for any record whose saved managers change (i.e. after an edit is saved). */
+static void mgr_sync(void) {
+    static unsigned char snap[509 * 12]; static int synced = 0;
+    if (GetTickCount() - g_t0 < 30000) return;
+    SIZE_T got = 0; uint32_t hdr = 0;
+    if (!ReadProcessMemory(GetCurrentProcess(), (void *)0x143700000, &hdr, 4, &got) || hdr != 0x04880008) return;
+    static unsigned char cur[509 * 12]; int any = 0;
+    for (int x = 0; x < 509; x++) {
+        if (!ReadProcessMemory(GetCurrentProcess(), (void *)(0x142e6f9b0ull + x * 0xD88ull + 0x58), cur + x * 12, 12, &got) || got != 12) return;
+        uint32_t *v = (uint32_t *)(cur + x * 12);
+        for (int j = 0; j < 3; j++) { if (v[j] != 0x400 && (v[j] == 0 || v[j] > 2047)) return; if (v[j] != 0x400) any = 1; }
+    }
+    if (!any) return;
+    int n = 0;
+    for (int x = 0; x < 509; x++) {
+        if (synced && !memcmp(snap + x * 12, cur + x * 12, 12)) continue;
+        unsigned char t[12]; void *dst = (void *)(0x143700000ull + x * 0xD88ull + 0x3B8);
+        if (ReadProcessMemory(GetCurrentProcess(), dst, t, 12, &got) && got == 12 && memcmp(t, cur + x * 12, 12))
+            if (WriteProcessMemory(GetCurrentProcess(), dst, cur + x * 12, 12, &got)) n++;
+    }
+    memcpy(snap, cur, sizeof snap);
+    if (n || !synced) L("[%8.2f] manager sync: %d records updated%s", (GetTickCount() - g_t0) / 1000.0, n, synced ? "" : " (initial)");
+    synced = 1;
+}
 static void dump_kind(int type, const char *stem);
 static volatile LONG g_wact; static void w_apply_all(void); static void find_request(const char *q); static void watch_request(const char *q);
 static void dump_threads(void) { dump_kind(0x0, "slots_snapshot"); }
@@ -370,6 +397,7 @@ static DWORD WINAPI rec_thread(LPVOID p) {
             if (z) { strcpy(z + 1, "slots_find.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) find_request(q);
                      strcpy(z + 1, "slots_watch.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) watch_request(q); }
             if (g_wact && i % 20 == 0) w_apply_all();
+            if (i % 50 == 0) mgr_sync();
             if (z) { strcpy(z + 1, "slots_mem.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) mem_request(q);
                      strcpy(z + 1, "slots_poke.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) poke_request(q);
                      if (i % 50 == 0) { strcpy(z + 1, "slots_poke_always.txt"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) poke_file(q, 1); }

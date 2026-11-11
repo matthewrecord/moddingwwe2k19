@@ -546,3 +546,10 @@
   search by index/id/strides found nothing); computed at display time. Watchpoints so far only hit copies
   (0x140d26fa3 copies pofo +0x120..+0x151 into the panel struct; 0x140d27ca1 copies it again). Next: watch the panel
   struct's copy (0x15643a/0x15b03a this session) for a reader that is not a memcpy -> overall function.
+- 03:55 Matthew's picks applied (live poke 168 writes + profile_pro.pac): Gallus = Wolfgang manages Mark & Joe
+  Coffey; Hurt Business = MVP manages Cedric, Shelton, Lashley; The Elite = each has the other two (slots 0,1; Omega's
+  Golden Lovers link replaced); Imperium = Alexander Wolfe manages Barthel & Aichner, WALTER and Wolfe none.
+  Remaining 3+ man teams: Time Splitters, Kings of Wrestling, Bullet Club, House of Black, Brick Lane Massive,
+  The Bloodline, Catch Point, Great Bash Heel, GOD, The Shield, LIJ, Death Triangle, Saughton Edina, SoCal
+  Uncensored, Undisputed Era, War Dogs, Aces & Eights, Bullet Club Gold, Legado del Fantasma, The Nexus, Wyatt Family.
+- DLL test12 built (manager sync); install after the game exits.
