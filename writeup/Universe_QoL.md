@@ -445,3 +445,8 @@
   wunistable.pac. Limitation: the team file is a snapshot of the MyWWE team table from 2026-11-10; after editing teams
   in the game/CCT, rerun teamimport.py (needs a fresh live dump of 0x14287C860) - next improvement: have the DLL build
   the table from the live MyWWE team table at seeding time (always current; new names would still need strings).
+- 2026-11-11 02:00 (Matthew expected the import to read his current teams, not a snapshot.) Main and Universe team
+  records share the layout for bytes 0x00-0x10C (compared THE REVIVAL main #2 vs Universe record: only stale name-buffer
+  bytes and +0x150 differ), so **DLL test9** copies the live MyWWE team table (rows 0-99) straight into the new
+  Universe's team records right after the game's seeding (post-hook via return-address swap). No snapshot, no
+  string-table entries needed (names are inline in these records). Built (65f3cdda...), staged; install on restart.

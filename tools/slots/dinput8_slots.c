@@ -626,7 +626,27 @@ static void watch_request(const char *q) {
    to seed_<n>_buf.bin and the current Universe blob ([[0x1425E7E20]+0x22F0]+8, 0x326DF0 bytes) to
    seed_<n>_blob.bin, so two creations (default roster vs MyWWE roster) can be diffed for the roster-choice flag. ---- */
 static volatile LONG g_nseed;
-static void __attribute__((ms_abi)) seed_hit(uint64_t buf, uint64_t size, uint64_t ret) {
+static uint64_t g_seed_ret; static uint8_t *g_post_stub;
+/* test9: after the seeder returns (mode = MyWWE import), copy the LIVE MyWWE team table (CCT 0x14287C860, rows 0-99,
+   0x1B8 each; same layout as Universe team records) over the new Universe's 100 team records (blob + 0x31BF54).
+   Always current: no snapshot file, names travel inline. universe_teams.ini line 1 = MyWWE mode (2); line 2 'live'. */
+static int g_post_mode;
+static void __attribute__((ms_abi)) seed_post(void) {
+    uint64_t g = 0, u = 0, blob = 0; SIZE_T got = 0;
+    if (!(ReadProcessMemory(GetCurrentProcess(), (void *)0x1425E7E20, &g, 8, &got) && g &&
+          ReadProcessMemory(GetCurrentProcess(), (void *)(g + 0x22F0), &u, 8, &got) && u &&
+          ReadProcessMemory(GetCurrentProcess(), (void *)(u + 8), &blob, 8, &got) && blob)) { L("SEED post: no Universe blob"); return; }
+    static uint8_t t[100 * 0x1B8];
+    if (!ReadProcessMemory(GetCurrentProcess(), (void *)0x14287C860, t, sizeof t, &got) || got != sizeof t) { L("SEED post: MyWWE team table unreadable"); return; }
+    int n = 0; for (int i = 0; i < 100; i++) { uint16_t m0, m1; memcpy(&m0, t + i * 0x1B8, 2); memcpy(&m1, t + i * 0x1B8 + 2, 2);
+        if (t[i * 0x1B8 + 0x100] && m0 < 0x400 && m1 < 0x400) n++; }
+    SIZE_T put_ = 0;
+    if (WriteProcessMemory(GetCurrentProcess(), (void *)(blob + 0x31BF54), t, sizeof t, &put_) && put_ == sizeof t)
+        L("SEED post: Universe teams <- live MyWWE team table (%d teams, rows 0-99)", n);
+    else L("SEED post: write failed");
+}
+static void __attribute__((ms_abi)) seed_hit(uint64_t buf, uint64_t size, uint64_t *retslot) {
+    uint64_t ret = retslot ? *retslot : 0;
     LONG n = InterlockedIncrement(&g_nseed);
     char d[MAX_PATH]; GetModuleFileNameA(NULL, d, MAX_PATH); char *z = strrchr(d, '\\'); if (z) z[1] = 0;
     /* test8: roster-choice mode = *(int*)[[0x1425E7E20]+0x4600] (read by the superstar import 0x140FFE480 just before:
@@ -641,7 +661,9 @@ static void __attribute__((ms_abi)) seed_hit(uint64_t buf, uint64_t size, uint64
       if (fi) { char l1[32] = {0}, l2[MAX_PATH] = {0}; int want = -2;
           if (fgets(l1, sizeof l1, fi) && fgets(l2, sizeof l2, fi)) { want = atoi(l1); trimnl(l2); }
           fclose(fi);
-          if (want == mode && (uint32_t)size == 27216) {
+          if (want == mode && !_stricmp(l2, "live") && retslot && g_post_stub) {
+              g_seed_ret = *retslot; *retslot = (uint64_t)g_post_stub; L("SEED: MyWWE roster -> live team copy after seeding");
+          } else if (want == mode && (uint32_t)size == 27216) {
               FILE *ft = fopen(l2, "rb"); uint8_t t[27216];
               if (ft && fread(t, 1, sizeof t, ft) == sizeof t && !memcmp(t, "LBTS", 4)) {
                   DWORD old; if (VirtualProtect((void *)buf, sizeof t, PAGE_READWRITE, &old)) { memcpy((void *)buf, t, sizeof t); VirtualProtect((void *)buf, sizeof t, old, &old);
@@ -673,7 +695,7 @@ static int install_seedprobe(uint8_t *c) {
     if (!same(va, orig)) { L("seedprobe: MISMATCH, off"); return 0; }
     int o = 0; uint8_t ob[8]; hexb(orig, ob);
     const uint8_t push[] = {0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53}; memcpy(c + o, push, 10); o += 10;
-    c[o++] = 0x4C; c[o++] = 0x8B; c[o++] = 0x44; c[o++] = 0x24; c[o++] = 0x30;   /* mov r8, [rsp+0x30] = return address */
+    c[o++] = 0x4C; c[o++] = 0x8D; c[o++] = 0x44; c[o++] = 0x24; c[o++] = 0x30;   /* lea r8, [rsp+0x30] = &return address */
     c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xEC; c[o++] = 0x28;
     c[o++] = 0x48; c[o++] = 0xB8; uint64_t fn = (uint64_t)seed_hit; memcpy(c + o, &fn, 8); o += 8;
     c[o++] = 0xFF; c[o++] = 0xD0;
@@ -681,6 +703,16 @@ static int install_seedprobe(uint8_t *c) {
     const uint8_t pop[] = {0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59}; memcpy(c + o, pop, 10); o += 10;
     memcpy(c + o, ob, n); o += n;
     c[o++] = 0xFF; c[o++] = 0x25; memset(c + o, 0, 4); o += 4; uint64_t back = VA(va) + n; memcpy(c + o, &back, 8); o += 8;
+    /* post stub: entered by the seeder's ret; keep rax, call seed_post, jump to the saved return address */
+    o = (o + 15) & ~15; g_post_stub = c + o;
+    c[o++] = 0x50;                                                    /* push rax */
+    c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xEC; c[o++] = 0x28;       /* sub rsp,0x28 (16-byte aligned call) */
+    c[o++] = 0x48; c[o++] = 0xB8; uint64_t pf = (uint64_t)seed_post; memcpy(c + o, &pf, 8); o += 8;
+    c[o++] = 0xFF; c[o++] = 0xD0;                                     /* call rax */
+    c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xC4; c[o++] = 0x28;       /* add rsp,0x28 */
+    c[o++] = 0x58;                                                    /* pop rax */
+    c[o++] = 0x49; c[o++] = 0xBB; uint64_t rp = (uint64_t)&g_seed_ret; memcpy(c + o, &rp, 8); o += 8;   /* mov r11,&g_seed_ret */
+    c[o++] = 0x41; c[o++] = 0xFF; c[o++] = 0x23;                      /* jmp [r11] */
     int64_t rel = (int64_t)(uintptr_t)c - (int64_t)(VA(va) + 5);
     if (rel > INT32_MAX || rel < INT32_MIN) { L("seedprobe: out of range"); return 0; }
     uint8_t j[8]; j[0] = 0xE9; int32_t r32 = (int32_t)rel; memcpy(j + 1, &r32, 4); j[5] = 0x90; j[6] = 0x90; put(va, j, n);

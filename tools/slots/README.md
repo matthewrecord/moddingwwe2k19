@@ -55,3 +55,9 @@ hidden. Read-only on the save. `tools/universe/tracker.py --archive <folder>` tu
 Hooks 0x140FFF130 (type-4 data handler that fills a new Universe's teams from wunistable.pac): logs `SEED call`
 with buffer/size/caller and writes `seed_<n>_buf.bin` (the data handed in) and `seed_<n>_blob.bin` (current
 Universe blob) next to the exe. Purpose: find the roster-choice flag (default vs MyWWE superstars) at seeding time.
+
+## test9 (2026-11-11 02:00): live team import
+`universe_teams.ini` line 1 = roster mode meaning "import MyWWE superstars" (2), line 2 = `live` (or a path to an
+LBTS file, test8 behaviour). With `live`, the seeder hook swaps the seeder's return address for a post stub that,
+after the default seeding, copies the live MyWWE team table (0x14287C860, rows 0-99 x 0x1B8) over the new
+Universe's team records (blob + 0x31BF54). Always current; names inline; no string edits needed.
