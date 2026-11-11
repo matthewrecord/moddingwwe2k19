@@ -292,3 +292,10 @@
   on demand (or looked up and missed). Waiting on Matthew: do the Test Wrestlers show phantom managers here?
   **Tracker impact:** DLL capture + tracker read only UNVSBODY0001 -> a Universe in slot 2/3 is not tracked yet. Fix
   planned: capture every UNVSBODY000N, tracker setting `universe_slot`.
+- 2026-11-10 22:58 **Not reproducible in a fresh Universe** (slot 2): no phantom managers, Keith Lee vs Angel Garza
+  title match normal. Best explanation: the slot-1 test Universe carried stale state. It was the earlier "throwaway"
+  Universe, created before Test Wrestlers 2-6 were swapped (19:40: slots 511/515 changed from Rhea Ripley/Toni Storm
+  to Keith Lee/Moose with the same ids), so its per-superstar data no longer matched the slot contents.
+  Status: closed as not reproducible; no fix shipped. Rule for Matthew: after changing who is in an overflow slot,
+  start a new Universe (or check that wrestler's managers). Reopen if it shows up in a Universe created after the
+  slot contents were final.
