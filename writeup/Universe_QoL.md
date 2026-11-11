@@ -466,3 +466,8 @@
   creation time (79), i.e. the import DOES copy his attributes. No 509-entry per-superstar rating array found in the
   Universe blob. Open: why the Universe shows AJ 80+ while MyWWE shows 71 - need the exact numbers/screens from
   Matthew (overall may be computed differently, or a different AJ slot).
+- 2026-11-11 02:30 **Ratings: likely not a bug.** Matthew: AJ Styles is #1 in the Universe power rankings, which gives a
+  ratings boost; and editing ratings in-game offers "update MyWWE only" vs "multiple areas" (he chose MyWWE only), i.e.
+  the game itself keeps Universe copies of the pofo and can propagate edits. Consistent with the data: the Universe
+  pofo copies hold his MyWWE attributes from creation time. To confirm: compare a wrestler who is not in the power
+  rankings. Reminder for Matthew: AJ's Aerial Offense was lowered 79 -> 59 as a test (revert).
