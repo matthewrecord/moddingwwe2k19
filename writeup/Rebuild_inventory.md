@@ -107,3 +107,15 @@ names, dates, the notes and spreadsheets; individual packs were not opened) plus
   (de4d3756...), chunk0.def regenerated at the same size, marker added.
 - No overlap with our files: our Universe team work changed `wunistable.pac` (still our version, 04:51 today); our
   DLL does not touch wunidata. Baseline for the next module: `snapshot_after_match_module_20261111`.
+
+## I. Genesis "Attire Slot Expansion (1000)" (installed 13:49, diffed against `snapshot_after_match_module_20261111`)
+- Exe rewritten but **byte-identical** (de4d3756...): the slot expansion had already installed the combined
+  "CH+Attire" exe (the `.attire` section was there since 13:32). Log: "installed combo CH+Attire (Steam) exe".
+- `mods\Universal Alternate Attire Unlock\pac\root\misc01_start_p30.pac` rewritten at the same size (229,376;
+  e556c887... -> bb47c6e1...). Log: "No existing attire definitions to carry over."
+- **To verify:** Matthew's own attire file (77,824 bytes, dated 2023-10-25) was replaced by the slot expansion at
+  13:32, before the attire module looked for definitions to carry over. It is preserved in
+  `genesis_backups\Character_Slot_Expansion_(500)\mods\Universal Alternate Attire Unlock\pac\root\`. His extra-attire
+  definitions (Extra Attires.xlsx, about 40 wrestlers) are probably not in the live file now.
+- Baseline for the entrances/victory module: `snapshot_after_attire_20261111` (manifest; MD5 of 9,669 files in
+  pac/menu, audio, gimmick, particle, prop and most of pac/evt; key-file MD5s incl. string_win).
