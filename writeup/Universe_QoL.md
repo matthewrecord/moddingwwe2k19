@@ -553,3 +553,8 @@
   The Bloodline, Catch Point, Great Bash Heel, GOD, The Shield, LIJ, Death Triangle, Saughton Edina, SoCal
   Uncensored, Undisputed Era, War Dogs, Aces & Eights, Bullet Club Gold, Legado del Fantasma, The Nexus, Wyatt Family.
 - DLL test12 built (manager sync); install after the game exits.
+- 04:10 Matthew's picks for 20 more teams applied (live 708 writes + profile_pro.pac 177 slots). Assumptions: Kings
+  of Wrestling and Brick Lane Massive rows were swapped in his list (Kidd/Hero/Cesaro are in Kings) -> Kidd manages
+  Hero & Cesaro, Hero manages Kidd; Brick Lane = everyone. Time Splitters: 937 (overflow slot) taken as Sabin; has no
+  record here, so only Kushida -> [Shelley, Sabin]. Scorpio Sky (210) has no record. Pending: Catch Point (which id
+  is Thatcher? members 712, 786, 729).
