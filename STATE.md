@@ -44,6 +44,11 @@
 - **2026-11-10 17:35 (handoff 011): character slots stage 1: test0 proxy `dinput8.dll` installed (behaviour-neutral patch mechanism check). Waiting on Matthew's boot + one match.**
 - **2026-11-10 18:54-19:07 (handoff 012): FIRST CHARACTER BEYOND THE 509 CAP WORKS (Exhibition singles + tag, Universe).** Open: entrance skipped in some arenas. Test Wrestler (Alex Shelley clone) in overflow slot 509, id 937, via `tools/slots` proxy dinput8.dll (test1k) + `tools/build/charslot.py`. Root cause of the earlier hangs: copied asset pacs must carry their new internal names (notes/characters step 1j). The DLL also carries permanent diagnostics (crash log, file log, code trace, VFS not-found log, remote snapshot).
 - **Next thread (Matthew 20:14): Universe QoL (record keeping, title history) incl. overflow-slot save safety: `handoff/013_universe_qol_2026-11-10.md`.**
+- **2026-11-10 21:44 (handoff 013, branch claude/universe-qol): Universe QoL thread.** Requirements + plan in
+  `writeup/Universe_QoL.md` (Matthew's tracker `D:\Documents\wrestling ratings.xlsx`; saves `Steam\userdata\93452036\817130\remote`,
+  XOR key 37 36 35 36). Overflow wrestlers survive Universe save/reload and work in title/non-title matches; bug:
+  Universe creation gives them 3 phantom CAW managers (show-1 glitches tracked to that). DLL test3b installed (memory
+  reads + Universe probe).
 - **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe).
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
