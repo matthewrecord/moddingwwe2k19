@@ -311,3 +311,15 @@
   not expose month/week in an obvious field, and a 336-day calendar array was not found (pattern search). Shipped
   instead: settings.tsv `ppv_<Month>_<week>` names (Backlash = May wk 1 from Matthew's calendar); PPV tab = every
   Sunday show. Decoding the schedule from the save remains open. Match type ("kind" byte) still unnamed.
+- 2026-11-10 23:30 **PPV CALENDAR DECODED** (Matthew added AEW Revolution on May week 3; diff of slot-2 blob):
+  48 bytes at UNVSBODY000N **0x19C038**, one per week from January week 1 (index = month*4 + week-1), value =
+  show-record index + 1 (0xFF none). Show records at **0x3C618 + i*0x2D8**, custom name at +0. Revolution = record 23
+  -> byte 0x18 at index 18 (May wk 3). Full slot-2 calendar: Jan3 NXT TakeOver Philadelphia, Jan4 Royal Rumble,
+  Feb4 Elimination Chamber, Mar2 Full Gear, Apr1 NXT TakeOver New Orleans, Apr2 WrestleMania, May1 AEW Revolution
+  (record 21; shown with the Backlash logo = renamed show), May3 AEW Revolution (new), Jun1 Extreme Rules, Jul1 NXT
+  TakeOver Chicago, Jul2 Money in the Bank, Aug2 NXT TakeOver Brooklyn III, Aug4 SummerSlam, Sep4 Hell in a Cell,
+  Oct4 TLC, Nov4 Survivor Series, Dec4 Clash of Champions. Shows with built-in names (RAW, NXT, Backlash...) store no
+  text -> weekday names / settings override. Tracker writes `_data\ppv_calendar.tsv` per Universe from the newest
+  capture; settings `ppv_` lines override.
+  Also: matches.py now requires a winner and a loser among >= 2 wrestlers (two false records in slot 2 removed;
+  Universe 2 rebuilt from captures: 6 matches).

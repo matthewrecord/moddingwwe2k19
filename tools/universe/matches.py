@@ -23,6 +23,9 @@ def parse(b):
       key = (tk, tuple(group))
       if key in seen: continue
       seen.add(key)
+      wr = [g for g in group if g[1] & 0xFF != 2]
+      if len(wr) < 2 or not any(g[2] in (0x1FF, 0x3FF) for g in wr) or not any(g[2] in (0x2FF, 0x4FF) for g in wr):
+          continue                                     # not a match card (needs a winner and a loser)
       title = None if tk >> 8 == 0xFF else tk >> 8
       out.append((start, day, title, tk & 0xFF, group))
   return out

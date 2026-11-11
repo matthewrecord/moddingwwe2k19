@@ -146,6 +146,11 @@ def process_slot(out, blobs, names, people, aliases, slot):
                              role='manager' if role & 0xFF == 2 else 'wrestler',
                              result='W' if res in (0x1FF, 0x3FF) else 'L', pinfall=int(res in (0x1FF, 0x2FF))))
       if new_here: cap += 1
+    if blobs:
+        cal = read_ppv_calendar(blobs[-1][1])
+        if cal:
+            with open(os.path.join(out, '_data', 'ppv_calendar.tsv'), 'w', encoding='utf-8') as f:
+                f.write('# from the save (newest capture); settings.tsv ppv_ lines override\n' + ''.join(f'{k}\t{v}\n' for k, v in cal.items()))
     with open(hpath, 'w', encoding='utf-8', newline='') as f:
         w = csv.DictWriter(f, HIST_COLS); w.writeheader(); w.writerows(hist)
     build_reports(hist, out, slot)
@@ -252,8 +257,8 @@ show_thu	AEW Dynamite
 show_fri	
 show_sat	
 show_sun	PPV
-# Pay-per-view names by month and week (Sunday shows), e.g. ppv_May_1 = May week 1. Add yours.
-ppv_May_1	Backlash
+# Pay-per-view names are read from the game's calendar automatically. To override one: ppv_<Month>_<week><TAB>name
+# ppv_May_1	Backlash
 # Count offseason matches in the standings? (no = shown in results only)
 count_offseason	no
 # Seasons run May..April (new Universes start in May). First day of a season (112 = May week 1 Monday).
@@ -267,7 +272,8 @@ def load_settings(out):
     return dict(brands=[b.strip() for b in t.get('roster_brands', 'WWE,AEW,NXT').split(',') if b.strip()],
                 off=(int(t.get('offseason_first_day', 112)), int(t.get('offseason_last_day', 195))),
                 shows=[t.get('show_' + d, '').strip() for d in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')],
-                ppv={k[4:]: v.strip() for k, v in t.items() if k.startswith('ppv_') and v.strip()},
+                ppv={**load_tsv(os.path.join(out, '_data', 'ppv_calendar.tsv')),
+                     **{k[4:]: v.strip() for k, v in t.items() if k.startswith('ppv_') and v.strip()}},
                 count_offseason=t.get('count_offseason', 'no').strip().lower() in ('yes', 'y', 'true', '1'),
                 drop=int(t.get('season_reset_drop', 100)), start=int(t.get('season_start_day', 112)))
 
@@ -280,6 +286,23 @@ def day_label(d, cfg):
     name = cfg['shows'][dow]
     if dow == 6: name = cfg.get('ppv', {}).get(f'{MONTHS[m % 12]}_{w}', name)
     return f'{MONTHS[m % 12]} wk {w} {DOW[dow]}', name
+
+CAL_OFF, SHOW_TABLE, SHOW_REC = 0x19C038, 0x3C618, 0x2D8
+def read_ppv_calendar(blob):
+    """PPV calendar of a Universe blob (decoded 2026-11-10 from Matthew adding AEW Revolution on May week 3):
+    48 bytes at CAL_OFF, one per week from January week 1 (index = month*4 + week-1); value = show-record index + 1
+    (0xFF = no PPV). Show records: SHOW_TABLE + i*SHOW_REC, name (custom names only) at +0, NUL-terminated.
+    Returns {'May_3': 'Aew Revolution', ...}; shows with a built-in (unstored) name are left out."""
+    cal = blob[CAL_OFF:CAL_OFF + 48]
+    if len(cal) < 48 or any(v != 0xFF and not 0 < v < 0x60 for v in cal): return {}
+    out = {}
+    for pos, v in enumerate(cal):
+        if v == 0xFF: continue
+        r = SHOW_TABLE + (v - 1) * SHOW_REC
+        name = blob[r:r + 48].split(b'\0')[0].decode('latin-1').strip()
+        if name and name.isprintable():
+            out[f'{MONTHS[pos // 4]}_{pos % 4 + 1}'] = ' '.join(w if w in ('NXT', 'AEW', 'TLC', 'III', 'II') else w.capitalize() for w in name.split())
+    return out
 
 DAY = {}
 def assign_seasons(order, bym, cfg):
