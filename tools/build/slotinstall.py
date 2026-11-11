@@ -30,7 +30,7 @@ Same conventions as Test Wrestler (handoff 012, notes/characters step 1j):
 - Backups: <file>.orig_charslot (first original only, never overwritten). Install log: slots\\installed.json.
 - render: the folder's .OODL (Oodle Tools output) if there is exactly one, else its .dds (stored, ~1 MB pac);
   several -> name one in spec field 6. Written as custom_typea and custom_typeb\0<id>00.pac (renderpac.py).
-  `--renders 511 512 ...` adds/replaces renders for already installed slots.
+  `--renders 511 512 514=Darby_Allin_New.dds ...` adds/replaces renders for installed slots.
 Titantrons are not built yet (.bk2 -> MVS pac writer still to do).
 """
 import argparse, glob, json, os, re, shutil, struct, sys
@@ -117,7 +117,7 @@ def find_render(folder, given):
     for ext in ('.OODL', '.dds'):
         c = sorted(p for p in glob.glob(os.path.join(folder, '*')) if p.lower().endswith(ext.lower()))
         if len(c) == 1: return c[0]
-        if len(c) > 1: die('%s: several %s files, name the render in spec field 6: %s' % (folder, ext, [os.path.basename(x) for x in c]))
+        if len(c) > 1: die('%s: several %s files, name the render (spec field 6, or --renders SLOT=file): %s' % (folder, ext, [os.path.basename(x) for x in c]))
     return None
 
 def write_renders(G, chunk, cid, src):
@@ -150,7 +150,7 @@ def main():
     ap.add_argument('--game', required=True); ap.add_argument('--pictures'); ap.add_argument('--spec')
     ap.add_argument('--list', action='store_true'); ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--remove', type=int, nargs='+', metavar='SLOT')
-    ap.add_argument('--renders', type=int, nargs='+', metavar='SLOT')
+    ap.add_argument('--renders', nargs='+', metavar='SLOT[=file]')
     a = ap.parse_args(); G = a.game
     sdir = os.path.join(G, 'slots'); os.makedirs(sdir, exist_ok=True)
     logp = os.path.join(sdir, 'installed.json')
@@ -192,11 +192,15 @@ def main():
         try: open(os.path.join(G, 'Chunk0.def'), 'r+b').close()
         except OSError: die('game files are locked: close the game first')
         backup(os.path.join(G, 'Chunk0.def')); chunk = open(os.path.join(G, 'Chunk0.def'), 'rb').read().split(b'\r\n')
-        for slot in a.renders:
-            info = next((x for x in inst if x['index'] == slot - 1), None)
-            if not info: die('slot %d is not in slots\\installed.json' % slot)
-            src = find_render(os.path.join(a.pictures, info['folder']), '')
+        todo = []
+        for arg in a.renders:                      # check everything first, then write
+            slot, _, given = arg.partition('=')
+            info = next((x for x in inst if x['index'] == int(slot) - 1), None)
+            if not info: die('slot %s is not in slots\\installed.json' % slot)
+            src = find_render(os.path.join(a.pictures, info['folder']), given)
             if not src: die('%s: no .OODL or .dds' % info['folder'])
+            todo.append((int(slot), info, src))
+        for slot, info, src in todo:
             write_renders(G, chunk, info['id'], src); info['render'] = os.path.basename(src)
             print('slot %d (id %d) %s: render from %s' % (slot, info['id'], info['name'], os.path.basename(src)))
         open(os.path.join(G, 'Chunk0.def'), 'wb').write(b'\r\n'.join(chunk)); json.dump(inst, open(logp, 'w'), indent=1)
