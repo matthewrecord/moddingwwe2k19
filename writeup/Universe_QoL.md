@@ -450,3 +450,12 @@
   bytes and +0x150 differ), so **DLL test9** copies the live MyWWE team table (rows 0-99) straight into the new
   Universe's team records right after the game's seeding (post-hook via return-address swap). No snapshot, no
   string-table entries needed (names are inline in these records). Built (65f3cdda...), staged; install on restart.
+- 2026-11-11 02:05 **Live team import (test9) confirmed working by Matthew** (log: "Universe teams <- live MyWWE team
+  table (68 teams, rows 0-99)").
+- 2026-11-11 02:10 **New issue: ratings.** Matthew's edited overall ratings (e.g. AJ Styles 71 in MyWWE) come into a
+  MyWWE-import Universe as the defaults (AJ 80+). First look (live reads, Universe 3 loaded): AJ (id 610, index 333)
+  pofo is identical in the MyWWE array (0x142840600) and the Universe-3 array (0x143208788); the moveset arrays
+  (0x142671078 vs 0x1432449E0, 0xD88 records) differ in 427 of 509 records across the whole record, so either the
+  Universe copy is a different/stale structure or ratings live elsewhere (candidate: Universe default data
+  `pac\universe\wunidata.pac`, by analogy with teams). Plan: controlled diff (change one wrestler's ratings in MyWWE,
+  live-read before/after) to locate the rating fields, then the same post-import copy as the teams.
