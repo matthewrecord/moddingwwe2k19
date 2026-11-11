@@ -53,3 +53,7 @@
 - **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe).
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
+
+## Reminder (Matthew, 2026-11-11)
+- Add **Dark Order**, **Private Party** and **The Kingdom** back into the MyWWE team list (missing from the game's 100
+  team slots). Then set their managers (ask Matthew for picks) live + in profile_pro.pac.
