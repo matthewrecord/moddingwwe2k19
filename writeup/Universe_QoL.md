@@ -305,3 +305,9 @@
   UNVSBODY000N from captures and (new) straight from SAVEDATA (`--save` added to tracker_auto.cmd / Update tracker.cmd),
   so all slots are tracked even before the new DLL is in. DLL test5 (md5 fa8f1d76...) captures all slots into one
   file; staged at `_moddingwwe2k19_builds\dinput8.dll.test5`, to install when the game is closed.
+- 2026-11-10 23:20 DLL test5 INSTALLED (fa8f1d76...; backup `_moddingwwe2k19_builds\dinput8.dll.test4_installed_bak`).
+  Universe 2 tracked (2 matches so far). PPV names: the save's show table (UNVSBODY000N 0x3c618, records 0x2D8 bytes,
+  names only for renamed shows: SMACKDOWN LIVE, AEW DYNAMITE, NXT TAKEOVER..., ROYAL RUMBLE, WRESTLEMANIA, ...) does
+  not expose month/week in an obvious field, and a 336-day calendar array was not found (pattern search). Shipped
+  instead: settings.tsv `ppv_<Month>_<week>` names (Backlash = May wk 1 from Matthew's calendar); PPV tab = every
+  Sunday show. Decoding the schedule from the save remains open. Match type ("kind" byte) still unnamed.

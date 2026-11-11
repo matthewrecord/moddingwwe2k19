@@ -252,6 +252,8 @@ show_thu	AEW Dynamite
 show_fri	
 show_sat	
 show_sun	PPV
+# Pay-per-view names by month and week (Sunday shows), e.g. ppv_May_1 = May week 1. Add yours.
+ppv_May_1	Backlash
 # Count offseason matches in the standings? (no = shown in results only)
 count_offseason	no
 # Seasons run May..April (new Universes start in May). First day of a season (112 = May week 1 Monday).
@@ -265,6 +267,7 @@ def load_settings(out):
     return dict(brands=[b.strip() for b in t.get('roster_brands', 'WWE,AEW,NXT').split(',') if b.strip()],
                 off=(int(t.get('offseason_first_day', 112)), int(t.get('offseason_last_day', 195))),
                 shows=[t.get('show_' + d, '').strip() for d in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')],
+                ppv={k[4:]: v.strip() for k, v in t.items() if k.startswith('ppv_') and v.strip()},
                 count_offseason=t.get('count_offseason', 'no').strip().lower() in ('yes', 'y', 'true', '1'),
                 drop=int(t.get('season_reset_drop', 100)), start=int(t.get('season_start_day', 112)))
 
@@ -274,7 +277,9 @@ def day_label(d, cfg):
     """Universe day -> ('May wk 2 Mon', 'RAW')."""
     if d is None: return '', ''
     m, w, dow = d // 28, (d % 28) // 7 + 1, d % 7
-    return f'{MONTHS[m % 12]} wk {w} {DOW[dow]}', cfg['shows'][dow]
+    name = cfg['shows'][dow]
+    if dow == 6: name = cfg.get('ppv', {}).get(f'{MONTHS[m % 12]}_{w}', name)
+    return f'{MONTHS[m % 12]} wk {w} {DOW[dow]}', name
 
 DAY = {}
 def assign_seasons(order, bym, cfg):
@@ -366,14 +371,15 @@ def write_html(rec, alltime, show_rec, cfg, season_no, season, offseason, reigns
         th += (f"<h3>{e(t)}</h3><table class=th><tr><th>Date</th><th class=l>Champion / defense</th><th>Show</th>"
                f"<th>Defenses</th><th>Lost to</th></tr>{rows}</table>")
     # tabs
-    shows_sorted = [sn for sn in cfg['shows'] if sn and sn in show_rec and sn != 'PPV'] + \
-                   [sn for sn in show_rec if sn not in cfg['shows'] and sn != 'PPV']
+    ppvn = set(cfg.get('ppv', {}).values()) | {cfg['shows'][6]}
+    shows_sorted = [sn for sn in cfg['shows'] if sn and sn in show_rec and sn not in ppvn] + \
+                   [sn for sn in show_rec if sn not in cfg['shows'] and sn not in ppvn]
     show_tabs = ''.join(f"<button class=sub-tab data-sub='show{i}'>{e(sn)}</button>" for i, sn in enumerate(shows_sorted))
     show_panes = ''.join(
         f"<div class=sub-pane id='show{i}'>{table(show_rec[sn].values(), f'st_show{i}')}"
         f"<h2>Results</h2>{cards([k for k in order if day_label(DAY.get(k), cfg)[1] == sn])}</div>"
         for i, sn in enumerate(shows_sorted))
-    ppv_keys = [k for k in order if day_label(DAY.get(k), cfg)[1] == cfg['shows'][6] and cfg['shows'][6]]
+    ppv_keys = [k for k in order if DAY.get(k) is not None and DAY[k] % 7 == 6]
     tabs = [('standings', f"Standings · season {season_no}"), ('shows', 'By show'), ('ppv', 'Pay-per-views'),
             ('titles', 'Title history'), ('results', 'All results'), ('alltime', 'All-time')]
     nav = ''.join(f"<button class=tab data-tab='{i}'>{e(n)}</button>" for i, n in tabs)
