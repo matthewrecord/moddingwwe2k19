@@ -239,3 +239,9 @@
 - 2026-11-10 22:29 (Matthew) The sheet/game mismatch is because tonight's Universe is a throwaway test; the
   Wrestlers sheet's Brand column reflects his real roster. => Sheet-based brand filter is valid for real use;
   save-based roster decoding drops to a nice-to-have (useful for test Universes / catching sheet drift).
+- 2026-11-10 22:33 **Universe calendar decoded** (Matthew's calendar screenshot): 12 months x 4 weeks x 7 days, day 0 =
+  January week 1 Monday. Day 119 = May wk 2 Mon (RAW), day 120 = May wk 2 Tue (SmackDown Live, current). May = 112-139,
+  offseason May-July = 112-195 (new default). Show names from weekday (settings.tsv show_mon..show_sun: RAW,
+  SmackDown Live, NXT, AEW Dynamite, Sun = PPV). history.csv gains show, date ("May wk 2 Mon"), season, offseason.
+  Tonight's test shows are correctly flagged OFFSEASON, so the standings tables are empty by design
+  (count_offseason no); they still appear in results/history.

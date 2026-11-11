@@ -140,13 +140,13 @@ def build_reports(hist, out):
     for h in hist:
         if h['match_key'] not in bym: bym[h['match_key']] = []; order.append(h['match_key'])
         bym[h['match_key']].append(h)
-    write_matches(order, bym, out)
     cfg = load_settings(out)
     rpath = os.path.join(out, 'roster.tsv')
     if not os.path.exists(rpath):
         open(rpath, 'w', encoding='utf-8').write('# person<TAB>brand: overrides the Brand column of the Wrestlers sheet for the standings.\n# Use a brand from settings.tsv (WWE, AEW, NXT) to put someone on a roster, or "none" to list them under Not on a roster.\n')
     override = load_tsv(rpath)
     season, offseason = assign_seasons(order, bym, cfg)
+    write_matches(order, bym, out, cfg, season, offseason)
     season_now = max(season.values() or [1])
     def tally(keys):
         rec = {}
@@ -212,9 +212,19 @@ DEFAULT_SETTINGS = """# Tracker settings (edit freely; one 'key<TAB>value' per l
 # Brands shown in the standings (Brand column of the Wrestlers sheet). Everyone else (Inactive, Legends, enhancement
 # talent, tournament entrants, people not in the sheet) is listed under 'Not on a roster'.
 roster_brands	WWE,AEW,NXT
-# Offseason: Universe days in this range (inclusive) are dummy shows. Day 1 = 1 January (to be confirmed).
-offseason_first_day	121
-offseason_last_day	212
+# Universe calendar: 12 months x 4 weeks x 7 days; day 0 = January week 1 Monday (confirmed 2026-11-10:
+# day 119 = May week 2 Monday = RAW, day 120 = May week 2 Tuesday = SmackDown). May = days 112-139.
+# Offseason: Universe days in this range (inclusive) are dummy shows. Default May-July = 112-195.
+offseason_first_day	112
+offseason_last_day	195
+# Weekly show by weekday for show names (blank = none). Sunday = pay-per-view.
+show_mon	RAW
+show_tue	SmackDown Live
+show_wed	NXT
+show_thu	AEW Dynamite
+show_fri	
+show_sat	
+show_sun	PPV
 # Count offseason matches in the standings? (no = shown in results only)
 count_offseason	no
 # A new season starts when the Universe day goes back by more than this many days (the yearly reset).
@@ -226,10 +236,20 @@ def load_settings(out):
     if not os.path.exists(p): open(p, 'w', encoding='utf-8').write(DEFAULT_SETTINGS)
     t = load_tsv(p)
     return dict(brands=[b.strip() for b in t.get('roster_brands', 'WWE,AEW,NXT').split(',') if b.strip()],
-                off=(int(t.get('offseason_first_day', 121)), int(t.get('offseason_last_day', 212))),
+                off=(int(t.get('offseason_first_day', 112)), int(t.get('offseason_last_day', 195))),
+                shows=[t.get('show_' + d, '').strip() for d in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')],
                 count_offseason=t.get('count_offseason', 'no').strip().lower() in ('yes', 'y', 'true', '1'),
                 drop=int(t.get('season_reset_drop', 100)))
 
+MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+def day_label(d, cfg):
+    """Universe day -> ('May wk 2 Mon', 'RAW')."""
+    if d is None: return '', ''
+    m, w, dow = d // 28, (d % 28) // 7 + 1, d % 7
+    return f'{MONTHS[m % 12]} wk {w} {DOW[dow]}', cfg['shows'][dow]
+
+DAY = {}
 def assign_seasons(order, bym, cfg):
     """Season number per match (increments when the Universe day jumps back = yearly reset) and offseason flag.
     Cards without a day (some current-show cards) take the day of the other cards captured with them."""
@@ -242,17 +262,18 @@ def assign_seasons(order, bym, cfg):
         h0 = bym[k][0]; d = int(h0['universe_day']) if str(h0['universe_day']).isdigit() else capday.get(h0['capture'])
         if d is not None and last is not None and d < last - cfg['drop']: s += 1
         if d is not None: last = d
-        season[k] = s; off[k] = d is not None and cfg['off'][0] <= d <= cfg['off'][1]
+        season[k] = s; off[k] = d is not None and cfg['off'][0] <= d <= cfg['off'][1]; DAY[k] = d
     return season, off
 
-def write_matches(order, bym, out):
+def write_matches(order, bym, out, cfg, season, offseason):
     """history.csv: one row per match (the readable history)."""
-    cols = ['show', 'captured', 'day', 'title', 'winners', 'losers', 'pinfall_by', 'pinned', 'winner_managers', 'loser_managers']
+    cols = ['show', 'date', 'season', 'offseason', 'captured', 'day', 'title', 'winners', 'losers', 'pinfall_by', 'pinned', 'winner_managers', 'loser_managers']
     with wopen(os.path.join(out, 'history.csv'), encoding='utf-8-sig', newline='') as fh:
         w = csv.DictWriter(fh, cols); w.writeheader()
         for k in order:
             hs = bym[k]; h0 = hs[0]
-            w.writerow(dict(show=h0['capture'], captured=h0['captured_at'][:16].replace('T', ' '), day=h0['universe_day'],
+            dl, sn = day_label(DAY.get(k), cfg)
+            w.writerow(dict(show=sn, date=dl, season=season[k], offseason='yes' if offseason[k] else '', captured=h0['captured_at'][:16].replace('T', ' '), day=h0['universe_day'],
                             title=h0['title'], winners=' & '.join(h['person'] for h in _who(hs, 'W')),
                             losers=' & '.join(h['person'] for h in _who(hs, 'L')),
                             pinfall_by=' & '.join(h['person'] for h in _who(hs, 'W') if str(h['pinfall']) == '1'),
@@ -291,7 +312,8 @@ def write_html(rec, alltime, cfg, season_no, season, offseason, reigns, order, b
     for k in reversed(order):
         hs = bym[k]; h0 = hs[0]
         if h0['capture'] != last:
-            res.append(f"<h3>Show {h0['capture']} <small>season {season[k]}{' · OFFSEASON' if offseason[k] else ''} · {e(h0['captured_at'][:16].replace('T', ' '))}"
+            dl, sn = day_label(DAY.get(k), cfg)
+            res.append(f"<h3>{e(sn or 'Show')} <small>{e(dl)} · season {season[k]}{' · OFFSEASON' if offseason[k] else ''} · {e(h0['captured_at'][:16].replace('T', ' '))}"
                        f"{' · day ' + str(h0['universe_day']) if h0['universe_day'] else ''}</small></h3>"); last = h0['capture']
         def side(r):
             ws = ' & '.join(e(h['person']) + (' <small>(pin)</small>' if str(h['pinfall']) == '1' and r == 'W' else '')
