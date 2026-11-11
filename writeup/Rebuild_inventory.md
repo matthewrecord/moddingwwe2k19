@@ -75,3 +75,28 @@ names, dates, the notes and spreadsheets; individual packs were not opened) plus
 - Plan: read-only exporter that packages every installed wrestler from the game (models, render, trons, name) and
   the save (pofo, moveset) into one normalized package per wrestler + a roster table; then an importer for Genesis
   slots once their layout is known.
+
+## G. What Genesis "Character Slot Expansion (500)" did (installed 13:32, diffed against the snapshot manifest)
+- **It is an exe patch, not a DLL.** `WWE2K19_x64.exe` 41,065,640 -> 43,078,144 bytes: two new sections `.attire`
+  (249 bytes) and `.chslots` (2,011,400 bytes at VA 0x14367E000...), 257 bytes changed in the original image in 37
+  runs (header; file offsets 0x20b614, 0x24a13b-0x24aa10, 0x49e52d-0x49e8b0, 0x4c6a30, 0x4c8bd0, 0x4c8cd0,
+  0x9649a0-0x964b70, 0xbf1508-0xbfc8fe, 0x190dd81-0x190e8d8). Original exe kept by Genesis
+  (`genesis_backups\Character_Slot_Expansion_(500)`) and in our snapshot.
+- Replaced (Genesis backed each up): PerfectPlextra `profile_dat.pac` 294,912 -> 514,048, `profile_pro.pac`
+  671,744 -> 1,185,792 (**our stale-manager clear in profile_pro is gone from the live file**), `profile_mvs.pac`
+  1,314,816 -> 2,330,624; `mods\Universal Alternate Attire Unlock\pac\root\misc01_start_p30.pac` 77,824 -> 229,376.
+  Added `pac\ch\ch93702.pac`, `ch93802.pac` (49 MB each), marker in `genesis_mods\`. chunk0.def regenerated (same
+  size), Chunk0.arc cleared. Log: "installed a 514,048-byte profile_dat.pac (CAWLESS's is 294,912); incompatible,
+  leaving the new file in place" = the CAWLESS overlay is superseded.
+- **Slot map published by Genesis**: `A - Genesis\_internal\DATABASE\ROSTER\expansion\All_500_Slots.json`: 500
+  records {character_id, physical_index, pofo_address, moveset_address, sizes, selectable_by_default}; physical
+  index 509-1008; ids = the unused ids from 109 up to 1007 plus 1023 (9 ids >= 1000); pofo records at 0x200 spacing
+  from 0x143682000, movesets 0xD90 apart; 2 selectable by default (937, 938 = the two shipped models). Same folder:
+  "WWE 2K19 Memory Sheet" xlsx for MyWWE and Universe1-3, data.xml.
+- **Collision with our work:** our 6 test slots use index 509-514 and ids 937-942, all inside Genesis's map; our DLL
+  patches several of the same code sites. `dinput8.dll` (test12) was not touched by Genesis; **renamed 13:36 to
+  `dinput8.dll.test12_disabled_for_genesis`** so the first launch tests Genesis alone. Consequence while disabled:
+  no Universe fixes / manager sync / overflow slots / team import from our DLL. The 589 music slots are data files
+  and should not depend on the DLL (to confirm in game).
+- Next: Matthew launches (no saving), reports; then a DLL build without the slot code and with its exe checks
+  matched to the Genesis exe (sha256 551c1e34...).
