@@ -535,3 +535,14 @@
   Backup `profile_pro.pac.orig_managers`. DLL test11 (poke_always) shelved; test10 stays installed.
 - Open: in-game manager edits go to the save copies, but the panel table is reloaded from this pac each launch, so
   an edit made in-game may not survive a restart in the panel. Check after the pac fix.
+- 03:45 Matthew: in-game manager edits don't survive a restart (panel table reloads from profile_pro.pac). Agreed:
+  DLL sync save -> panel table at launch (TODO, one DLL). Gender = pofo +0x24 (1 = female).
+- Team managers (Matthew's rules: 2-man teams = each other; team with a woman = she manages each man; 3+ men =
+  lowest overall manages the rest, 2nd lowest manages the lowest). Applied for 88 wrestlers (2-person teams incl.
+  2 women = each other; first team wins for multi-team members): live poke into the 3 save copies + panel table
+  (336 writes), and written into profile_pro.pac slot 0 (80 records; backup `.before_teammgrs`). Log:
+  notes/characters/team_managers_2026-11-11.log. CAW ids 10, 11, 115, 160 have no pofo record here (skipped).
+- **Pending: 25 teams of 3+ men** need Overall. Overall is NOT stored (not in pofo, not cached in memory; brute
+  search by index/id/strides found nothing); computed at display time. Watchpoints so far only hit copies
+  (0x140d26fa3 copies pofo +0x120..+0x151 into the panel struct; 0x140d27ca1 copies it again). Next: watch the panel
+  struct's copy (0x15643a/0x15b03a this session) for a reader that is not a memcpy -> overall function.
