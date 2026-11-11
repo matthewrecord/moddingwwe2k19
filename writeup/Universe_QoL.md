@@ -499,3 +499,4 @@
   `_moddingwwe2k19_builds\SAVEDATA.before_manager_fix`.
 - Main team: not saved and not in the team member lists; watchpoint on the edit-screen field caught nothing when
   opening Trent / A-Kid (that buffer is reused only by the edit flow). Open.
+- 02:47 **Manager fix applied and saved.** Save read back: all 3 copies now hold only the 11 kept links (Brie/Nikki, Owens/Zayn, Mickie/Alexa, Liv/Sarah, Hanson/Rowe, Diesel->HBK). Existing Universes keep their own copies (made at creation); new Universes inherit the clean data.
