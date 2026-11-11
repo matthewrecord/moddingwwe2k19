@@ -44,6 +44,8 @@ def load_idnames(cct):
         names.setdefault(i, n)
     return names
 
+BRANDS = {}                                           # person -> Brand column of the Wrestlers sheet
+
 def load_people(xlsx, names):
     people = {}
     if not xlsx or not os.path.exists(xlsx): return people
@@ -53,12 +55,14 @@ def load_people(xlsx, names):
     try: cw, cs = hdr.index('Wrestler'), hdr.index('Character Slot')
     except ValueError: return people
     cg = hdr.index('Gen') if 'Gen' in hdr else None
+    cb = hdr.index('Brand') if 'Brand' in hdr else None
     byname = {}
     for i, n in names.items(): byname.setdefault(n.lower(), i)
     for r in rows[1:]:
         w, s = r[cw], r[cs]
         if not w or (cg is not None and str(r[cg] or '').strip() not in ('M', 'F')): continue   # skip non-wrestler rows (side tables)
         s = str(s or '').strip()
+        if cb is not None: BRANDS[str(w).strip()] = str(r[cb] or '').strip()
         if s[:3].isdigit() or s[:1].isdigit():
             try: people[int(s.split('-')[0].strip())] = str(w).strip(); continue
             except ValueError: pass
@@ -136,24 +140,39 @@ def build_reports(hist, out):
     for h in hist:
         if h['match_key'] not in bym: bym[h['match_key']] = []; order.append(h['match_key'])
         bym[h['match_key']].append(h)
-    rec = {}
     write_matches(order, bym, out)
-    for k in order:
-        for h in bym[k]:
-            if h['role'] != 'wrestler': continue
-            r = rec.setdefault(h['person'], dict(person=h['person'], matches=0, W=0, L=0, pins_scored=0, pinned=0,
-                                                 title_matches=0, streak='', form=''))
-            r['matches'] += 1; r[h['result']] += 1
-            if h['pinfall'] == '1' or h['pinfall'] == 1:
-                if h['result'] == 'W': r['pins_scored'] += 1
-                else: r['pinned'] += 1
-            if h['title_id'] != '': r['title_matches'] += 1
-            r['form'] = (r['form'] + h['result'])[-5:]
-    for r in rec.values():
-        f = r['form']; n = len(f) - len(f.rstrip(f[-1])) if f else 0
-        r['streak'] = f'{f[-1]}{n}' if f else ''
+    cfg = load_settings(out)
+    rpath = os.path.join(out, 'roster.tsv')
+    if not os.path.exists(rpath):
+        open(rpath, 'w', encoding='utf-8').write('# person<TAB>brand: overrides the Brand column of the Wrestlers sheet for the standings.\n# Use a brand from settings.tsv (WWE, AEW, NXT) to put someone on a roster, or "none" to list them under Not on a roster.\n')
+    override = load_tsv(rpath)
+    season, offseason = assign_seasons(order, bym, cfg)
+    season_now = max(season.values() or [1])
+    def tally(keys):
+        rec = {}
+        for k in keys:
+            for h in bym[k]:
+                if h['role'] != 'wrestler': continue
+                r = rec.setdefault(h['person'], dict(person=h['person'], brand=override.get(h['person'], BRANDS.get(h['person'], '')).strip(), matches=0, W=0, L=0,
+                                                     pins_scored=0, pinned=0, title_matches=0, streak='', form=''))
+                r['matches'] += 1; r[h['result']] += 1
+                if str(h['pinfall']) == '1':
+                    if h['result'] == 'W': r['pins_scored'] += 1
+                    else: r['pinned'] += 1
+                if h['title_id'] != '': r['title_matches'] += 1
+                r['form'] = (r['form'] + h['result'])[-5:]
+        for r in rec.values():
+            f = r['form']; n = len(f) - len(f.rstrip(f[-1])) if f else 0
+            r['streak'] = f'{f[-1]}{n}' if f else ''
+        return rec
+    counted = [k for k in order if not offseason[k] or cfg['count_offseason']]
+    rec = tally([k for k in counted if season[k] == season_now])          # current season
+    alltime = tally(counted)
+    with wopen(os.path.join(out, 'records_all_time.csv'), encoding='utf-8-sig', newline='') as fh:
+        w = csv.DictWriter(fh, ['person', 'brand', 'matches', 'W', 'L', 'pins_scored', 'pinned', 'title_matches', 'streak', 'form'])
+        w.writeheader(); w.writerows(sorted(alltime.values(), key=lambda r: (-r['W'], r['L'], r['person'])))
     with wopen(os.path.join(out, 'records.csv'), encoding='utf-8-sig', newline='') as fh:
-        w = csv.DictWriter(fh, ['person', 'matches', 'W', 'L', 'pins_scored', 'pinned', 'title_matches', 'streak', 'form'])
+        w = csv.DictWriter(fh, ['person', 'brand', 'matches', 'W', 'L', 'pins_scored', 'pinned', 'title_matches', 'streak', 'form'])
         w.writeheader(); w.writerows(sorted(rec.values(), key=lambda r: (-r['W'], r['L'], r['person'])))
     # title reigns: the winning side of a title match holds the title afterwards
     champ, reigns = {}, []
@@ -174,7 +193,7 @@ def build_reports(hist, out):
         w = csv.DictWriter(fh, ['title', 'champion', 'won_from', 'won_capture', 'won_day', 'defenses', 'lost_capture', 'lost_to'],
                            extrasaction='ignore')
         w.writeheader(); w.writerows(reigns)
-    write_html(rec, reigns, order, bym, out)
+    write_html(rec, alltime, cfg, season_now, season, offseason, reigns, order, bym, out)
     with wopen(os.path.join(out, 'log.md')) as fh:
         fh.write('# Universe match log\n\n'); last = None
         for k in order:
@@ -188,6 +207,43 @@ def build_reports(hist, out):
 
 def _who(hs, res, role='wrestler'):
     return [h for h in hs if h['result'] == res and h['role'] == role]
+
+DEFAULT_SETTINGS = """# Tracker settings (edit freely; one 'key<TAB>value' per line)
+# Brands shown in the standings (Brand column of the Wrestlers sheet). Everyone else (Inactive, Legends, enhancement
+# talent, tournament entrants, people not in the sheet) is listed under 'Not on a roster'.
+roster_brands	WWE,AEW,NXT
+# Offseason: Universe days in this range (inclusive) are dummy shows. Day 1 = 1 January (to be confirmed).
+offseason_first_day	121
+offseason_last_day	212
+# Count offseason matches in the standings? (no = shown in results only)
+count_offseason	no
+# A new season starts when the Universe day goes back by more than this many days (the yearly reset).
+season_reset_drop	100
+"""
+
+def load_settings(out):
+    p = os.path.join(out, 'settings.tsv')
+    if not os.path.exists(p): open(p, 'w', encoding='utf-8').write(DEFAULT_SETTINGS)
+    t = load_tsv(p)
+    return dict(brands=[b.strip() for b in t.get('roster_brands', 'WWE,AEW,NXT').split(',') if b.strip()],
+                off=(int(t.get('offseason_first_day', 121)), int(t.get('offseason_last_day', 212))),
+                count_offseason=t.get('count_offseason', 'no').strip().lower() in ('yes', 'y', 'true', '1'),
+                drop=int(t.get('season_reset_drop', 100)))
+
+def assign_seasons(order, bym, cfg):
+    """Season number per match (increments when the Universe day jumps back = yearly reset) and offseason flag.
+    Cards without a day (some current-show cards) take the day of the other cards captured with them."""
+    capday = {}
+    for k in order:
+        h0 = bym[k][0]
+        if str(h0['universe_day']).isdigit(): capday[h0['capture']] = max(capday.get(h0['capture'], 0), int(h0['universe_day']))
+    season, off, s, last = {}, {}, 1, None
+    for k in order:
+        h0 = bym[k][0]; d = int(h0['universe_day']) if str(h0['universe_day']).isdigit() else capday.get(h0['capture'])
+        if d is not None and last is not None and d < last - cfg['drop']: s += 1
+        if d is not None: last = d
+        season[k] = s; off[k] = d is not None and cfg['off'][0] <= d <= cfg['off'][1]
+    return season, off
 
 def write_matches(order, bym, out):
     """history.csv: one row per match (the readable history)."""
@@ -204,16 +260,25 @@ def write_matches(order, bym, out):
                             winner_managers=' & '.join(h['person'] for h in _who(hs, 'W', 'manager')),
                             loser_managers=' & '.join(h['person'] for h in _who(hs, 'L', 'manager'))))
 
-def write_html(rec, reigns, order, bym, out):
+def write_html(rec, alltime, cfg, season_no, season, offseason, reigns, order, bym, out):
     """standings.html: a self-contained page (open in any browser), rebuilt on every run."""
     import html as H
     e = H.escape
-    rows = sorted(rec.values(), key=lambda r: (-(r['W'] / r['matches'] if r['matches'] else 0), -r['W'], r['L'], r['person']))
     def form(f): return ''.join(f'<span class="f {c}">{c}</span>' for c in f)
-    st = ''.join(f"<tr><td class=n>{i}</td><td class=p>{e(r['person'])}</td><td>{r['W']}</td><td>{r['L']}</td>"
-                 f"<td>{(100 * r['W'] / r['matches']):.0f}%</td><td>{r['pins_scored']}</td><td>{r['pinned']}</td>"
-                 f"<td>{r['title_matches']}</td><td><b>{e(r['streak'])}</b></td><td>{form(r['form'])}</td></tr>"
-                 for i, r in enumerate(rows, 1))
+    HDR = ('<tr><th>#</th><th style="text-align:left">Superstar</th>{b}<th>W</th><th>L</th><th>Win %</th><th>Pins</th>'
+           '<th>Pinned</th><th>Title matches</th><th>Streak</th><th>Last 5</th></tr>')
+    def table(rs, brandcol=False):
+        rs = sorted(rs, key=lambda r: (-(r['W'] / r['matches'] if r['matches'] else 0), -r['W'], r['L'], r['person']))
+        body = ''.join(f"<tr><td class=n>{i}</td><td class=p>{e(r['person'])}</td>"
+                       + (f"<td>{e(r['brand'] or '—')}</td>" if brandcol else '')
+                       + f"<td>{r['W']}</td><td>{r['L']}</td><td>{(100 * r['W'] / r['matches']):.0f}%</td><td>{r['pins_scored']}</td>"
+                         f"<td>{r['pinned']}</td><td>{r['title_matches']}</td><td><b>{e(r['streak'])}</b></td><td>{form(r['form'])}</td></tr>"
+                       for i, r in enumerate(rs, 1))
+        return '<table>' + HDR.format(b='<th>Brand</th>' if brandcol else '') + (body or '<tr><td colspan=11 class=sub>No matches yet.</td></tr>') + '</table>'
+    st = ''.join(f"<h3>{e(b)}</h3>" + table([r for r in rec.values() if r['brand'] == b]) for b in cfg['brands'])
+    others = [r for r in rec.values() if r['brand'] not in cfg['brands']]
+    if others: st += f"<details><summary>Not on a roster ({len(others)}): enhancement talent, tournaments, inactive</summary>{table(others, True)}</details>"
+    at = table(list(alltime.values()), True)
     cur = {}
     for rg in reigns: cur[rg['title']] = rg
     champs = ''.join(f"<div class=belt><div class=t>{e(t)}</div><div class=c>{e(rg['champion'])}</div>"
@@ -226,7 +291,7 @@ def write_html(rec, reigns, order, bym, out):
     for k in reversed(order):
         hs = bym[k]; h0 = hs[0]
         if h0['capture'] != last:
-            res.append(f"<h3>Show {h0['capture']} <small>{e(h0['captured_at'][:16].replace('T', ' '))}"
+            res.append(f"<h3>Show {h0['capture']} <small>season {season[k]}{' · OFFSEASON' if offseason[k] else ''} · {e(h0['captured_at'][:16].replace('T', ' '))}"
                        f"{' · day ' + str(h0['universe_day']) if h0['universe_day'] else ''}</small></h3>"); last = h0['capture']
         def side(r):
             ws = ' & '.join(e(h['person']) + (' <small>(pin)</small>' if str(h['pinfall']) == '1' and r == 'W' else '')
@@ -246,10 +311,12 @@ tr:hover td{{background:#1a1f26}} .f{{display:inline-block;width:18px;margin:0 1
 .belt{{background:linear-gradient(135deg,#2a2410,#17140a);border:1px solid #6b5a1e;border-radius:10px;padding:14px 18px;min-width:220px}}
 .belt .t{{color:#d4af37;font-size:12px;text-transform:uppercase;letter-spacing:1px}} .belt .c{{font-size:20px;font-weight:700;margin:4px 0}} .belt .d{{color:#a99f80;font-size:12px}}
 .m{{padding:5px 0;border-bottom:1px solid #1d2229;max-width:1100px}} .def{{color:#8a8f98;margin:0 6px}}
+details{{margin:10px 0}} summary{{cursor:pointer;color:#aab}}
 .tt{{margin-left:8px;font-size:11px;background:#6b5a1e;color:#fff;padding:2px 7px;border-radius:9px}}
 </style></head><body><h1>Universe standings</h1><div class=sub>{len(order)} matches recorded · updated {datetime.datetime.now():%Y-%m-%d %H:%M}</div>
 <h2>Champions</h2><div class=belts>{champs or '<span class=sub>No title matches yet.</span>'}</div>
-<h2>Standings</h2><table><tr><th>#</th><th style="text-align:left">Superstar</th><th>W</th><th>L</th><th>Win %</th><th>Pins</th><th>Pinned</th><th>Title matches</th><th>Streak</th><th>Last 5</th></tr>{st}</table>
+<h2>Standings · season {season_no}{'' if cfg['count_offseason'] else ' (offseason not counted)'}</h2>{st}
+<h2>All-time records</h2><details><summary>Show all-time table ({len(alltime)} superstars)</summary>{at}</details>
 <h2>Title history</h2><table><tr><th>Title</th><th style="text-align:left">Champion</th><th>Won from</th><th>Won</th><th>Defenses</th><th>Lost to</th></tr>{th or '<tr><td colspan=6>—</td></tr>'}</table>
 <h2>Results</h2>{''.join(res)}</body></html>"""
     with wopen(os.path.join(out, 'standings.html')) as fh: fh.write(page)

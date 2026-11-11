@@ -227,3 +227,12 @@
   worked: 14 matches in history.
   Show names: the Universe blob holds the show list (SMACKDOWN LIVE, AEW DYNAMITE, PPV names) and cards sit in
   separate blocks (0x58500, 0x66400, 0x6ae00, 0x6f880, 0x195xxx) -> mapping block -> show is the next decode item.
+- 2026-11-10 23:55 Tracker v1.2 (Matthew: filter non-roster talent; seasons with offseason; all-time separate):
+  * Standings grouped by brand (settings.tsv `roster_brands`, default WWE,AEW,NXT from the Wrestlers sheet's Brand
+    column); everyone else under a collapsed "Not on a roster". `roster.tsv` (person<TAB>brand|none) overrides.
+    Caveat: the sheet's Brand column is out of date vs the game (e.g. Brock Lesnar "Inactive" but on a show), so the
+    real fix is reading rosters from the save. Located: id lists (0x400 = empty) at UNVSBODY0001 0x38bee-0x3abf0
+    (show/brand roster or rivalry lists, not yet decoded).
+  * Seasons: new season when the Universe day jumps back > season_reset_drop (100) days; offseason = days
+    offseason_first_day..last_day (121-212 = May-July if day 1 = 1 Jan; unconfirmed); `count_offseason no` keeps
+    offseason dummy shows out of all standings. Pages: current-season standings + all-time table (records_all_time.csv).
