@@ -1,4 +1,4 @@
-"""Install wrestlers from the pictures folder into overflow slots (profile index 509+, "slot 510+"), for the
+r"""Install wrestlers from the pictures folder into overflow slots (profile index 509+, "slot 510+"), for the
 tools/slots proxy dinput8.dll. Runs on Matthew's PC (plain Python 3, no packages); the game must be closed.
 
   python3 slotinstall.py --game "<WWE 2K19 folder>" --pictures "<pictures WWE 2K19 folder>" --spec slots_to_add.txt
@@ -14,9 +14,12 @@ a list); models = every ch<5 digits>*.pac in the folder (EPK8 format; HSPC-forma
 attire = the last two digits of the ch number (ch14502 -> 02); two files with the same attire -> name them.
 
 Same conventions as Test Wrestler (handoff 012, notes/characters step 1j):
-- slot index: next free from 509 up (Matthew's "slot 510" = index 509); character id: next free from the
-  PerfectPlextra placeholder ids 937-999 (their profile rows sit beyond the 509 cap and are never loaded) that no
-  slot and no CCT asset uses; name string id = 39370 + (id - 937).
+- slot index: next free from 509 up (Matthew's "slot 510" = index 509).
+- character id: checked on every run. Free = not the id of any profile row (the PerfectPlextra rows 938-949 are
+  allowed: they sit beyond the 509 cap and never load; 950-999 are Matthew's converted CAW slots 50-99 and LIVE),
+  no model in pac\ch or mods\CCT, no CCT line in Chunk0.def, no unlockable (HID, misc01_start) for it, no slot.
+  Order: 938-949 first (next to Test Wrestler's 937), then ascending (109, 110, 114, ...; 381 free on 2026-11-10).
+- name string id = 39370 + (id - 937) (checked free).
 - slots\\IIII_DDDD_SSSS.pofo/.moveset (SSSS = the pofo's original id: its 40-byte per-slot record is cloned).
 - pofo: +0 id, +2 index, name string ids (every name field equal to +0x08) -> the new name string.
 - models -> mods\\CCT\\characters\\pac\\ch\\ch<id><att>.pac with the internal name at 0x80C set to 000<id><att>.
@@ -26,14 +29,15 @@ Renders and Titantrons are not built yet (needs pac writers from .dds/.bk2): the
 """
 import argparse, glob, json, os, re, shutil, struct, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path[:0] = [HERE, os.path.join(HERE, '..', 'lib')]
+sys.path[:0] = [HERE, os.path.join(HERE, '..', 'lib'), os.path.join(HERE, '..', 'audio')]
 from yukes import HSPC, SHDC, string_table_parse, string_table_build
+from bpe import expand
 
 STR = 'mods/SuperString/pac/string/win/string_win.pac'
 PROF = 'mods/PerfectPlextra/pac/profile/profile_dat.pac'
 CH_DIR = 'mods/CCT/characters/pac/ch'
 NAME_OFF = 0x80C
-ID_POOL = range(937, 1000)
+DEAD_OK = set(range(938, 950))
 def sid_for(cid): return 39370 + (cid - 937)
 
 def die(msg): print('STOPPED, nothing written:', msg); sys.exit(1)
@@ -76,6 +80,26 @@ def models_for(folder, given):
         out[att] = p
     return out, skipped
 
+def dec(b):
+    if b[:4] != b'BPE ': return b
+    h = struct.unpack('<4I', b[4:20]); return expand(b, 16, h[2])[0]
+
+def id_pool(game, slots):
+    """Ids safe for a new character: see the module docstring."""
+    used = used_ids(game, slots)
+    for f in SHDC(HSPC(open(os.path.join(game, PROF), 'rb').read()).files[0]['data']).files:
+        cid = struct.unpack_from('<H', dec(f['data']), 4)[0]
+        if cid not in DEAD_OK or f['id'] < 509: used.add(cid)
+    for d in ('pac/ch', CH_DIR):
+        for fn in os.listdir(os.path.join(game, d)):
+            m = re.match(r'ch(\d{3})\d{2}', fn.lower())
+            if m: used.add(int(m.group(1)))
+    mp = os.path.join(game, 'pac/root/misc01_start.pac')
+    hid = [dec(f['data']) for f in SHDC(HSPC(open(mp, 'rb').read()).files[0]['data']).files if f['id'] == 6][0]
+    assert hid[:4] == b'HID\x00'
+    for i in range(struct.unpack_from('<I', hid, 4)[0]): used.add(struct.unpack_from('<I', hid, 8 + 32 * i + 0x10)[0])
+    return [i for i in sorted(DEAD_OK) if i not in used] + [i for i in range(100, 1000) if i not in used and i not in DEAD_OK]
+
 def used_ids(game, slots):
     used = {s['id'] for s in slots}
     for ln in open(os.path.join(game, 'Chunk0.def'), 'rb').read().split(b'\r\n'):
@@ -115,7 +139,7 @@ def main():
     except OSError: die('game files are locked: close the game first')
 
     spec = parse_spec(a.spec)
-    used = used_ids(G, present); used_idx = {s['index'] for s in present}
+    pool = id_pool(G, present); used_idx = {s['index'] for s in present}; used = set()
     sp = open(os.path.join(G, STR), 'rb').read(); H = HSPC(sp); S = SHDC(H.files[0]['data'])
     pre, ents = string_table_parse(S.files[0]['data']); strings = dict(ents)
     chunk = open(os.path.join(G, 'Chunk0.def'), 'rb').read().split(b'\r\n')
@@ -128,9 +152,9 @@ def main():
         if len(pofo) != 0x1E4 or len(mov) != 0xD88: die('%s: pofo/moveset sizes %d/%d' % (w['folder'], len(pofo), len(mov)))
         models, skipped = models_for(folder, w['models'])
         if not models: die('%s: no usable model pac (skipped: %s)' % (w['folder'], skipped))
-        cid = next((i for i in ID_POOL if i not in used), None)
+        cid = next((i for i in pool if i not in used), None)
         idx = next((i for i in range(509, 1024) if i not in used_idx), None)
-        if cid is None: die('no free id left in 937-999')
+        if cid is None: die('no free character id left')
         sid = sid_for(cid)
         if sid in strings: die('name string %d already used' % sid)
         used.add(cid); used_idx.add(idx)
