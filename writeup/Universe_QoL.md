@@ -397,3 +397,13 @@
   Names: not found as strings in SuperString string_win.pac file 0; the entry carries no text -> name source TBD.
   Experiment 1 (`tools/universe/stable_test1.py`): #DIY (691+461) in entry 23, copied from THE REVIVAL entry ->
   shows which name the game gives it. Built: wunistable_test1.pac md5 08d20ecc... (original eeab1af0...).
+- 2026-11-11 01:10 **Experiment 1 result (Matthew): the #DIY entry appeared in the new Universe as "The Revival"**
+  -> the file approach works, and names come from **+0x100 (full) / +0x104 (short) u32 string ids** (copied from
+  THE REVIVAL = 16035/16135). Team name strings live in SuperString string_win.pac (HSPC > SHDC > table) at
+  16000+n / 16100+n (e.g. #DIY 16051, THE DELETERS OF WORLDS 16060/16084, THE SHIELD 16001).
+  **Team import tool `tools/universe/teamimport.py`**: vanilla wunistable.pac (from .orig_teams) + MyWWE team dump ->
+  new wunistable.pac + string_win.pac. Run 1 (teamimport_v1): **63 teams added** into entries 23, 25-86; names reuse
+  existing strings where the text exists (#DIY 16051, THE SHIELD 16001, AMERICAN ALPHA 16036, WYATT FAMILY 16075,
+  WAR RAIDERS 16085, EVOLUTION 16003), 57 new strings 39600-39656. Template per size: 2 -> Revival, 3 -> Titus
+  Worldwide, 4 -> Undisputed Era. Notes: TABERNAK DE TEAM uses CAW slots 3/1; TIME SPLITTERS includes overflow id 937
+  (Test Wrestler 1). Outputs verified by re-parsing (27,915 strings vs 27,858). Install waits for the game to close.
