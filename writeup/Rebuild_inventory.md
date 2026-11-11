@@ -100,3 +100,10 @@ names, dates, the notes and spreadsheets; individual packs were not opened) plus
   and should not depend on the DLL (to confirm in game).
 - Next: Matthew launches (no saving), reports; then a DLL build without the slot code and with its exe checks
   matched to the Genesis exe (sha256 551c1e34...).
+
+## H. Genesis "Universe Match Table Expansion" (installed 13:42, diffed against `snapshot_after_slot_expansion_20261111`)
+- Only one game file changed: `pac\universe\wunidata.pac` (32,768 bytes, 411 bytes differ; was the vanilla file
+  526bd92a..., now 2249cb40...; Genesis backup in `genesis_backups\Universe_Match_Table_Expansion`). Exe unchanged
+  (de4d3756...), chunk0.def regenerated at the same size, marker added.
+- No overlap with our files: our Universe team work changed `wunistable.pac` (still our version, 04:51 today); our
+  DLL does not touch wunidata. Baseline for the next module: `snapshot_after_match_module_20261111`.
