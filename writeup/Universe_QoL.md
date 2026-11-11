@@ -559,3 +559,9 @@
   record here, so only Kushida -> [Shelley, Sabin]. Scorpio Sky (210) has no record. Pending: Catch Point (which id
   is Thatcher? members 712, 786, 729).
 - 04:15 Catch Point: Gulak (729) manages 712 and 786 (applied live + pac).
+- 04:20 **Six profiles carried the wrong slot id at pofo +0** (CCT-injected donor ids, so two pofos shared an id and
+  the real id resolved to nothing): idx 112 Colin Cassady 627->115, 125 Kay Lee Ray 659->147, 129 Vincent 672->160,
+  138 Xia Li 450->194, 141 Scorpio Sky 978->210, 156 (AVAILABLE GFX Selectable) 767->255. Fixed live in the MyWWE pofo
+  array (save layer; save backup SAVEDATA.before_idfix). The CCT source pofos still hold the wrong id (re-injecting
+  them would bring it back). With ids fixed: Cass <-> Enzo (760), Vincent -> 881 (The Righteous), Scorpio Sky ->
+  Daniels & Kazarian (live + profile_pro.pac).
