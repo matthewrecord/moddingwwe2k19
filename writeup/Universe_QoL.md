@@ -387,3 +387,13 @@
   (Universe defaults). "stable" = teams/stables in 2K19's naming. Not yet confirmed: next = unpack with the repo's
   HSPC/BPE tools, match entries against the 25 default teams (members 113/398 = Deleters, 618/615 = Revival), and
   confirm with a VFS open log during Universe creation. The highest patch level present wins (p10 here).
+- 2026-11-11 00:55 **Default team file confirmed: `pac\universe\wunistable.pac`.** HSPC container; at 0x1864 an
+  uncompressed **LBTS** table ('LBTS', u32 0x110 = entry size, u32 100 = entries, pad), entries of **0x110 bytes**:
+  +0x00 5 x u16 members (0x400 empty), +0x0E u8 member count, +0x10 u16 logo/team value (0xFFFF none), +0x18 u16
+  (1317..1377; name or record id?), +0x2A.. rating/AI fields. Entries 0-22 + 24 = the 25 Universe default teams in
+  Universe order (0 Deleters 113/398 0x956, 1 B-Team 397/425, 2 Revival 618/615 0x79E, 3 Slater & Rhyno, 4 Titus
+  Worldwide, ... 22 Undisputed Era, 24 Bella Twins); 23 and 25-99 empty. `wunistable_p10.pac` holds a zlib LBTS with
+  100 empty template entries (apparently not what fills Universes; the base file's 25 teams are what appear).
+  Names: not found as strings in SuperString string_win.pac file 0; the entry carries no text -> name source TBD.
+  Experiment 1 (`tools/universe/stable_test1.py`): #DIY (691+461) in entry 23, copied from THE REVIVAL entry ->
+  shows which name the game gives it. Built: wunistable_test1.pac md5 08d20ecc... (original eeab1af0...).
