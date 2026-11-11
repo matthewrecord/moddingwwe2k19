@@ -84,3 +84,6 @@
   0x1425e6968 (9) -> candidate Universe manager pointers. Next: read them live with DLL test3 (`slots_mem.request`).
 - Save: ids 937-939 do not occur as u32 anywhere in the decoded save; 940-942 only sporadically -> the Universe
   section is probably compressed (zlib chunks) or keyed differently; decoding continues after the live dump.
+- 2026-11-10 21:12 (Matthew) **Keith Lee (overflow, champion) vs HHH (vanilla), title match: works** (entrance + match
+  normal). So a title match with one overflow champion is fine. Hypotheses narrowed to the specific broken setup:
+  two overflow wrestlers in one title match, or champion vs champion (two belts), or that specific opponent/slot.
