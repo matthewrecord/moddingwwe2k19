@@ -98,3 +98,17 @@ Create an Entrance. Matthew got 9 selectable with Wrestleminus.
   | mods/SuperString/pac/string/win/string_win.pac | 7ae21680c28a5c747ca60438e0bca06b | 734eec144ea46dc4eddb67fba16999ae |
   Uninstall: copy the two backups back. Matthew's check: Create an Entrance, the four video menus: do the new
   "<NAME> (id)" entries appear (about 230 per menu, at the end), does the menu scroll normally, does one play.
+
+## 08:20 Character slots via CCT: design for DLL test13 (not built yet)
+- CCT (`Custom_Character_Tools.exe`, .NET x64) is obfuscated (encrypted strings/method bodies; `tools/exe/cildump.py`
+  gives nothing readable), so its behaviour is to be established empirically, not by reading its code.
+- Plan "CCT - Extra Slots" profile: copy of the CCT folder whose data.xml superstar list = the 64 new slots
+  (slotNumber 509-572, slotId = our ids) with pofoStartAddress = BRIDGE - 509*484 and movesetStartAddress =
+  BRIDGE_MVS - 509*3464 (universe1-3 addresses pointed at scratch copies). DLL test13: (1) VirtualAlloc the bridge at a
+  fixed address; (2) pre-create 64 slots (placeholder pofo/moveset, names "Extra Slot NN", ids from the free pool);
+  (3) every few seconds compare bridge records with the last seen copy; on change: fix pofo +0 id / +2 index / +4
+  person id to the slot's own (CCT pofos carry donor ids), copy into the overflow arrays (existing injection path),
+  write `slots\IIII_DDDD.pofo/.moveset` so it survives a restart; log every bridge write (shows what CCT touches).
+- Open: what CCT reads first (it may read the current pofo to show the slot), whether it writes the Universe copies,
+  which files it copies by slotId (models, renders, trons) and whether their internal names match what the
+  overflow loader needs (notes/characters step 1j).

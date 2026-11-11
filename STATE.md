@@ -51,6 +51,7 @@
   Universe creation gives them 3 phantom CAW managers (show-1 glitches tracked to that). DLL test3b installed (memory
   reads + Universe probe).
 - **2026-11-11 04:15 (handoff 014, claude/universe-qol): managers & main teams.** Wrong main teams fixed (unique pofo person ids); stale managers fixed at the source (`profile_pro.pac`); Matthew's team managers set; 6 wrong pofo slot ids fixed. DLL test12 (manager sync) installed 04:12; save verified. Start with `handoff/014_managers_teams_2026-11-11.md`.
+- **2026-11-11 08:20 (handoff 015, claude/slots50-gfx): groundwork for CCT-filled slots.** Target 64 overflow character slots (CCT bridge = DLL test13, designed, not built) and entrance-video (GFX) slots: list loader/menu filter decoded (no fixed size), **gfx_v1 installed** (+~229 entries per video menu); waiting on Matthew's in-game check. Start with `handoff/015_slots64_gfx_2026-11-11.md`.
 - **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe), `handoff/014_managers_teams_2026-11-11.md` (managers/teams).
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
