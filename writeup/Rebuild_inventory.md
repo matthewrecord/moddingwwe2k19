@@ -54,3 +54,24 @@ names, dates, the notes and spreadsheets; individual packs were not opened) plus
   is unverified. The pre-Genesis file exists in three places (`profile_dat.pac.orig_musicslot`, Genesis backup,
   none in Resources); the save with the CAWs is copied in `snapshot_pre_genesis_slots_20261111\SAVEDATA`.
 - The CAWs have no backup outside the save file.
+
+## E. Rebuild rules set by Matthew (13:26)
+- **Ground truth = the installed game + the save**, not the per-wrestler folders: pofo/moveset in game carry his
+  in-game rating edits; every wrestler has working graphics and a render in game. Folders only fill in the dozen or
+  so wrestlers not installed yet.
+- Fewer than 400 mods vs 500 new Genesis slots: on a fresh install the mods go into new slots only; CAW, MyCareer
+  and legend slots stay untouched.
+- **No music baked into GFX any more** (real music slots exist): strip audio from every tron.
+- Name strings: copy from the existing string file. Renders in game are the source; a few custom renders he wants
+  to change (details to come).
+- Moving a mod = movies (count varies), moveset re-pointed, render, model(s) per attire (+ pofo id, name string).
+## F. First measurements of the installed roster (chunk0.def + CCT names, 13:30)
+- Models: 491 ids (100-999) have model files; 921 model pacs under `mods\CCT\characters`, the same 921 again under
+  `mods\Genesis\characters` (Genesis migration copied them; both sets are now in chunk0.def = the duplicate names),
+  310 base. Attires per id: 416 with one, 43 two, 11 three, 10 four, 11 with five to ten.
+- 374 slots carry a CCT replaced name (= Matthew's mods), 368 of them have model files.
+- Screen trons: 402 ids have all four (wall/mini/ramp/apron); of the 374 named slots 320 have all four, 36 none.
+- `movies\titantron`: 2,553 .bk2 (ent 2231, tag 273, bel 31, cre 7, uni 6, car 3, bray 2).
+- Plan: read-only exporter that packages every installed wrestler from the game (models, render, trons, name) and
+  the save (pofo, moveset) into one normalized package per wrestler + a roster table; then an importer for Genesis
+  slots once their layout is known.
