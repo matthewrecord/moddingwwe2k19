@@ -323,3 +323,7 @@
   capture; settings `ppv_` lines override.
   Also: matches.py now requires a winner and a loser among >= 2 wrestlers (two false records in slot 2 removed;
   Universe 2 rebuilt from captures: 6 matches).
+- 2026-11-10 23:14 (Matthew) May wk 1 PPV: the Backlash arena was replaced by the AEW Revolution arena, so the show
+  keeps legacy Backlash bits (logo) with the Revolution name. **Future idea (Matthew):** redo the game install from
+  scratch, using the project's "add new slots instead of replacing" methods (music slots done, character slots done;
+  arenas/shows not yet investigated) to avoid replacements like this. Logged for a later thread; not started.
