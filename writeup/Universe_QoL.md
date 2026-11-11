@@ -103,3 +103,8 @@
   log. So no single overflow wrestler breaks a title match; the only broken setup so far is **two overflow wrestlers
   in the same title match** (Keith Lee vs Angel Garza, twice). To confirm with a different pair: Keith Lee vs Ace
   Austin (title), with a log mark before/after so the new TRACE callers of that match can be isolated.
+- 2026-11-10 21:38 **Keith Lee vs Ace Austin, title match: normal** (entrances + match; no new TRACE/exception lines
+  after log line 3086). So "two overflow wrestlers in a title match" is NOT the trigger either. Only failing case:
+  Keith Lee vs Angel Garza (title), on show 1, twice. Remaining candidates: that exact pairing/title; state of the
+  fresh Universe on show 1 (e.g. phantom managers attached at the time); something since fixed by a reload. Next:
+  rerun Keith Lee vs Angel Garza (title) now.
