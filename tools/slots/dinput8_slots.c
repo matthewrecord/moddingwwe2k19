@@ -309,18 +309,20 @@ typedef BOOL (WINAPI *MDWD)(HANDLE, DWORD, HANDLE, int, void *, void *, void *);
    (safety check). Used to clear stale superstar manager links (0xD88 records, manager u16 at +0x58). */
 static int hx(const char *t, unsigned char *o, int max) { int n = 0; unsigned v;
     while (t[0] && t[1] && n < max && sscanf(t, "%2x", &v) == 1) { o[n++] = (unsigned char)v; t += 2; } return n; }
-static void poke_request(const char *q) {
+static void poke_file(const char *q, int keep) {
     FILE *f = fopen(q, "r"); if (!f) return; char line[512]; int ok = 0, bad = 0;
     while (fgets(line, sizeof line, f)) {
         unsigned long long va = 0; char a[200] = {0}, b[200] = {0}; unsigned char ob[100], nb[100], cur[100]; SIZE_T got = 0;
         if (sscanf(line, "%llx %199s %199s", &va, a, b) != 3) continue;
         int n = hx(a, ob, 100); if (n != hx(b, nb, 100) || !n) { bad++; continue; }
         if (!ReadProcessMemory(GetCurrentProcess(), (void *)va, cur, n, &got) || got != (SIZE_T)n || memcmp(cur, ob, n)) {
-            L("poke: %llx skipped (not the expected bytes)", va); bad++; continue; }
+            if (!keep) L("poke: %llx skipped (not the expected bytes)", va); bad++; continue; }
         if (WriteProcessMemory(GetCurrentProcess(), (void *)va, nb, n, &got) && got == (SIZE_T)n) ok++; else { L("poke: %llx write failed", va); bad++; }
     }
-    fclose(f); DeleteFileA(q); L("poke: %d written, %d skipped/failed", ok, bad);
+    fclose(f); if (!keep) { DeleteFileA(q); L("poke: %d written, %d skipped/failed", ok, bad); }
+    else if (ok) L("poke_always: %d written", ok);
 }
+static void poke_request(const char *q) { poke_file(q, 0); }
 static void dump_kind(int type, const char *stem);
 static volatile LONG g_wact; static void w_apply_all(void); static void find_request(const char *q); static void watch_request(const char *q);
 static void dump_threads(void) { dump_kind(0x0, "slots_snapshot"); }
@@ -370,6 +372,7 @@ static DWORD WINAPI rec_thread(LPVOID p) {
             if (g_wact && i % 20 == 0) w_apply_all();
             if (z) { strcpy(z + 1, "slots_mem.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) mem_request(q);
                      strcpy(z + 1, "slots_poke.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) poke_request(q);
+                     if (i % 50 == 0) { strcpy(z + 1, "slots_poke_always.txt"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) poke_file(q, 1); }
                      strcpy(z + 1, "slots_fulldump.request");
                      if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) { DeleteFileA(q); L("[%8.2f] full dump requested", (GetTickCount() - g_t0) / 1000.0); dump_kind(0x2, "slots_full"); } }
         }

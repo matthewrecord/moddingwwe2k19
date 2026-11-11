@@ -66,3 +66,7 @@ Universe's team records (blob + 0x31BF54). Always current; names inline; no stri
 `slots_poke.request`: lines `<hex VA> <old hex> <new hex>`; writes only when memory equals `old`. First use: clear
 stale superstar manager links in the live superstar records (base 0x142e6f9b0 + k*0x1EA9C8, k=0..2; 0xD88 per index;
 manager u16 at +0x58; 1024 = none), then the game saves them on the next edit-save. md5 92e6b9d5...
+
+## test11 (2026-11-11 03:15): persistent pokes
+`slots_poke_always.txt` (same line format as slots_poke.request) is re-applied every 5 s and never deleted; lines whose
+old bytes don't match are silently skipped. Used for the manager table the game rebuilds each launch (0x143700360).

@@ -514,3 +514,13 @@
   (keeper = the one whose slot id equals the person id; others get their own slot id if unused, else fresh 1100+).
   List: notes/characters/person_id_fix_2026-11-11.tsv. Save backup `SAVEDATA.before_person_ids`. Existing Universe pofo
   copies not touched (new Universes copy from MyWWE). To verify: save, restart, check A-Kid/Trent/Beth/Brie/AJ Lee.
+- 03:15 Managers still shown after restart (Bray->Hardy, Hikuleo->Bo Dallas...). Found the table the panel actually
+  reads: display code 0x140d32f91 calls 0x1404c7630 (superstar runtime struct) and copies +0x3B8..+0x3D0. That struct
+  embeds a 0xD88 record at +0x360: a **4th table at 0x143700360** (record stride 0xD88, managers are THREE u32 slots at
+  +0x58/+0x5C/+0x60, main team u32 at +0x70). It is rebuilt each launch from data other than the three saved copies
+  (still holds vanilla/old values: Trent->Miz, Miz->[Maryse, Axel, Dallas]), so the fix must be re-applied each launch.
+- DLL test11 (md5 f30a4066...): `slots_poke_always.txt` next to the exe is re-applied every 5 s (old-value checked,
+  so harmless once applied). Generated: 164 pokes over all four tables, slots +0x58/+0x5C/+0x60, rule = clear if
+  either side's slot is replaced or the pair is Hardy/Wyatt, Ziggler/McIntyre, Sheamus/Cesaro; keep Brie/Nikki,
+  Owens/Zayn, Mickie/Alexa, Liv/Sarah Logan, Hanson/Rowe, Diesel/HBK'97. Applied live once (164 written).
+- Person id fix verified after restart (A-Kid/Trent main team fixed; save has unique ids).
