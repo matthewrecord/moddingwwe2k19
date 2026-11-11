@@ -238,8 +238,8 @@ show_sat
 show_sun	PPV
 # Count offseason matches in the standings? (no = shown in results only)
 count_offseason	no
-# A new season starts when the Universe day goes back by more than this many days (the yearly reset).
-season_reset_drop	100
+# Seasons run May..April (new Universes start in May). First day of a season (112 = May week 1 Monday).
+season_start_day	112
 """
 
 def load_settings(out):
@@ -250,7 +250,7 @@ def load_settings(out):
                 off=(int(t.get('offseason_first_day', 112)), int(t.get('offseason_last_day', 195))),
                 shows=[t.get('show_' + d, '').strip() for d in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')],
                 count_offseason=t.get('count_offseason', 'no').strip().lower() in ('yes', 'y', 'true', '1'),
-                drop=int(t.get('season_reset_drop', 100)))
+                drop=int(t.get('season_reset_drop', 100)), start=int(t.get('season_start_day', 112)))
 
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -271,7 +271,9 @@ def assign_seasons(order, bym, cfg):
     season, off, s, last = {}, {}, 1, None
     for k in order:
         h0 = bym[k][0]; d = int(h0['universe_day']) if str(h0['universe_day']).isdigit() else capday.get(h0['capture'])
-        if d is not None and last is not None and d < last - cfg['drop']: s += 1
+        # season = Universe year May..April (Matthew: new Universes start in May; May-July offseason).
+        # New season when the day enters May from Jan-Apr, or jumps back while staying in May-Dec (new Universe).
+        if d is not None and last is not None and d >= cfg['start'] and (last < cfg['start'] or d < last): s += 1
         if d is not None: last = d
         season[k] = s; off[k] = d is not None and cfg['off'][0] <= d <= cfg['off'][1]; DAY[k] = d
     return season, off

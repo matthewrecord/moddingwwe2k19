@@ -254,3 +254,12 @@
   Chrome (no JS errors; screenshots checked).
   Idea from his sheets for later: per-title contender rankings (Main Roster Stats: C + ranked contenders with W, L,
   PPV W/L, pct).
+- 2026-11-10 22:45 (Matthew) New Universes start in **May**. Seasons now run May..April: new season when the day enters
+  May from Jan-Apr, or jumps back within May-Dec (a new Universe). January no longer splits a season.
+  Tested: days [112,200,330,5,100,112,130,300,112] -> seasons [1,1,1,1,1,2,2,2,3].
+## Remaining plan (triage order, 2026-11-10 22:45)
+1. Phantom-manager fix (overflow wrestlers get 3x CAW slot 0 "Marq Quen"; also wrong manager names for vanilla).
+2. PPV names per Sunday (show list in the save) + match-type names (kind byte).
+3. Tag-team import (custom teams into Universe; source: Matthew's Wrestlers/team list).
+4. Title contender rankings (like his Main Roster Stats sheet), MOTN/star ratings if the save holds them.
+5. Save-based rosters (catch sheet drift); in-game display of records (long term).
