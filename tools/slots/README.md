@@ -28,3 +28,9 @@ lines / CCT asset copies (models ch<id>xx, trons and renders 0<id>00) for a new 
   Keeps the last 1024 events in memory; writes them to the log on a crash (first 3 exceptions), on **F12**, and at
   game exit. Failed opens (file not found etc.) are logged immediately. Not seen: file I/O done through the C
   runtime (fopen) or by other DLLs (e.g. Wwise, Bink) with their own imports.
+
+## Multi-slot (test2, 2026-11-10 19:20)
+The proxy loads every `slots\IIII_DDDD_SSSS.pofo/.moveset`, sets the lookup cap to (highest index + 1, min 510) and
+traces all overflow slots. Install wrestlers with `tools/build/slotinstall.py` (see its docstring): spec file of
+pictures-folder names -> next free slot (510 = index 509, ...) and id (937-999), models renamed internally,
+Chunk0.def sorted insert, name string 39370 + (id - 937). Renders/Titantrons: not yet.

@@ -18,9 +18,8 @@
 
 #define BASE_SLOTS 509
 #define MAX_SLOTS  1024          /* capacity of the relocated buffers (ids are < 1024 anyway) */
-#ifndef SLOT_CAP
-#define SLOT_CAP   510           /* slots 0..SLOT_CAP-1 pass the raised lookup checks (test1: one overflow slot) */
-#endif
+static int g_cap = 510;        /* slots 0..g_cap-1 pass the raised lookup checks: max(installed slot index)+1, min 510 */
+#define SLOT_CAP g_cap
 
 static FILE *g_log; static HMODULE g_real; static uintptr_t g_img; static DWORD g_t0;
 static void L(const char *f, ...) { if (!g_log) return; va_list a; va_start(a, f); vfprintf(g_log, f, a); va_end(a);
@@ -190,11 +189,13 @@ static void load_slots(void) {
     do { int idx, id, src = -1; int nf = sscanf(f.cFileName, "%d_%d_%d.pofo", &idx, &id, &src);
         if (nf < 2 || g_nslots >= 64) continue; if (nf == 2) src = -1;
         Slot *t = &g_slots[g_nslots]; char p[MAX_PATH];
-        if (idx < BASE_SLOTS || idx >= SLOT_CAP || id < 100 || id >= 1024) { L("slot %s: index/id out of range (cap %d)", f.cFileName, SLOT_CAP); continue; }
+        if (idx < BASE_SLOTS || idx >= MAX_SLOTS || id < 100 || id >= 1024) { L("slot %s: index/id out of range", f.cFileName); continue; }
+        { int dupe = 0; for (int q = 0; q < g_nslots; q++) if (g_slots[q].idx == idx || g_slots[q].id == id) dupe = 1;
+          if (dupe) { L("slot %s: index or id used twice, skipped", f.cFileName); continue; } }
         strcpy(p, dir); strcat(p, f.cFileName); if (!readf(p, t->pofo, 0x1E4)) { L("slot %s: bad pofo", f.cFileName); continue; }
         strcpy(strrchr(p, '.'), ".moveset"); if (!readf(p, t->mov, 0xD88)) { L("slot %s: missing/bad .moveset", f.cFileName); continue; }
         t->idx = idx; t->id = id; t->src = src; *(uint16_t *)t->pofo = (uint16_t)id; *(uint16_t *)(t->pofo + 2) = (uint16_t)idx;
-        g_nslots++; L("slot loaded: index %d id %d (%s)", idx, id, f.cFileName);
+        g_nslots++; if (idx + 1 > g_cap) g_cap = idx + 1; L("slot loaded: index %d id %d (%s)", idx, id, f.cFileName);
     } while (FindNextFileA(h, &f)); FindClose(h);
 }
 static DWORD WINAPI slot_thread(LPVOID p) {
@@ -370,7 +371,7 @@ static const Hook HOOKS[] = {
     {0x140965860, "4883ec28448bc9", 7, 0, "40-byte rec by id 140965860"},
 };
 #define NHOOKS (int)(sizeof HOOKS / sizeof HOOKS[0])
-static uint64_t g_seen[512]; static volatile LONG g_nseen; static CRITICAL_SECTION g_tcs;
+static uint8_t g_isslot[1024]; static uint64_t g_seen[512]; static volatile LONG g_nseen; static CRITICAL_SECTION g_tcs;
 static void __attribute__((ms_abi)) trace_hit(uint64_t ret, uint32_t hook) {
     EnterCriticalSection(&g_tcs);
     uint64_t key = ret ^ ((uint64_t)hook << 56); int found = 0;
@@ -379,13 +380,20 @@ static void __attribute__((ms_abi)) trace_hit(uint64_t ret, uint32_t hook) {
         L("[%8.2f] TRACE %s called for slot from %llx (thread %lu)", (GetTickCount() - g_t0) / 1000.0, HOOKS[hook].name, (unsigned long long)ret, GetCurrentThreadId()); }
     LeaveCriticalSection(&g_tcs);
 }
-static int install_tracer(uint8_t *mem, int idx_val, int id_val) {
+static int install_tracer(uint8_t *mem) {
     for (int h = 0; h < NHOOKS; h++) if (!same(HOOKS[h].va, HOOKS[h].orig)) { L("tracer: MISMATCH %llx, tracer off", HOOKS[h].va); return 0; }
     for (int h = 0; h < NHOOKS; h++) {
         const Hook *k = &HOOKS[h]; uint8_t *c = mem + 128 * h; int o = 0; uint8_t orig[16]; hexb(k->orig, orig);
-        int32_t v = k->by_index ? idx_val : id_val;
-        c[o++] = 0x81; c[o++] = 0xF9; memcpy(c + o, &v, 4); o += 4;                 /* cmp ecx, v */
-        c[o++] = 0x75; int jne = o++;                                                /* jne go */
+        int jne, jne2 = -1, jne3 = -1;
+        if (k->by_index) { int32_t v = BASE_SLOTS; c[o++] = 0x81; c[o++] = 0xF9; memcpy(c + o, &v, 4); o += 4;   /* cmp ecx, 509 */
+            c[o++] = 0x7C; jne = o++; }                                                                          /* jl go */
+        else { c[o++] = 0x89; c[o++] = 0xC8;                                         /* mov eax, ecx */
+            c[o++] = 0x3D; uint32_t m = 0x400; memcpy(c + o, &m, 4); o += 4;        /* cmp eax, 0x400 */
+            c[o++] = 0x73; jne = o++;                                                /* jae go */
+            c[o++] = 0x49; c[o++] = 0xBB; uint64_t tb = (uint64_t)g_isslot; memcpy(c + o, &tb, 8); o += 8;   /* mov r11, table */
+            c[o++] = 0x41; c[o++] = 0x80; c[o++] = 0x3C; c[o++] = 0x03; c[o++] = 0x00;   /* cmp byte [r11+rax], 0 */
+            c[o++] = 0x74; jne2 = o++; }                                             /* je go */
+        (void)jne3;
         const uint8_t push[] = {0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53}; memcpy(c + o, push, 10); o += 10;
         const uint8_t pre[] = {0x48, 0x83, 0xEC, 0x28, 0x48, 0x8B, 0x4C, 0x24, 0x58}; memcpy(c + o, pre, 9); o += 9;   /* sub rsp,28; mov rcx,[rsp+58] */
         c[o++] = 0xBA; uint32_t hid = h; memcpy(c + o, &hid, 4); o += 4;            /* mov edx, h */
@@ -393,7 +401,7 @@ static int install_tracer(uint8_t *mem, int idx_val, int id_val) {
         c[o++] = 0xFF; c[o++] = 0xD0;                                                /* call rax */
         c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xC4; c[o++] = 0x28;
         const uint8_t pop[] = {0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59}; memcpy(c + o, pop, 10); o += 10;
-        c[jne] = (uint8_t)(o - jne - 1);
+        c[jne] = (uint8_t)(o - jne - 1); if (jne2 >= 0) c[jne2] = (uint8_t)(o - jne2 - 1);
         memcpy(c + o, orig, k->n); o += k->n;                                        /* original prologue */
         c[o++] = 0xFF; c[o++] = 0x25; memset(c + o, 0, 4); o += 4; uint64_t back = VA(k->va) + k->n; memcpy(c + o, &back, 8); o += 8;
         int64_t rel = (int64_t)(uintptr_t)c - (int64_t)(VA(k->va) + 5);
@@ -407,10 +415,10 @@ static int install_tracer(uint8_t *mem, int idx_val, int id_val) {
    logs every path the index does NOT find (deduplicated, max 400) and every lookup naming an overflow slot's id. ---- */
 uintptr_t g_vfs_tramp;
 #define VFS_SEEN 16384
-static uint32_t g_vfs_hash[VFS_SEEN]; static int g_nvfs; static char g_idtag[2][8];
+static uint32_t g_vfs_hash[VFS_SEEN]; static int g_nvfs; 
 void __attribute__((ms_abi)) vfs_log(const char *path, int found) {
     if (!path) return;
-    int ours = (g_idtag[0][0] && strstr(path, g_idtag[0])) || (g_idtag[1][0] && strstr(path, g_idtag[1]));
+    int ours = 0; for (int q = 0; q < g_nslots && !ours; q++) { char t[8]; sprintf(t, "%03d", g_slots[q].id); if (strstr(path, t)) ours = 1; }
     if (found && !ours) return;
     EnterCriticalSection(&g_tcs);
     uint32_t hv = 2166136261u; for (const char *q = path; *q; q++) hv = (hv ^ (uint8_t)*q) * 16777619u; hv |= 1;
@@ -456,10 +464,10 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         g_t0 = GetTickCount(); InitializeCriticalSection(&g_ncs);
         AddVectoredExceptionHandler(1, veh);
         L("file hooks installed: %d of 7", hook_all()); CreateThread(0, 0, rec_thread, 0, 0, 0);
-        if (g_img == 0x140000000ULL) { if (apply()) { CreateThread(0, 0, later_check, 0, 0, 0); load_slots(); if (g_nslots) { CreateThread(0, 0, slot_thread, 0, 0, 0);
+        if (g_img == 0x140000000ULL) { load_slots(); L("slot cap %d (%d overflow slots)", g_cap, g_nslots); if (apply()) { CreateThread(0, 0, later_check, 0, 0, 0); if (g_nslots) { CreateThread(0, 0, slot_thread, 0, 0, 0);
             InitializeCriticalSection(&g_tcs); uint8_t *m = alloc_near(0x1000);
-            if (m && install_tracer(m, g_slots[0].idx, g_slots[0].id)) { DWORD old; VirtualProtect(m, 0x1000, PAGE_EXECUTE_READ, &old); L("tracer on for index %d / id %d", g_slots[0].idx, g_slots[0].id); }
-            sprintf(g_idtag[0], "%03d", g_slots[0].id); sprintf(g_idtag[1], "0%03d00", g_slots[0].id);
+            for (int q = 0; q < g_nslots; q++) g_isslot[g_slots[q].id] = 1;
+            if (m && install_tracer(m)) { DWORD old; VirtualProtect(m, 0x1000, PAGE_EXECUTE_READ, &old); L("tracer on for %d overflow slots", g_nslots); }
             uint8_t *vm = alloc_near(0x1000); if (vm && install_vfs(vm)) { DWORD old; VirtualProtect(vm, 0x1000, PAGE_EXECUTE_READ, &old); L("vfs logger on"); } } } }
         else L("unexpected image base: NOTHING applied");
     }
