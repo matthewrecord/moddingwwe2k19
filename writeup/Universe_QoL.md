@@ -327,3 +327,20 @@
   keeps legacy Backlash bits (logo) with the Revolution name. **Future idea (Matthew):** redo the game install from
   scratch, using the project's "add new slots instead of replacing" methods (music slots done, character slots done;
   arenas/shows not yet investigated) to avoid replacements like this. Logged for a later thread; not started.
+- 2026-11-10 23:45 **Tag-team import, survey 1.**
+  * Save chunk inventory (non-asset): MAIN (14.2 MB raw: main game data, like the in-memory main block), TMMA/TMU0/TMU1
+    (1 MB each: an embedded **SQLite database** "RecentMatches" with 155 integer columns; MA + two Universe slots;
+    slot-1 db had 1 row: 1,0,58,0,24577024,7,0,0,150,255,...), TRMA/TRU0/TRU1 and TSMA/TSU0/TSU1 (zeroed in this save),
+    LOGO, UNVS (Universe blobs, one per slot), plus ~470 creation-asset chunks (CAAS/CASS/CCAC...).
+  * **Universe team table** in each UNVSBODY000N: records of **0x1B8 bytes (= CCT teamLength 440)**, name (uppercase,
+    NUL-terminated) at the record's +0x54-ish position; first 27 records from 0x31A844 in slot 2: (14 empty), THE
+    DELETERS OF WORLDS, THE B-TEAM, THE REVIVAL, HEATH SLATER & RHYNO, TITUS WORLDWIDE, THE ASCENSION, BREEZANGO,
+    THE RIOTT SQUAD, KEVIN OWENS & SAMI ZAYN, THE AUTHORS OF PAIN, THE BAR, GALLOWS & ANDERSON, THE BLUDGEON BROTHERS.
+    Member ids (u16 pair) sit 0x100 bytes before each name (e.g. THE REVIVAL -> 615 Dash Wilder, 618 Scott Dawson).
+  * Main (non-Universe) team table: in MAINBODY around 0x3C000 (team names found there, e.g. REVIVAL, DIY); exact
+    record base/stride not pinned yet (first stride guess failed). CCT reads it live at 0x14287C860 (data.xml).
+  * Route options: (a) offline save writer (decode -> edit UNVS team records -> zlib -> XOR -> fix chunk sizes; HEAD
+    chunks carry 4-byte hashes that may need recomputing -> risk); (b) **in-game via the DLL**: copy teams into the
+    live Universe team table while the Universe is loaded and let the game save it itself (no save-format risk).
+    Preferred: (b), with (a) as fallback. Next: pin the main team record layout (CCT data.xml offsets + live memory
+    read with slots_mem.request), then Universe table base/count, then a dry-run diff tool.
