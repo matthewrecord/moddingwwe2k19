@@ -123,3 +123,21 @@ Create an Entrance. Matthew got 9 selectable with Wrestleminus.
   export, uninstall, live injection (ours applies at next game start), a front end Matthew can run himself.
 - Sources named by Gemini, checked: github.com/pozzum/WrestleMINUS exists (open C#, Yuke's formats). "AuroraForge-
   NT100" not found by search; "Genesis (2KLive)" appears to be a Patreon tool, not open source. Unverified beyond that.
+
+## 10:10 Genesis (2KLive) enters: Matthew is running its setup; own-slot work paused
+- Genesis 1.1.1 (closed, "Beta", activated) offers: CAWLESS Mod (installed 10:03), Character Slot Expansion (500)
+  "dedicated POFO and moveset memory" (124 MB), Attire Slot Expansion (1000), Universe Match Expansion, Universe Match
+  Table Expansion, Women's Tag + extra titles. Lives in `D:\Pictures\WWE 2K19\A - Genesis` (debug log, backups).
+- What Genesis has already changed in the game folder (measured 10:10): `chunk0.def` regenerated (+3,565 lines
+  `mods\genesis\characters\pac\ch\...`, none removed; 2,976 file names now appear more than once), `Chunk0.arc`
+  cleared, `mods\PerfectPlextra\pac\profile\profile_dat.pac` overlaid by CAWLESS (693 bytes differ; previous file
+  e52943c4... kept by Genesis in `genesis_backups\CAWLESS_Mod` and equal to our `.orig_musicslot` copy),
+  `mods\Genesis` = 50 GB (migrated characters), markers in `genesis_mods\`. Disk: 263 GB free.
+- Our files are intact: dinput8.dll test12 aa5b46ef, cae_item_p30 4a39af1a (gfx_v1), string_win 734eec14,
+  profile_pro.pac b0167e9b (manager clear). Game not started since 04:07, so nothing is tested against Genesis yet.
+- Snapshot before any Genesis slot expansion: `_moddingwwe2k19_builds\snapshot_pre_genesis_slots_20261111`
+  (dinput8.dll, chunk0.def + .bak, profile_dat after CAWLESS, slots\, SAVEDATA, top-level file list + MD5s).
+- Expected conflict: our DLL relocates the pofo/moveset pointer tables for its 6 overflow slots (ids 937-942);
+  a 500-slot expansion must patch the same tables. Plan: test-launch now, install the expansion alone, diff, then
+  drop our slot code in favour of Genesis and keep only what Genesis lacks (music slot bank, Universe fixes, manager
+  sync, GFX menu entries) if they coexist.
