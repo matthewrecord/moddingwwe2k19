@@ -470,6 +470,61 @@ static int install_uniprobe(uint8_t *c) {
     L("uniprobe installed at %llx", (unsigned long long)va); return 1;
 }
 
+
+/* ---- test4: Universe auto-capture. Config `universe_capture.ini` next to the exe:
+     line 1 = full path of SAVEDATA, line 2 = archive folder, line 3 (optional) = command to run after a capture.
+   Every 10 s the save's write time is checked; when it changed and has been stable for 5 s, the file is XOR-decoded
+   in memory (128-byte key), the UNVSBODY0001 chunk (tag + header + zlib, ~30 KB) is written to
+   <archive>\unvs_<yyyymmdd_hhmmss>.bin, and the command (if any) is started hidden. Nothing in the save is changed. */
+static const uint8_t SAVEKEY[128] = {
+ 0x37,0x36,0x35,0x36,0x31,0x31,0x39,0x38,0x30,0x35,0x33,0x37,0x31,0x37,0x37,0x36,0x34,0x36,0x35,0x36,0x37,0x36,0x35,0x36,
+ 0x37,0x36,0x35,0x36,0x37,0x36,0x35,0x36,0x37,0x36,0x35,0x36,0x37,0x36,0x35,0x36,0x37,0x36,0x35,0x36,0x37,0x36,0x35,0x36,
+ 0x37,0x36,0x35,0x36,0x37,0x36,0x35,0x36,0x37,0x36,0x35,0x36,0x37,0x36,0x35,0x36,0x57,0x57,0x45,0x32,0x4b,0x31,0x37,0x2a,
+ 0x28,0x55,0x59,0x48,0x44,0x41,0x4b,0x4a,0x5e,0x6b,0x6a,0x68,0x64,0x61,0x67,0x33,0x61,0x6a,0x68,0x64,0x61,0x76,0x35,0x31,
+ 0x30,0x35,0x31,0x30,0x5e,0x31,0x34,0x66,0x6e,0x63,0x78,0x61,0x64,0x3b,0x34,0x6a,0x70,0x5b,0x5b,0x5b,0x64,0x6c,0x73,0x61,
+ 0x39,0x69,0x72,0x6e,0x78,0x7a,0x34,0x2d};
+static void trimnl(char *x) { size_t n = strlen(x); while (n && (x[n - 1] == '\n' || x[n - 1] == '\r' || x[n - 1] == ' ')) x[--n] = 0; }
+static int capture_once(const char *save, const char *dir, const char *cmd) {
+    HANDLE h = CreateFileA(save, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+    if (h == INVALID_HANDLE_VALUE) { L("capture: cannot open save"); return 0; }
+    DWORD hi = 0, n = GetFileSize(h, &hi), got = 0; uint8_t *b = (uint8_t *)malloc(n ? n : 1);
+    if (!b) { CloseHandle(h); return 0; }
+    BOOL ok = ReadFile(h, b, n, &got, 0); CloseHandle(h);
+    if (!ok || got != n) { free(b); L("capture: short read"); return 0; }
+    for (DWORD i = 0; i < n; i++) b[i] ^= SAVEKEY[i & 127];
+    if (n < 4 || memcmp(b, "VCGD", 4)) { free(b); L("capture: bad magic"); return 0; }
+    uint8_t *t = 0; for (DWORD i = 0; i + 32 < n; i++) if (b[i] == 'U' && !memcmp(b + i, "UNVSBODY0001", 12)) { t = b + i; break; }
+    if (!t || memcmp(t + 16, "ZLIB", 4)) { free(b); L("capture: no Universe chunk"); return 0; }
+    uint32_t cs; memcpy(&cs, t + 24, 4); size_t len = 32 + (size_t)cs;
+    if ((size_t)(t - b) + len > n) { free(b); L("capture: chunk truncated"); return 0; }
+    SYSTEMTIME st; GetLocalTime(&st); char out[MAX_PATH];
+    CreateDirectoryA(dir, 0);
+    snprintf(out, sizeof out, "%s\\unvs_%04d%02d%02d_%02d%02d%02d.bin", dir, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+    FILE *w = fopen(out, "wb"); if (w) { fwrite(t, 1, len, w); fclose(w); }
+    free(b); L("[%8.2f] capture: Universe chunk (%u bytes) -> %s", (GetTickCount() - g_t0) / 1000.0, (unsigned)len, out);
+    if (cmd && *cmd) { STARTUPINFOA si = {sizeof si}; PROCESS_INFORMATION pi; char c[1024]; snprintf(c, sizeof c, "cmd.exe /c %s", cmd);
+        si.dwFlags = STARTF_USESHOWWINDOW; si.wShowWindow = SW_HIDE;
+        if (CreateProcessA(0, c, 0, 0, FALSE, CREATE_NO_WINDOW, 0, 0, &si, &pi)) { CloseHandle(pi.hThread); CloseHandle(pi.hProcess); L("capture: command started"); }
+        else L("capture: command failed (%lu)", GetLastError()); }
+    return 1;
+}
+static DWORD WINAPI capture_thread(LPVOID p) {
+    (void)p; char ini[MAX_PATH]; GetModuleFileNameA(NULL, ini, MAX_PATH); char *z = strrchr(ini, '\\'); if (z) strcpy(z + 1, "universe_capture.ini");
+    FILE *f = fopen(ini, "r"); if (!f) return 0;
+    static char save[MAX_PATH], dir[MAX_PATH], cmd[1024];
+    if (!fgets(save, sizeof save, f) || !fgets(dir, sizeof dir, f)) { fclose(f); L("capture: ini incomplete"); return 0; }
+    if (!fgets(cmd, sizeof cmd, f)) cmd[0] = 0; fclose(f); trimnl(save); trimnl(dir); trimnl(cmd);
+    L("capture: watching %s -> %s", save, dir);
+    FILETIME last = {0, 0}, seen = {0, 0}; int stable = 0, first = 1;
+    for (;;) {
+        Sleep(5000); WIN32_FILE_ATTRIBUTE_DATA a;
+        if (!GetFileAttributesExA(save, GetFileExInfoStandard, &a)) continue;
+        if (first) { seen = a.ftLastWriteTime; first = 0; if (capture_once(save, dir, cmd)) last = seen; continue; }   /* also at start: catches a save written just before the game was closed (tracker dedupes) */
+        if (CompareFileTime(&a.ftLastWriteTime, &seen)) { seen = a.ftLastWriteTime; stable = 0; continue; }
+        if (CompareFileTime(&seen, &last) && ++stable >= 1) { if (capture_once(save, dir, cmd)) last = seen; stable = 0; }
+    }
+}
+
 /* ---- VFS lookup logger: the game's file-index lookup 0x141264010(char *path, out) (229 callers). Post-call hook:
    logs every path the index does NOT find (deduplicated, max 400) and every lookup naming an overflow slot's id. ---- */
 uintptr_t g_vfs_tramp;
@@ -522,7 +577,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
         L("wwe2k19 slots proxy, build " __DATE__ " " __TIME__ ", image %p", (void *)g_img);
         g_t0 = GetTickCount(); InitializeCriticalSection(&g_ncs);
         AddVectoredExceptionHandler(1, veh);
-        L("file hooks installed: %d of 7", hook_all()); CreateThread(0, 0, rec_thread, 0, 0, 0);
+        L("file hooks installed: %d of 7", hook_all()); CreateThread(0, 0, rec_thread, 0, 0, 0); CreateThread(0, 0, capture_thread, 0, 0, 0);
         if (g_img == 0x140000000ULL) { load_slots(); L("slot cap %d (%d overflow slots)", g_cap, g_nslots); if (apply()) { CreateThread(0, 0, later_check, 0, 0, 0); if (g_nslots) { CreateThread(0, 0, slot_thread, 0, 0, 0);
             InitializeCriticalSection(&g_tcs); uint8_t *m = alloc_near(0x1000);
             for (int q = 0; q < g_nslots; q++) g_isslot[g_slots[q].id] = 1;

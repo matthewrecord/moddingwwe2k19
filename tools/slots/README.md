@@ -39,3 +39,9 @@ Chunk0.def sorted insert, name string 39370 + (id - 937). Renders/Titantrons: no
 - `slots_mem.request` in the game folder: lines `<hex VA> <hex len> [deref]` -> `slots_mem_<sec>_<n>.bin` (raw bytes,
   ReadProcessMemory, so bad addresses only log). `deref` reads a pointer at VA first.
 - `slots_fulldump.request` -> `slots_full_<sec>.dmp` (MiniDumpWithFullMemory; several GB).
+
+## test4 (2026-11-10 23:15): Universe auto-capture
+`universe_capture.ini` next to the exe: line 1 SAVEDATA path, line 2 archive folder, line 3 optional command.
+At game start and whenever the save's write time changes (checked every 5 s, stable 5 s), the DLL decodes the save in
+memory and writes the UNVSBODY0001 chunk (~30 KB) to `<archive>\unvs_<date_time>.bin`; then runs the command
+hidden. Read-only on the save. `tools/universe/tracker.py --archive <folder>` turns captures into history.

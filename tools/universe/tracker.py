@@ -13,7 +13,7 @@ Later reuse of a slot never rewrites old rows. Title names: titles.tsv ('id<TAB>
 
 usage: python3 tracker.py --save SAVEDATA --out DIR --cct "A - CCT dir" [--xlsx ratings.xlsx]
 """
-import argparse, csv, datetime, hashlib, os, sys
+import argparse, csv, datetime, hashlib, os, struct, sys, zlib
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import savedecode, matches
 
@@ -64,12 +64,27 @@ def load_tsv(path):
         return {a: b for a, b in (l.rstrip('\n').split('\t', 1) for l in f if '\t' in l and not l.startswith('#'))}
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('--save', required=True); ap.add_argument('--out', required=True)
-    ap.add_argument('--cct', required=True); ap.add_argument('--xlsx'); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument('--save'); ap.add_argument('--out', required=True)
+    ap.add_argument('--cct', required=True); ap.add_argument('--xlsx')
+    ap.add_argument('--archive', help='folder of unvs_*.bin captured by the slots DLL (processed in time order)'); a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    raw = open(a.save, 'rb').read(); md5 = hashlib.md5(raw).hexdigest()
-    blob = next((body for o, tag, size, body in savedecode.chunks(savedecode.decode(raw)) if tag == 'UNVSBODY0001' and body), None)
-    if blob is None: sys.exit('no Universe data in this save')
+    blobs = []                                        # (source label, Universe blob)
+    if a.archive and os.path.isdir(a.archive):
+        done_p = os.path.join(a.out, 'processed.txt')
+        done = set(open(done_p).read().split()) if os.path.exists(done_p) else set()
+        for fn in sorted(f for f in os.listdir(a.archive) if f.startswith('unvs_') and f.endswith('.bin')):
+            if fn in done: continue
+            c = open(os.path.join(a.archive, fn), 'rb').read()
+            csize = struct.unpack_from('<I', c, 24)[0]
+            try: blobs.append((fn, zlib.decompress(c[32:32 + csize])))
+            except zlib.error: print('skip (bad zlib):', fn)
+            done.add(fn)
+        open(done_p, 'w').write('\n'.join(sorted(done)))
+    if a.save and os.path.exists(a.save):
+        raw = open(a.save, 'rb').read()
+        b = next((body for o, tag, size, body in savedecode.chunks(savedecode.decode(raw)) if tag == 'UNVSBODY0001' and body), None)
+        if b is not None: blobs.append(('save ' + hashlib.md5(raw).hexdigest()[:8], b))
+    if not blobs: print('no new captures'); return
     names = load_idnames(a.cct); people = load_people(a.xlsx, names)
     aliases = load_tsv(os.path.join(a.out, 'aliases.tsv'))
     tpath = os.path.join(a.out, 'titles.tsv')
@@ -80,25 +95,28 @@ def main():
     if os.path.exists(hpath): hist = list(csv.DictReader(open(hpath, encoding='utf-8', newline='')))
     known = {h['match_key'] for h in hist}
     last_cap = max([int(h['capture']) for h in hist] or [0]); cap = last_cap + 1
-    now = datetime.datetime.now().isoformat(timespec='seconds'); added = 0; mno = 0
-    for start, day, title, kind, group in matches.parse(blob):
+    now = datetime.datetime.now().isoformat(timespec='seconds'); added = 0
+    for src, blob in blobs:
+      mno = 0; new_here = 0
+      for start, day, title, kind, group in matches.parse(blob):
         key = hashlib.md5(repr((day, title, kind, group)).encode()).hexdigest()[:16]
         mno += 1
         if key in known: continue
-        known.add(key); added += 1
+        known.add(key); added += 1; new_here += 1
         for gid, role, res in group:
             slot = names.get(gid, str(gid)); person = people.get(gid) or slot
             person = aliases.get(person, person)
-            hist.append(dict(capture=cap, captured_at=now, save_md5=md5, match_key=key, match_no=mno,
+            hist.append(dict(capture=cap, captured_at=now, save_md5=src, match_key=key, match_no=mno,
                              universe_day=day or '', title_id='' if title is None else title,
                              title='' if title is None else tnames.get(str(title), f'title {title}'), kind=kind,
                              side=role >> 8, game_id=gid, slot_name=slot, person=person,
                              role='manager' if role & 0xFF == 2 else 'wrestler',
                              result='W' if res in (0x1FF, 0x3FF) else 'L', pinfall=int(res in (0x1FF, 0x2FF))))
+      if new_here: cap += 1
     with open(hpath, 'w', encoding='utf-8', newline='') as f:
         w = csv.DictWriter(f, HIST_COLS); w.writeheader(); w.writerows(hist)
     build_reports(hist, a.out)
-    print(f'capture {cap if added else "-"}: {added} new matches (save {md5[:8]}), history {len({h["match_key"] for h in hist})} matches')
+    print(f'{added} new matches from {len(blobs)} source(s); history {len({h["match_key"] for h in hist})} matches')
 
 def build_reports(hist, out):
     order = []; bym = {}

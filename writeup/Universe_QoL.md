@@ -207,3 +207,10 @@
   it with Windows Python (needs python + openpyxl on Windows, unverified) — or the agent runs it via the shell.
   Known limits v1: Universe day is 0 for some cards (in-progress region); show name/brand not yet decoded; match
   type ("kind") not named; tag teams listed as their members.
+- 2026-11-10 23:15 **Automatic capture** (Matthew asked for automatic): DLL test4 (md5 5e10d6a4...) installed, with
+  `universe_capture.ini` -> every Universe save drops `unvs_<date_time>.bin` (~30 KB) into
+  `D:\Documents\WWE2K19 Universe Tracker\captures\` while the game runs (also once at game start). Capture never misses
+  a show as long as the game runs ~10 s after the save. Turning captures into the reports: `tracker.py --archive`
+  (processed.txt remembers what was read; matches dedupe). That step runs automatically only if line 3 of the ini
+  holds a command and Windows has Python + openpyxl (unknown); otherwise the agent runs it on request, or Matthew
+  double-clicks `Update tracker.cmd`. Tested: synthetic captures of two saves -> 7 matches, rerun adds nothing.
