@@ -493,15 +493,21 @@ static int capture_once(const char *save, const char *dir, const char *cmd) {
     if (!ok || got != n) { free(b); L("capture: short read"); return 0; }
     for (DWORD i = 0; i < n; i++) b[i] ^= SAVEKEY[i & 127];
     if (n < 4 || memcmp(b, "VCGD", 4)) { free(b); L("capture: bad magic"); return 0; }
-    uint8_t *t = 0; for (DWORD i = 0; i + 32 < n; i++) if (b[i] == 'U' && !memcmp(b + i, "UNVSBODY0001", 12)) { t = b + i; break; }
-    if (!t || memcmp(t + 16, "ZLIB", 4)) { free(b); L("capture: no Universe chunk"); return 0; }
-    uint32_t cs; memcpy(&cs, t + 24, 4); size_t len = 32 + (size_t)cs;
-    if ((size_t)(t - b) + len > n) { free(b); L("capture: chunk truncated"); return 0; }
-    SYSTEMTIME st; GetLocalTime(&st); char out[MAX_PATH];
-    CreateDirectoryA(dir, 0);
+    /* every Universe slot: UNVSBODY0001..0009 (tag + 32-byte header + zlib), concatenated into one capture file */
+    SYSTEMTIME st; GetLocalTime(&st); char out[MAX_PATH]; CreateDirectoryA(dir, 0);
     snprintf(out, sizeof out, "%s\\unvs_%04d%02d%02d_%02d%02d%02d.bin", dir, st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
-    FILE *w = fopen(out, "wb"); if (w) { fwrite(t, 1, len, w); fclose(w); }
-    free(b); L("[%8.2f] capture: Universe chunk (%u bytes) -> %s", (GetTickCount() - g_t0) / 1000.0, (unsigned)len, out);
+    FILE *w = 0; size_t len = 0; int nch = 0;
+    for (DWORD i = 0; i + 32 < n; i++) {
+        if (b[i] != 'U' || memcmp(b + i, "UNVSBODY000", 11) || b[i + 11] < '1' || b[i + 11] > '9' || memcmp(b + i + 16, "ZLIB", 4)) continue;
+        uint32_t cs; memcpy(&cs, b + i + 24, 4); size_t l = 32 + (size_t)cs;
+        if ((size_t)i + l > n) continue;
+        if (!w) w = fopen(out, "wb");
+        if (w) { fwrite(b + i, 1, l, w); len += l; nch++; }
+        i += (DWORD)l - 1;
+    }
+    if (w) fclose(w);
+    if (!nch) { free(b); L("capture: no Universe chunk"); return 0; }
+    free(b); L("[%8.2f] capture: %d Universe slot(s), %u bytes -> %s", (GetTickCount() - g_t0) / 1000.0, nch, (unsigned)len, out);
     if (cmd && *cmd) { STARTUPINFOA si = {sizeof si}; PROCESS_INFORMATION pi; char c[1024]; snprintf(c, sizeof c, "cmd.exe /c %s", cmd);
         si.dwFlags = STARTF_USESHOWWINDOW; si.wShowWindow = SW_HIDE;
         if (CreateProcessA(0, c, 0, 0, FALSE, CREATE_NO_WINDOW, 0, 0, &si, &pi)) { CloseHandle(pi.hThread); CloseHandle(pi.hProcess); L("capture: command started"); }

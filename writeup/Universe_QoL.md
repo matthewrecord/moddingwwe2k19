@@ -299,3 +299,9 @@
   Status: closed as not reproducible; no fix shipped. Rule for Matthew: after changing who is in an overflow slot,
   start a new Universe (or check that wrestler's managers). Reopen if it shows up in a Universe created after the
   slot contents were final.
+- 2026-11-10 23:15 **Multiple Universe slots.** Tracker now writes one folder per save slot
+  (`Universe 1\`, `Universe 2\`, ... each with its own standings.html, history.csv, settings.tsv, titles.tsv,
+  roster.tsv); slot 1 inherited the earlier history; old root files moved to `_old\root_v1\`. The tracker reads every
+  UNVSBODY000N from captures and (new) straight from SAVEDATA (`--save` added to tracker_auto.cmd / Update tracker.cmd),
+  so all slots are tracked even before the new DLL is in. DLL test5 (md5 fa8f1d76...) captures all slots into one
+  file; staged at `_moddingwwe2k19_builds\dinput8.dll.test5`, to install when the game is closed.

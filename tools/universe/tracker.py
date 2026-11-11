@@ -75,40 +75,56 @@ def load_tsv(path):
     with open(path, encoding='utf-8') as f:
         return {a: b for a, b in (l.rstrip('\n').split('\t', 1) for l in f if '\t' in l and not l.startswith('#'))}
 
+def read_capture(c):
+    """A capture file holds one or more Universe chunks (tag UNVSBODY000N + 32-byte header + zlib)."""
+    out, o = [], 0
+    while o + 32 <= len(c):
+        tag = c[o:o + 12]
+        if not tag.startswith(b'UNVSBODY000'): break
+        csize = struct.unpack_from('<I', c, o + 24)[0]
+        try: out.append((int(tag[11:12]), zlib.decompress(c[o + 32:o + 32 + csize])))
+        except (zlib.error, ValueError): pass
+        o += 32 + csize
+    return out
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('--save'); ap.add_argument('--out', required=True)
     ap.add_argument('--cct', required=True); ap.add_argument('--xlsx')
     ap.add_argument('--archive', help='folder of unvs_*.bin captured by the slots DLL (processed in time order)'); a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    blobs = []                                        # (source label, Universe blob)
+    blobs = []                                        # (source label, Universe slot, blob)
     if a.archive and os.path.isdir(a.archive):
         done_p = os.path.join(a.out, 'processed.txt')
         done = set(open(done_p).read().split()) if os.path.exists(done_p) else set()
         for fn in sorted(f for f in os.listdir(a.archive) if f.startswith('unvs_') and f.endswith('.bin')):
             if fn in done: continue
-            c = open(os.path.join(a.archive, fn), 'rb').read()
-            csize = struct.unpack_from('<I', c, 24)[0]
-            try: blobs.append((fn, zlib.decompress(c[32:32 + csize])))
-            except zlib.error: print('skip (bad zlib):', fn)
+            for slot, blob in read_capture(open(os.path.join(a.archive, fn), 'rb').read()): blobs.append((fn, slot, blob))
             done.add(fn)
         open(done_p, 'w').write('\n'.join(sorted(done)))
     if a.save and os.path.exists(a.save):
-        raw = open(a.save, 'rb').read()
-        b = next((body for o, tag, size, body in savedecode.chunks(savedecode.decode(raw)) if tag == 'UNVSBODY0001' and body), None)
-        if b is not None: blobs.append(('save ' + hashlib.md5(raw).hexdigest()[:8], b))
+        raw = open(a.save, 'rb').read(); src = 'save ' + hashlib.md5(raw).hexdigest()[:8]
+        for o, tag, size, body in savedecode.chunks(savedecode.decode(raw)):
+            if tag.startswith('UNVSBODY000') and tag != 'UNVSBODY0000' and body: blobs.append((src, int(tag[-1]), body))
     names = load_idnames(a.cct); people = load_people(a.xlsx, names)
     aliases = load_tsv(os.path.join(a.out, 'aliases.tsv'))
-    tpath = os.path.join(a.out, 'titles.tsv')
+    # one output folder per Universe save slot ("Universe 1", "Universe 2", ...); slot 1 inherits the v1 root data
+    u1 = os.path.join(a.out, 'Universe 1', '_data')
+    if os.path.exists(os.path.join(a.out, '_data', 'participants.csv')) and not os.path.exists(os.path.join(u1, 'participants.csv')):
+        import shutil; os.makedirs(u1, exist_ok=True)
+        shutil.copyfile(os.path.join(a.out, '_data', 'participants.csv'), os.path.join(u1, 'participants.csv'))
+        for f in ('settings.tsv', 'titles.tsv', 'roster.tsv'):
+            if os.path.exists(os.path.join(a.out, f)): shutil.copyfile(os.path.join(a.out, f), os.path.join(a.out, 'Universe 1', f))
+    slots = sorted({s for _, s, _ in blobs} | {int(d.split()[-1]) for d in os.listdir(a.out) if d.startswith('Universe ') and d.split()[-1].isdigit()})
+    for slot in slots:
+        process_slot(os.path.join(a.out, f'Universe {slot}'), [(src, b) for src, s, b in blobs if s == slot], names, people, aliases, slot)
+
+def process_slot(out, blobs, names, people, aliases, slot):
+    os.makedirs(os.path.join(out, '_data'), exist_ok=True)
+    tpath = os.path.join(out, 'titles.tsv')
     if not os.path.exists(tpath):
         open(tpath, 'w', encoding='utf-8').write('# championship id<TAB>name (edit freely)\n150\tAEW US Championship\n')
     tnames = load_tsv(tpath)
-    # internal per-participant store (one row per person per match); the readable files are rebuilt from it
-    os.makedirs(os.path.join(a.out, '_data'), exist_ok=True)
-    hpath = os.path.join(a.out, '_data', 'participants.csv'); hist = []
-    old = os.path.join(a.out, 'history.csv')          # v1 layout: migrate once
-    if not os.path.exists(hpath) and os.path.exists(old) and 'match_key' in open(old, encoding='utf-8').readline():
-        hist = list(csv.DictReader(open(old, encoding='utf-8', newline='')))
-        import shutil; shutil.copyfile(old, os.path.join(a.out, '_data', 'history_v1.csv'))   # history.csv is rewritten below as one row per match
+    hpath = os.path.join(out, '_data', 'participants.csv'); hist = []
     if os.path.exists(hpath): hist = list(csv.DictReader(open(hpath, encoding='utf-8', newline='')))
     known = {h['match_key'] for h in hist}
     last_cap = max([int(h['capture']) for h in hist] or [0]); cap = last_cap + 1
@@ -121,21 +137,21 @@ def main():
         if key in known: continue
         known.add(key); added += 1; new_here += 1
         for gid, role, res in group:
-            slot = names.get(gid, str(gid)); person = people.get(gid) or slot
+            sname = names.get(gid, str(gid)); person = people.get(gid) or sname
             person = aliases.get(person, person)
             hist.append(dict(capture=cap, captured_at=now, save_md5=src, match_key=key, match_no=mno,
                              universe_day=day or '', title_id='' if title is None else title,
                              title='' if title is None else tnames.get(str(title), f'title {title}'), kind=kind,
-                             side=role >> 8, game_id=gid, slot_name=slot, person=person,
+                             side=role >> 8, game_id=gid, slot_name=sname, person=person,
                              role='manager' if role & 0xFF == 2 else 'wrestler',
                              result='W' if res in (0x1FF, 0x3FF) else 'L', pinfall=int(res in (0x1FF, 0x2FF))))
       if new_here: cap += 1
     with open(hpath, 'w', encoding='utf-8', newline='') as f:
         w = csv.DictWriter(f, HIST_COLS); w.writeheader(); w.writerows(hist)
-    build_reports(hist, a.out)
-    print(f'{added} new matches from {len(blobs)} source(s); history {len({h["match_key"] for h in hist})} matches')
+    build_reports(hist, out, slot)
+    print(f'Universe {slot}: {added} new matches; history {len({h["match_key"] for h in hist})} matches')
 
-def build_reports(hist, out):
+def build_reports(hist, out, slot=1):
     order = []; bym = {}
     for h in hist:
         if h['match_key'] not in bym: bym[h['match_key']] = []; order.append(h['match_key'])
@@ -204,7 +220,7 @@ def build_reports(hist, out):
         if season[k] != season_now: continue
         byshow.setdefault(when(k)[1] or 'Unknown', []).append(k)
     show_rec = {sn: tally(ks) for sn, ks in byshow.items()}
-    write_html(rec, alltime, show_rec, cfg, season_now, season, offseason, reigns, order, bym, out)
+    write_html(rec, alltime, show_rec, cfg, season_now, season, offseason, reigns, order, bym, out, slot)
     with wopen(os.path.join(out, 'log.md')) as fh:
         fh.write('# Universe match log\n\n'); last = None
         for k in order:
@@ -294,7 +310,7 @@ def write_matches(order, bym, out, cfg, season, offseason):
                             winner_managers=' & '.join(h['person'] for h in _who(hs, 'W', 'manager')),
                             loser_managers=' & '.join(h['person'] for h in _who(hs, 'L', 'manager'))))
 
-def write_html(rec, alltime, show_rec, cfg, season_no, season, offseason, reigns, order, bym, out):
+def write_html(rec, alltime, show_rec, cfg, season_no, season, offseason, reigns, order, bym, out, slot=1):
     """standings.html: self-contained tabbed page (any browser), rebuilt on every run.
     Tabs: Standings | By show | Pay-per-views | Title history | All results | All-time. A checkbox on the standings
     tabs hides people who are not on a roster (brand outside settings.tsv roster_brands)."""
@@ -371,7 +387,7 @@ def write_html(rec, alltime, show_rec, cfg, season_no, season, offseason, reigns
         'alltime': f"{filt}{table(alltime.values(), 'st_all')}",
     }
     body = ''.join(f"<section class=pane id='{i}'>{panes[i]}</section>" for i, _ in tabs)
-    page = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Universe standings</title><style>
+    page = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Universe {slot} standings</title><style>
 body{{font:15px/1.45 system-ui,Segoe UI,sans-serif;background:#111418;color:#e8e8e8;margin:0;padding:24px 40px}}
 h1{{margin:0 0 4px;font-size:28px}} h2{{margin:26px 0 10px;font-size:17px;text-transform:uppercase;letter-spacing:1.5px;color:#d4af37}}
 h3{{margin:18px 0 6px;font-size:15px;color:#cfd3da}} small{{color:#8a8f98;font-weight:normal}} .sub{{color:#8a8f98}}
@@ -388,7 +404,7 @@ tr:hover td{{background:#1a1f26}} tr.nr td.p{{color:#9aa1ab;font-weight:400}}
 tr.reign td{{background:#1b1a12}} tr.defense td{{color:#b9bec6;font-size:14px}}
 .m{{padding:5px 0;border-bottom:1px solid #1d2229;max-width:1150px}} .def{{color:#8a8f98;margin:0 6px}}
 .tt{{margin-left:8px;font-size:11px;background:#6b5a1e;color:#fff;padding:2px 7px;border-radius:9px}}
-</style></head><body><h1>Universe standings</h1><div class=sub>{len(order)} matches recorded · updated {datetime.datetime.now():%Y-%m-%d %H:%M}</div>
+</style></head><body><h1>Universe {slot} standings</h1><div class=sub>{len(order)} matches recorded · updated {datetime.datetime.now():%Y-%m-%d %H:%M}</div>
 <nav>{nav}</nav>{body}
 <script>
 function show(id){{document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab==id));
