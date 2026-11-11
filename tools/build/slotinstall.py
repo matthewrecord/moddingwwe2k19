@@ -9,7 +9,7 @@ tools/slots proxy dinput8.dll. Runs on Matthew's PC (plain Python 3, no packages
     cannot delete), drops their Chunk0.def lines and the name string; the slot number and id become free again.
 
 Spec file: one wrestler per line, fields separated by '|', only the first is required; '#' starts a comment.
-  Folder | Display name | pofo file | moveset file | model files (comma separated)
+  Folder | Display name | pofo file | moveset file | model files (comma separated) | render (.OODL or .dds)
   A-Kid
   Angel Garza | Angel Garza | Angel Garza [Mod] 930.pofo
 Defaults: display name = folder name; the folder's only .pofo / .moveset (several -> name one, the run stops with
@@ -28,17 +28,23 @@ Same conventions as Test Wrestler (handoff 012, notes/characters step 1j):
 - models -> mods\\CCT\\characters\\pac\\ch\\ch<id><att>.pac with the internal name at 0x80C set to 000<id><att>.
 - Chunk0.def: one line per new file, inserted in sorted position. Name: SuperString English table.
 - Backups: <file>.orig_charslot (first original only, never overwritten). Install log: slots\\installed.json.
-Renders and Titantrons are not built yet (needs pac writers from .dds/.bk2): the select screen shows a default render.
+- render: the folder's .OODL (Oodle Tools output) if there is exactly one, else its .dds (stored, ~1 MB pac);
+  several -> name one in spec field 6. Written as custom_typea and custom_typeb\0<id>00.pac (renderpac.py).
+  `--renders 511 512 ...` adds/replaces renders for already installed slots.
+Titantrons are not built yet (.bk2 -> MVS pac writer still to do).
 """
 import argparse, glob, json, os, re, shutil, struct, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [HERE, os.path.join(HERE, '..', 'lib'), os.path.join(HERE, '..', 'audio')]
 from yukes import HSPC, SHDC, string_table_parse, string_table_build
 from bpe import expand
+import renderpac
 
 STR = 'mods/SuperString/pac/string/win/string_win.pac'
 PROF = 'mods/PerfectPlextra/pac/profile/profile_dat.pac'
 CH_DIR = 'mods/CCT/characters/pac/ch'
+RENDER_DIR = 'mods/CCT/renders/pac/menu/win/Assets/wwe19_singleread/texture/ssface'
+RENDER_TPL = os.path.join(HERE, 'render_template.pac')
 NAME_OFF = 0x80C
 DEAD_OK = set(range(938, 950))
 def sid_for(cid): return 39370 + (cid - 937)
@@ -54,9 +60,9 @@ def parse_spec(path):
     for ln in open(path, encoding='utf-8-sig'):
         ln = ln.split('#', 1)[0].strip()
         if not ln: continue
-        f = [x.strip() for x in ln.split('|')] + [''] * 5
+        f = [x.strip() for x in ln.split('|')] + [''] * 6
         out.append({'folder': f[0], 'name': f[1] or f[0], 'pofo': f[2], 'moveset': f[3],
-                    'models': [m.strip() for m in f[4].split(',') if m.strip()]})
+                    'models': [m.strip() for m in f[4].split(',') if m.strip()], 'render': f[5]})
     return out
 
 def pick(folder, ext, given, label):
@@ -103,6 +109,28 @@ def id_pool(game, slots):
     for i in range(struct.unpack_from('<I', hid, 4)[0]): used.add(struct.unpack_from('<I', hid, 8 + 32 * i + 0x10)[0])
     return [i for i in sorted(DEAD_OK) if i not in used] + [i for i in range(100, 1000) if i not in used and i not in DEAD_OK]
 
+def find_render(folder, given):
+    if given:
+        p = os.path.join(folder, given)
+        if not os.path.isfile(p): die('%s not found' % p)
+        return p
+    for ext in ('.OODL', '.dds'):
+        c = sorted(p for p in glob.glob(os.path.join(folder, '*')) if p.lower().endswith(ext.lower()))
+        if len(c) == 1: return c[0]
+        if len(c) > 1: die('%s: several %s files, name the render in spec field 6: %s' % (folder, ext, [os.path.basename(x) for x in c]))
+    return None
+
+def write_renders(G, chunk, cid, src):
+    data = open(src, 'rb').read()
+    oodl = data if data[:4] == b'OODL' else renderpac.oodl_from_dds(data)
+    if not os.path.exists(RENDER_TPL): die('render_template.pac missing next to slotinstall.py')
+    tpl = open(RENDER_TPL, 'rb').read()
+    for kind in 'ab':
+        rel = '%s/custom_type%s/0%03d00.pac' % (RENDER_DIR, kind, cid); dst = os.path.join(G, rel)
+        open(dst, 'wb').write(renderpac.build(tpl, oodl, kind, cid))
+        chunk_insert(chunk, rel.replace('/', '\\').lower().encode())
+
+
 def used_ids(game, slots):
     used = {s['id'] for s in slots}
     for ln in open(os.path.join(game, 'Chunk0.def'), 'rb').read().split(b'\r\n'):
@@ -122,6 +150,7 @@ def main():
     ap.add_argument('--game', required=True); ap.add_argument('--pictures'); ap.add_argument('--spec')
     ap.add_argument('--list', action='store_true'); ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--remove', type=int, nargs='+', metavar='SLOT')
+    ap.add_argument('--renders', type=int, nargs='+', metavar='SLOT')
     a = ap.parse_args(); G = a.game
     sdir = os.path.join(G, 'slots'); os.makedirs(sdir, exist_ok=True)
     logp = os.path.join(sdir, 'installed.json')
@@ -145,6 +174,10 @@ def main():
             cid = s_['id']
             for f in glob.glob(os.path.join(sdir, '%04d_%04d*' % (idx, cid))): shutil.move(f, os.path.join(trash, os.path.basename(f)))
             for f in glob.glob(os.path.join(G, CH_DIR, 'ch%03d??.pac' % cid)): shutil.move(f, os.path.join(trash, os.path.basename(f)))
+            for kind in 'ab':
+                f = os.path.join(G, RENDER_DIR, 'custom_type%s' % kind, '0%03d00.pac' % cid)
+                if os.path.exists(f): shutil.move(f, os.path.join(trash, 'render_type%s_0%03d00.pac' % (kind, cid)))
+            chunk = [l for l in chunk if not (l.lower().startswith(b'mods\\cct\\renders\\') and l.lower().endswith(b'\\0%03d00.pac' % cid))]
             chunk = [l for l in chunk if not re.search(rb'\\ch%03d\d\d\.pac$' % cid, l.lower()) or not l.lower().startswith(b'mods\\cct\\characters\\')]
             info = next((x for x in inst if x['index'] == idx), {})
             if info.get('sid') in strings and info.get('sid') != 39370: del strings[info['sid']]
@@ -152,6 +185,20 @@ def main():
             print('removed slot %d (index %d, id %d) %s' % (slot, idx, cid, info.get('name', '')))
         S.files[0]['data'] = string_table_build(pre, sorted(strings.items()))
         open(os.path.join(G, STR), 'wb').write(H.replace(0, S.build()))
+        open(os.path.join(G, 'Chunk0.def'), 'wb').write(b'\r\n'.join(chunk)); json.dump(inst, open(logp, 'w'), indent=1)
+        return
+    if a.renders:
+        if not a.pictures: die('--pictures is required')
+        try: open(os.path.join(G, 'Chunk0.def'), 'r+b').close()
+        except OSError: die('game files are locked: close the game first')
+        backup(os.path.join(G, 'Chunk0.def')); chunk = open(os.path.join(G, 'Chunk0.def'), 'rb').read().split(b'\r\n')
+        for slot in a.renders:
+            info = next((x for x in inst if x['index'] == slot - 1), None)
+            if not info: die('slot %d is not in slots\\installed.json' % slot)
+            src = find_render(os.path.join(a.pictures, info['folder']), '')
+            if not src: die('%s: no .OODL or .dds' % info['folder'])
+            write_renders(G, chunk, info['id'], src); info['render'] = os.path.basename(src)
+            print('slot %d (id %d) %s: render from %s' % (slot, info['id'], info['name'], os.path.basename(src)))
         open(os.path.join(G, 'Chunk0.def'), 'wb').write(b'\r\n'.join(chunk)); json.dump(inst, open(logp, 'w'), indent=1)
         return
     if a.list or not a.spec:
@@ -179,6 +226,7 @@ def main():
         pofo = bytearray(open(pofo_p, 'rb').read()); mov = open(mov_p, 'rb').read()
         if len(pofo) != 0x1E4 or len(mov) != 0xD88: die('%s: pofo/moveset sizes %d/%d' % (w['folder'], len(pofo), len(mov)))
         models, skipped = models_for(folder, w['models'])
+        render = find_render(folder, w['render'])
         if not models: die('%s: no usable model pac (skipped: %s)' % (w['folder'], skipped))
         cid = next((i for i in pool if i not in used), None)
         idx = next((i for i in range(509, 1024) if i not in used_idx), None)
@@ -194,10 +242,10 @@ def main():
         if pofo[0x20] != 1: print('note: %s pofo is not flagged playable (+0x20 = %d): set to 1' % (w['folder'], pofo[0x20])); pofo[0x20] = 1
         plan.append({'name': w['name'], 'folder': w['folder'], 'index': idx, 'id': cid, 'source_id': src_id, 'sid': sid,
                      'pofo': bytes(pofo), 'moveset': mov, 'pofo_file': os.path.basename(pofo_p),
-                     'moveset_file': os.path.basename(mov_p), 'models': models, 'skipped': skipped})
+                     'moveset_file': os.path.basename(mov_p), 'models': models, 'skipped': skipped, 'render': render})
     for p in plan:
         print('slot %d (index %d)  id %d  "%s"  pofo %s, moveset %s, attires %s%s' % (
-            p['index'] + 1, p['index'], p['id'], p['name'], p['pofo_file'], p['moveset_file'], sorted(p['models']),
+            p['index'] + 1, p['index'], p['id'], p['name'], p['pofo_file'], p['moveset_file'], sorted(p['models']) + ['render ' + (os.path.basename(p['render']) if p['render'] else 'NONE')],
             ('  SKIPPED (HSPC format): %s' % p['skipped']) if p['skipped'] else ''))
     if a.dry_run: print('dry run: nothing written'); return
 
@@ -212,7 +260,9 @@ def main():
             shutil.copyfile(src, dst)
             with open(dst, 'r+b') as f: f.seek(NAME_OFF); f.write(b'000%03d%s' % (p['id'], att.encode()))
             chunk_insert(chunk, ('mods\\cct\\characters\\pac\\ch\\ch%03d%s.pac' % (p['id'], att)).encode())
+        if p['render']: write_renders(G, chunk, p['id'], p['render'])
         inst.append({k: p[k] for k in ('name', 'folder', 'index', 'id', 'source_id', 'sid', 'pofo_file', 'moveset_file')} |
+                    {'render': os.path.basename(p['render']) if p['render'] else None} |
                     {'models': {k: os.path.basename(v) for k, v in p['models'].items()}})
     S.files[0]['data'] = string_table_build(pre, sorted(strings.items()))
     open(os.path.join(G, STR), 'wb').write(H.replace(0, S.build()))
