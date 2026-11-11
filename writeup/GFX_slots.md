@@ -112,3 +112,14 @@ Create an Entrance. Matthew got 9 selectable with Wrestleminus.
 - Open: what CCT reads first (it may read the current pofo to show the slot), whether it writes the Universe copies,
   which files it copies by slotId (models, renders, trons) and whether their internal names match what the
   overflow loader needs (notes/characters step 1j).
+
+## 09:40 Direction change proposed by Matthew: build our own installer instead of bridging CCT
+- CCT screenshots: per-slot Import = CH-Pac-Files, Moveset, Pofo, Render, Tron (**Apron, Mini, Ramp, Titan, Wall** =
+  five tron kinds, matching the five lists 0/1/44/42/43; which is which still to pin, "Titan" likely the fifth list
+  gfx_v1 left alone). Also: Chunk Tools (Regenerate Chunk0.def, Clear Chunk0.arc), Install Mods (PerfectPlextra,
+  SuperString, Titantron Fix, Universal Alternate Attire Unlock), slot types Default/DLC/Hidden, Universe1-3 lists.
+- Our coverage today: pofo + moveset + models + render + name string + Chunk0.def for overflow slots
+  (`tools/build/slotinstall.py`), tron menu entries (`gfxslots.py`). Missing for parity: tron file import (5 kinds),
+  export, uninstall, live injection (ours applies at next game start), a front end Matthew can run himself.
+- Sources named by Gemini, checked: github.com/pozzum/WrestleMINUS exists (open C#, Yuke's formats). "AuroraForge-
+  NT100" not found by search; "Genesis (2KLive)" appears to be a Patreon tool, not open source. Unverified beyond that.
