@@ -438,6 +438,38 @@ static int install_tracer(uint8_t *mem) {
     return 1;
 }
 
+
+/* ---- test3b: Universe probe. Logs each NEW (rcx object, r8 id) pair passed to the Universe per-superstar lookup
+   0x140bbe5e0 (509 records x 0x450, id at +0x38c from rcx), so slots_mem.request can read the live table. ---- */
+static uint64_t g_useen[256]; static volatile LONG g_nuseen;
+static void __attribute__((ms_abi)) uni_hit(uint64_t obj, uint64_t id) {
+    EnterCriticalSection(&g_tcs);
+    uint64_t key = obj ^ (id << 48); int found = 0;
+    for (LONG i = 0; i < g_nuseen; i++) if (g_useen[i] == key) { found = 1; break; }
+    if (!found && g_nuseen < 256) { g_useen[g_nuseen++] = key;
+        L("[%8.2f] UNIV lookup obj %llx id %llu%s", (GetTickCount() - g_t0) / 1000.0, (unsigned long long)obj, (unsigned long long)(uint32_t)id,
+          ((uint32_t)id < 1024 && g_isslot[(uint32_t)id]) ? " (OVERFLOW SLOT)" : ""); }
+    LeaveCriticalSection(&g_tcs);
+}
+static int install_uniprobe(uint8_t *c) {
+    const uint64_t va = 0x140bbe5e0; const char *orig = "48895c2408"; const int n = 5;
+    if (!same(va, orig)) { L("uniprobe: MISMATCH, off"); return 0; }
+    int o = 0; uint8_t ob[8]; hexb(orig, ob);
+    const uint8_t push[] = {0x51, 0x52, 0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53}; memcpy(c + o, push, 10); o += 10;
+    c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xEC; c[o++] = 0x28;                  /* sub rsp,28 (keeps 16-alignment: 6 pushes + 0x28) */
+    c[o++] = 0x4C; c[o++] = 0x89; c[o++] = 0xC2;                                 /* mov rdx, r8 (rcx already = obj) */
+    c[o++] = 0x48; c[o++] = 0xB8; uint64_t fn = (uint64_t)uni_hit; memcpy(c + o, &fn, 8); o += 8;
+    c[o++] = 0xFF; c[o++] = 0xD0;
+    c[o++] = 0x48; c[o++] = 0x83; c[o++] = 0xC4; c[o++] = 0x28;
+    const uint8_t pop[] = {0x41, 0x5B, 0x41, 0x5A, 0x41, 0x59, 0x41, 0x58, 0x5A, 0x59}; memcpy(c + o, pop, 10); o += 10;
+    memcpy(c + o, ob, n); o += n;
+    c[o++] = 0xFF; c[o++] = 0x25; memset(c + o, 0, 4); o += 4; uint64_t back = VA(va) + n; memcpy(c + o, &back, 8); o += 8;
+    int64_t rel = (int64_t)(uintptr_t)c - (int64_t)(VA(va) + 5);
+    if (rel > INT32_MAX || rel < INT32_MIN) { L("uniprobe: out of range"); return 0; }
+    uint8_t j[8]; j[0] = 0xE9; int32_t r32 = (int32_t)rel; memcpy(j + 1, &r32, 4); put(va, j, n);
+    L("uniprobe installed at %llx", (unsigned long long)va); return 1;
+}
+
 /* ---- VFS lookup logger: the game's file-index lookup 0x141264010(char *path, out) (229 callers). Post-call hook:
    logs every path the index does NOT find (deduplicated, max 400) and every lookup naming an overflow slot's id. ---- */
 uintptr_t g_vfs_tramp;
@@ -495,7 +527,8 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD why, LPVOID r) {
             InitializeCriticalSection(&g_tcs); uint8_t *m = alloc_near(0x1000);
             for (int q = 0; q < g_nslots; q++) g_isslot[g_slots[q].id] = 1;
             if (m && install_tracer(m)) { DWORD old; VirtualProtect(m, 0x1000, PAGE_EXECUTE_READ, &old); L("tracer on for %d overflow slots", g_nslots); }
-            uint8_t *vm = alloc_near(0x1000); if (vm && install_vfs(vm)) { DWORD old; VirtualProtect(vm, 0x1000, PAGE_EXECUTE_READ, &old); L("vfs logger on"); } } } }
+            uint8_t *vm = alloc_near(0x1000); if (vm && install_vfs(vm)) { DWORD old; VirtualProtect(vm, 0x1000, PAGE_EXECUTE_READ, &old); L("vfs logger on"); }
+            uint8_t *um = alloc_near(0x1000); if (um && install_uniprobe(um)) { DWORD old; VirtualProtect(um, 0x1000, PAGE_EXECUTE_READ, &old); } } } }
         else L("unexpected image base: NOTHING applied");
     }
     if (why == DLL_PROCESS_DETACH && g_log) dump_ring("game exit");
