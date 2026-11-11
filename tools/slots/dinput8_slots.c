@@ -12,6 +12,7 @@
  * Build: x86_64-w64-mingw32-gcc -O2 -shared -masm=intel -o dinput8.dll dinput8_slots.c dinput8.def -static-libgcc
  */
 #include <windows.h>
+#include <tlhelp32.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -305,6 +306,7 @@ static int hook_all(void) {
    suspension was blocked by Windows security, so this build uses the standard dump API instead.) ---- */
 typedef BOOL (WINAPI *MDWD)(HANDLE, DWORD, HANDLE, int, void *, void *, void *);
 static void dump_kind(int type, const char *stem);
+static volatile LONG g_wact; static void w_apply_all(void); static void find_request(const char *q); static void watch_request(const char *q);
 static void dump_threads(void) { dump_kind(0x0, "slots_snapshot"); }
 /* test3: memory reads for Universe work. slots_mem.request = lines "<hex VA> <hex len> [deref]" (deref: read a
    pointer at VA first, then dump len bytes at that pointer); output slots_mem_<sec>_<n>.bin + a log line. Reads use
@@ -347,6 +349,9 @@ static DWORD WINAPI rec_thread(LPVOID p) {
         if (i % 10 == 0) {   /* remote trigger: an agent creates slots_snapshot.request in the game folder */
             char q[MAX_PATH]; GetModuleFileNameA(NULL, q, MAX_PATH); char *z = strrchr(q, '\\'); if (z) strcpy(z + 1, "slots_snapshot.request");
             if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) { DeleteFileA(q); L("[%8.2f] snapshot requested by file", (GetTickCount() - g_t0) / 1000.0); dump_threads(); dump_ring("request file"); }
+            if (z) { strcpy(z + 1, "slots_find.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) find_request(q);
+                     strcpy(z + 1, "slots_watch.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) watch_request(q); }
+            if (g_wact && i % 20 == 0) w_apply_all();
             if (z) { strcpy(z + 1, "slots_mem.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) mem_request(q);
                      strcpy(z + 1, "slots_fulldump.request");
                      if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) { DeleteFileA(q); L("[%8.2f] full dump requested", (GetTickCount() - g_t0) / 1000.0); dump_kind(0x2, "slots_full"); } }
@@ -529,6 +534,90 @@ static DWORD WINAPI capture_thread(LPVOID p) {
         if (CompareFileTime(&a.ftLastWriteTime, &seen)) { seen = a.ftLastWriteTime; stable = 0; continue; }
         if (CompareFileTime(&seen, &last) && ++stable >= 1) { if (capture_once(save, dir, cmd)) last = seen; stable = 0; }
     }
+}
+
+
+/* ---- test6: find + hardware watchpoints (for locating game routines, e.g. Universe team seeding).
+   slots_find.request: one line of text -> logs up to 64 addresses where it occurs in committed memory (FIND lines).
+   slots_watch.request: up to 4 lines "<hex addr> <len 1|2|4|8> <w|rw> <name>" -> DR0-DR3 on every thread
+   (re-applied every 2 s for new threads); each new instruction hitting a watch is logged once (WATCH lines, with exe
+   offsets found on the stack). An empty watch file clears the watchpoints. ---- */
+static uintptr_t g_w[4]; static int g_wlen[4], g_wtype[4]; static char g_wname[4][32];
+static uintptr_t g_wseen[2048]; static volatile LONG g_nws;
+static void w_apply_thread(HANDLE th) {
+    CONTEXT c; memset(&c, 0, sizeof c); c.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+    if (!GetThreadContext(th, &c)) return;
+    DWORD64 dr7 = 0; DWORD64 *r[4] = {&c.Dr0, &c.Dr1, &c.Dr2, &c.Dr3};
+    for (int i = 0; i < 4; i++) { *r[i] = g_w[i];
+        if (g_w[i]) { int ln = g_wlen[i] == 8 ? 2 : g_wlen[i] == 4 ? 3 : g_wlen[i] == 2 ? 1 : 0;
+            dr7 |= (1ull << (i * 2)) | ((DWORD64)g_wtype[i] << (16 + i * 4)) | ((DWORD64)ln << (18 + i * 4)); } }
+    c.Dr7 = dr7; SetThreadContext(th, &c);
+}
+static void w_apply_all(void) {
+    DWORD me = GetCurrentThreadId(), pid = GetCurrentProcessId();
+    HANDLE s = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0); THREADENTRY32 te; te.dwSize = sizeof te;
+    if (s == INVALID_HANDLE_VALUE) return;
+    for (BOOL ok = Thread32First(s, &te); ok; ok = Thread32Next(s, &te)) {
+        if (te.th32OwnerProcessID != pid || te.th32ThreadID == me) continue;
+        HANDLE th = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, te.th32ThreadID);
+        if (!th) continue;
+        if (SuspendThread(th) != (DWORD)-1) { w_apply_thread(th); ResumeThread(th); }
+        CloseHandle(th);
+    }
+    CloseHandle(s);
+}
+static LONG CALLBACK w_veh(PEXCEPTION_POINTERS ep) {
+    if (ep->ExceptionRecord->ExceptionCode != EXCEPTION_SINGLE_STEP) return EXCEPTION_CONTINUE_SEARCH;
+    CONTEXT *c = ep->ContextRecord; DWORD64 st = c->Dr6;
+    if (!(st & 0xF)) return EXCEPTION_CONTINUE_SEARCH;
+    for (int i = 0; i < 4; i++) if (st & (1u << i)) {
+        uintptr_t key = c->Rip ^ ((uintptr_t)i << 60); int dup = 0; LONG n = g_nws;
+        for (LONG k = 0; k < n && k < 2048; k++) if (g_wseen[k] == key) { dup = 1; break; }
+        if (dup || n >= 2048) continue;
+        g_wseen[InterlockedIncrement(&g_nws) - 1] = key;
+        char line[400]; int o = snprintf(line, sizeof line, "WATCH %s rip=%llx rcx=%llx rdx=%llx r8=%llx rsi=%llx rdi=%llx stack:", g_wname[i],
+            (unsigned long long)c->Rip, (unsigned long long)c->Rcx, (unsigned long long)c->Rdx, (unsigned long long)c->R8,
+            (unsigned long long)c->Rsi, (unsigned long long)c->Rdi);
+        uint64_t *sp = (uint64_t *)c->Rsp;
+        for (int j = 0, k = 0; j < 96 && k < 10 && o < 360; j++) { uint64_t v = sp[j];
+            if (v >= g_img + 0x1000 && v < g_img + 0x1e06000) { o += snprintf(line + o, sizeof line - o, " %llx", (unsigned long long)v); k++; } }
+        L("[%8.2f] %s", (GetTickCount() - g_t0) / 1000.0, line);
+    }
+    c->Dr6 = 0; return EXCEPTION_CONTINUE_EXECUTION;
+}
+static void find_request(const char *q) {
+    FILE *f = fopen(q, "rb"); if (!f) return; char pat[128] = {0}; size_t pl = fread(pat, 1, sizeof pat - 1, f); fclose(f); DeleteFileA(q);
+    while (pl && (pat[pl - 1] == '\n' || pat[pl - 1] == '\r')) pat[--pl] = 0;
+    if (!pl) return;
+    L("[%8.2f] FIND '%s'", (GetTickCount() - g_t0) / 1000.0, pat);
+    static unsigned char buf[1 << 20]; uintptr_t a = 0x10000; MEMORY_BASIC_INFORMATION mi; int hits = 0;
+    while (a < 0x7FFFFFFF0000ull && VirtualQuery((void *)a, &mi, sizeof mi) && hits < 64) {
+        uintptr_t rb = (uintptr_t)mi.BaseAddress, re = rb + mi.RegionSize;
+        int ok = mi.State == MEM_COMMIT && !(mi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) &&
+                 (mi.Protect & (PAGE_READWRITE | PAGE_READONLY | PAGE_WRITECOPY | PAGE_EXECUTE_READWRITE));
+        if (ok && rb != (uintptr_t)buf) for (uintptr_t p = rb; p < re && hits < 64; p += sizeof buf - 128) {
+            SIZE_T n = re - p < sizeof buf ? re - p : sizeof buf, got = 0;
+            if (!ReadProcessMemory(GetCurrentProcess(), (void *)p, buf, n, &got) || got < pl) break;
+            for (SIZE_T k = 0; k + pl <= got && hits < 64; k++)
+                if (buf[k] == (unsigned char)pat[0] && !memcmp(buf + k, pat, pl)) {
+                    uintptr_t ea = p + k; if (ea >= (uintptr_t)buf && ea < (uintptr_t)buf + sizeof buf) continue;
+                    L("FIND hit %llx (region %llx size %llx type %lx%s)", (unsigned long long)ea, (unsigned long long)rb,
+                      (unsigned long long)mi.RegionSize, mi.Type, (ea >= g_img && ea < g_img + 0x4000000) ? ", exe image" : ""); hits++; }
+        }
+        a = re;
+    }
+    L("FIND done: %d hit(s)", hits);
+}
+static void watch_request(const char *q) {
+    FILE *f = fopen(q, "r"); if (!f) return; char line[160]; int n = 0;
+    memset(g_w, 0, sizeof g_w);
+    while (n < 4 && fgets(line, sizeof line, f)) { unsigned long long a; int ln; char ty[8] = "w", nm[32] = "w";
+        if (sscanf(line, "%llx %d %7s %31s", &a, &ln, ty, nm) < 2) continue;
+        g_w[n] = (uintptr_t)a; g_wlen[n] = ln; g_wtype[n] = strcmp(ty, "rw") ? 1 : 3; strcpy(g_wname[n], nm);
+        L("WATCH set %d: %llx len %d %s %s", n, a, ln, ty, nm); n++; }
+    fclose(f); DeleteFileA(q);
+    static int veh_on; if (!veh_on) { AddVectoredExceptionHandler(1, w_veh); veh_on = 1; }
+    g_wact = n; w_apply_all(); L("WATCH armed: %d", n);
 }
 
 /* ---- VFS lookup logger: the game's file-index lookup 0x141264010(char *path, out) (229 callers). Post-call hook:

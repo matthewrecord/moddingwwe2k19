@@ -45,3 +45,8 @@ Chunk0.def sorted insert, name string 39370 + (id - 937). Renders/Titantrons: no
 At game start and whenever the save's write time changes (checked every 5 s, stable 5 s), the DLL decodes the save in
 memory and writes the UNVSBODY0001 chunk (~30 KB) to `<archive>\unvs_<date_time>.bin`; then runs the command
 hidden. Read-only on the save. `tools/universe/tracker.py --archive <folder>` turns captures into history.
+
+## test6 (2026-11-10 23:40): find + hardware watchpoints
+- `slots_find.request` (one line of text) -> `FIND hit <addr>` lines for every occurrence in committed memory (max 64).
+- `slots_watch.request`: up to 4 lines `<hex addr> <1|2|4|8> <w|rw> <name>` -> DR0-DR3 on all threads (re-applied
+  every 2 s); each new instruction that hits is logged once as `WATCH <name> rip=... stack: <exe return addresses>`.
