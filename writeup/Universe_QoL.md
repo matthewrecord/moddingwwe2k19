@@ -214,3 +214,6 @@
   (processed.txt remembers what was read; matches dedupe). That step runs automatically only if line 3 of the ini
   holds a command and Windows has Python + openpyxl (unknown); otherwise the agent runs it on request, or Matthew
   double-clicks `Update tracker.cmd`. Tested: synthetic captures of two saves -> 7 matches, rerun adds nothing.
+- 2026-11-10 23:20 Matthew installed Python (Store, `C:\Users\Acer\AppData\Local\Python\pythoncore-3.15-64\python.exe`)
+  + openpyxl. `universe_capture.ini` line 3 now runs `tracker_auto.cmd` (hidden; output to `last_run.txt`) after
+  every capture -> **fully automatic**. `Update tracker.cmd` = same with a visible window, for manual runs.
