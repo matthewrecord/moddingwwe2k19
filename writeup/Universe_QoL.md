@@ -236,3 +236,6 @@
   * Seasons: new season when the Universe day jumps back > season_reset_drop (100) days; offseason = days
     offseason_first_day..last_day (121-212 = May-July if day 1 = 1 Jan; unconfirmed); `count_offseason no` keeps
     offseason dummy shows out of all standings. Pages: current-season standings + all-time table (records_all_time.csv).
+- 2026-11-10 22:29 (Matthew) The sheet/game mismatch is because tonight's Universe is a throwaway test; the
+  Wrestlers sheet's Brand column reflects his real roster. => Sheet-based brand filter is valid for real use;
+  save-based roster decoding drops to a nice-to-have (useful for test Universes / catching sheet drift).
