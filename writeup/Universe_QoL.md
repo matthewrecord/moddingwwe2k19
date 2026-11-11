@@ -25,3 +25,23 @@
    tool to write custom teams into a Universe save or patch the import.
 5. **Stats layer**: star ratings, match of the night, PPV results, rivalries, appearances, year-end awards.
 6. **In game (long term)**: DLL hooks so title history/records use the person identity and/or show our records in menus.
+
+## Findings log
+- 2026-11-10 20:50 **Save location found**: Steam app id is **817130** (steam_appid.txt; not 960090), saves in
+  `C:\Program Files (x86)\Steam\userdata\93452036\817130\remote\SAVEDATA` + `SAVEDATA_BACKUP` (identical, 49,922,765
+  bytes, md5 2bfe6591a0a9b873537ec69ef9c97b7d after Universe show 1). Steam Cloud syncs this folder (remotecache.vdf).
+  Backup: `<game>\_moddingwwe2k19_builds\saves\20261110_2044_universe_after_show1\`.
+  Options files (not saves) are in `D:\Documents\WWE2K19\`.
+- Save format first look: whole file is obfuscated; header begins `aurr3198`; recurring `35 36 35 36` / `36 35 36 37`
+  where plaintext is presumably zero -> looks like a simple position-keyed XOR/additive stream, not compression or
+  encryption. First ~36 MB high entropy (7.98 bits/byte: compressed or random-keyed), tail lower (4.4-6.2). To decode
+  in step 2 (exe: `CUserSaveDataIOThread`, `yCSetProfileMainSaveData`, `CDefaultSaveDataMaker`).
+- Matthew's Universe show 1 (20:44) with Test Wrestlers **Angel Garza (slot 512)** and **Keith Lee (slot 511)**, each
+  holding a title. Observed:
+  1. Every Test Wrestler defaults to **three copies of one CAW as manager** in Universe (bug; hypothesis: a 509-wide
+     per-superstar Universe table read at index >= 509 lands in neighbouring data, e.g. the CAW block).
+  2. Neither entrance played (both champions). Earlier, without titles, entrances played in some arenas.
+  3. In their match wrestlers fell randomly, then glitched: one could not get up, the other could not grab him;
+     repeated the same on SmackDown. (Hypothesis: the manager/run-in AI or a bad Universe per-superstar record.)
+  Slots log for this session: no crash/exception records; TRACE lines only from known getters.
+  The previous throwaway Universe save was overwritten by this one (only one Universe save slot file).
