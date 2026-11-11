@@ -1,0 +1,109 @@
+index	owner	slot	manager	action
+102	Triple H	0	Kay Lee Ray	clear
+111	Matt Hardy	0	Bray Wyatt	clear
+122	Mickie James	0	Alexa Bliss	keep
+131	Kofi Kingston	0	AVAILABLE GFX (Selectable)	clear
+131	Kofi Kingston	1	AVAILABLE GFX	clear
+143	AVAILABLE GFX	0	Karl Anderson	clear
+144	The Miz	0	Trent Beretta | AVAILABLE GFX	clear
+144	The Miz	1	Hikuleo	clear
+144	The Miz	2	AVAILABLE GFX (Selectable)	clear
+162	Dolph Ziggler	0	Drew McIntyre	clear
+164	Drew McIntyre	0	Dolph Ziggler	clear
+165	Sheamus	0	Cesaro	clear
+170	Trent Beretta | AVAILABLE GFX	0	The Miz	clear
+175	Tomohiro Ishii	0	Enzo Amore | Enzo and Cass GFX	clear
+175	Tomohiro Ishii	1	Trent Seven	clear
+178	Togi Makabe	0	Danny Burch | AVAILABLE GFX	clear
+181	AVAILABLE GFX (Selectable)	0	Jey Uso	clear
+182	Jey Uso	0	AVAILABLE GFX (Selectable)	clear
+184	Simon Gotch | AVAILABLE GFX	0	Chris Dickinson	clear
+186	Heather Slater | Nexus GFX	0	Rhyno	clear
+188	Brock Lesnar	0	AVAILABLE GFX (Selectable)	clear
+197	Cesaro	0	Sheamus	clear
+205	Kenny King	0	Uhaa Nation	clear
+205	Kenny King	1	Dana Brooke	clear
+209	AVAILABLE GFX (Selectable)	0	Kofi Kingston	clear
+209	AVAILABLE GFX (Selectable)	1	AVAILABLE GFX	clear
+210	Dirty Johnny Curtis	0	Tyler Breeze	clear
+211	Brie Bella	0	Nikki Bella	keep
+212	Nikki Bella	0	Brie Bella	keep
+215	Diesel	0	Shawn Michaels '97	keep
+216	Chris Dickinson	0	Simon Gotch | AVAILABLE GFX	clear
+217	Hikuleo	0	AVAILABLE GFX (Selectable)	clear
+218	Bray Wyatt	0	Matt Hardy	clear
+220	Naomichi Marufuji	0	Dominik Mysterio | Judgment Day GFX	clear
+221	Dominik Mysterio | Judgment Day GFX	0	Naomichi Marufuji	clear
+229	Batista	0	Tegan Nox	clear
+229	Batista	1	Marcel Barthel | Trey Miguel GFX	clear
+230	AVAILABLE GFX	0	Grizzled Young Veteran GFX	clear
+231	Grizzled Young Veteran GFX	0	AVAILABLE GFX	clear
+233	Tegan Nox	0	Marcel Barthel | Trey Miguel GFX	clear
+233	Tegan Nox	1	Batista	clear
+233	Tegan Nox	2	Ryback	clear
+234	AVAILABLE GFX	0	AVAILABLE GFX (Selectable)	clear
+234	AVAILABLE GFX	1	Kofi Kingston	clear
+235	Miro	0	Vaudevillains GFX	clear
+236	AVAILABLE GFX (Selectable)	0	Hikuleo	clear
+238	Sami Zayn	0	Kevin Owens	keep
+242	Marcel Barthel | Trey Miguel GFX	0	Tegan Nox	clear
+242	Marcel Barthel | Trey Miguel GFX	1	Batista	clear
+244	Frankie Kazarian | AVAILABLE GFX	0	AVAILABLE GFX	clear
+244	Frankie Kazarian | AVAILABLE GFX	1	Luke Harper	clear
+245	AVAILABLE GFX	0	Frankie Kazarian | AVAILABLE GFX	clear
+245	AVAILABLE GFX	1	Luke Harper	clear
+246	Luke Harper	0	Frankie Kazarian | AVAILABLE GFX	clear
+246	Luke Harper	1	AVAILABLE GFX	clear
+247	Danny Burch | AVAILABLE GFX	0	Togi Makabe	clear
+248	Chuck Taylor | AVAILABLE GFX	0	Nick Comoroto | The Factory GFX	clear
+249	Nick Comoroto | The Factory GFX	0	Chuck Taylor | AVAILABLE GFX	clear
+250	Ortiz | AVAILABLE GFX	0	Luchasaurus | Available GFX	clear
+252	Luchasaurus | Available GFX	0	Ortiz | AVAILABLE GFX	clear
+320	Vaudevillains GFX	0	Miro	clear
+324	Kevin Owens	0	Sami Zayn	keep
+326	Tyler Breeze	0	Dirty Johnny Curtis	clear
+329	Wes Lee	0	Max Caster | The Acclaimed GFX	clear
+330	Max Caster | The Acclaimed GFX	0	Wes Lee	clear
+338	AVAILABLE GFX (Selectable)	0	AVAILABLE GFX	clear
+341	AVAILABLE GFX	0	AVAILABLE GFX (Selectable)	clear
+343	Alexa Bliss	0	Mickie James	keep
+348	Uhaa Nation	0	Kenny King	clear
+348	Uhaa Nation	1	Dana Brooke	clear
+350	Karl Anderson	0	AVAILABLE GFX	clear
+360	Andrade El Idolo	0	Zelina Vega	clear
+362	Roderick Strong	0	reDragon GFX	clear
+362	Roderick Strong	1	Kyle O'Reilly	keep
+362	Roderick Strong	2	Adam Cole	keep
+365	AVAILABLE GFX	0	Bullet Club General GFX	clear
+366	Bullet Club General GFX	0	AVAILABLE GFX	clear
+367	AVAILABLE GFX	0	D'Angelo Family GFX	clear
+368	D'Angelo Family GFX	0	AVAILABLE GFX	clear
+369	Eric Young	0	Alexander Wolfe | Imperium GFX	clear
+369	Eric Young	1	AVAILABLE GFX	clear
+370	Alexander Wolfe | Imperium GFX	0	Eric Young	clear
+370	Alexander Wolfe | Imperium GFX	1	AVAILABLE GFX	clear
+371	AVAILABLE GFX	0	Eric Young	clear
+371	AVAILABLE GFX	1	Alexander Wolfe | Imperium GFX	clear
+373	Iconics GFX	0	Great Bash Heel GFX	clear
+374	Great Bash Heel GFX	0	Iconics GFX	clear
+384	Ruby Soho	0	Sarah Logan	clear
+384	Ruby Soho	1	Liv Morgan	clear
+399	Liv Morgan	0	Sarah Logan	keep
+399	Liv Morgan	1	Ruby Soho	clear
+400	Toxic Attraction GFX	0	Sonya Deville	clear
+402	Sarah Logan	0	Liv Morgan	keep
+402	Sarah Logan	1	Ruby Soho	clear
+403	Sonya Deville	0	Toxic Attraction GFX	clear
+404	Adam Cole	0	reDragon GFX	clear
+404	Adam Cole	1	Kyle O'Reilly	keep
+404	Adam Cole	2	Roderick Strong	keep
+405	AVAILABLE GFX	0	AVAILABLE GFX (Selectable)	clear
+406	reDragon GFX	0	Kyle O'Reilly	clear
+406	reDragon GFX	1	Roderick Strong	clear
+406	reDragon GFX	2	Adam Cole	clear
+407	Kyle O'Reilly	0	reDragon GFX	clear
+407	Kyle O'Reilly	1	Roderick Strong	keep
+407	Kyle O'Reilly	2	Adam Cole	keep
+408	AVAILABLE GFX (Selectable)	0	AVAILABLE GFX	clear
+410	Chaos GFX	0	AVAILABLE GFX	clear
+412	AVAILABLE GFX	0	Chaos GFX	clear

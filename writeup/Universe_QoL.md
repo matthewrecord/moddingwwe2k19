@@ -524,3 +524,14 @@
   either side's slot is replaced or the pair is Hardy/Wyatt, Ziggler/McIntyre, Sheamus/Cesaro; keep Brie/Nikki,
   Owens/Zayn, Mickie/Alexa, Liv/Sarah Logan, Hanson/Rowe, Diesel/HBK'97. Applied live once (164 written).
 - Person id fix verified after restart (A-Kid/Trent main team fixed; save has unique ids).
+- 03:25 **Real source found.** Watchpoint at launch on the 4th table: writer 0x140963151 in
+  NGlobalData::InitCharProfile, copying 0x488-byte records (header u16 8, u16 0x488, i16 index, u16 flag -> +0x1cb)
+  into 0x143700000 + idx*0xD88. Source = `mods/PerfectPlextra/pac/profile/profile_pro.pac` (raw records, managers =
+  3 x u32 at +0x3B8, main team u32 +0x3D0). It still had the vanilla pairings (Trent/Maryse->Miz, Miz->[Maryse, Axel,
+  Dallas], Primo->Epico...). The game rebuilds the panel table from it every launch, which is why cleared or edited
+  managers came back. The save copies are a separate layer.
+- `tools/build/managerfix.py` patches the pac: 93 links cleared, 15 kept (Brie/Nikki, Owens/Zayn, Mickie/Alexa,
+  Liv/Sarah Logan, Diesel->HBK'97, Undisputed Era trio); report notes/characters/managerfix_report_2026-11-11.tsv.
+  Backup `profile_pro.pac.orig_managers`. DLL test11 (poke_always) shelved; test10 stays installed.
+- Open: in-game manager edits go to the save copies, but the panel table is reloaded from this pac each launch, so
+  an edit made in-game may not survive a restart in the panel. Check after the pac fix.
