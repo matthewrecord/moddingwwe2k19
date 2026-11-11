@@ -471,3 +471,22 @@
   the game itself keeps Universe copies of the pofo and can propagate edits. Consistent with the data: the Universe
   pofo copies hold his MyWWE attributes from creation time. To confirm: compare a wrestler who is not in the power
   rankings. Reminder for Matthew: AJ's Aerial Offense was lowered 79 -> 59 as a test (revert).
+
+## Stale main manager / main team links (2026-11-11 02:40)
+- Matthew: many superstars show a main manager or main team that isn't theirs (GOD, Death Triangle worst). Suspected
+  cause of the phantom Universe managers.
+- Controlled edit on Trent Beretta (id 291, index 170; slot originally **Maryse**; showed manager The Miz, team GOD).
+  Save diff (GOD+Miz -> Roppongi Vice + none): only **6 bytes** changed, the u16 manager id 0x00DA (218, The Miz) ->
+  0x0400 (none) in three copies inside MAINBODY0000 (decoded offsets 0x88e608, 0xa78fd0, 0xc63998).
+- Layout: per-superstar records of **0xD88 bytes**, in index order (509), manager u16 at **+0x58**, 1024 = none.
+  Copy 1 base = 0x88e5b0 - 170*0xD88; copies 2/3 at +0x1EA9C8 each (MyWWE + Universe copies, presumably).
+  Confirmed by Wes Lee (index 329) -> manager 606 Max Caster, 159 records after Trent.
+- **Cause: the links are the vanilla pairings of whoever first had the slot.** Wes Lee (ex-Primo) -> Max Caster
+  (ex-Epico); Kenny King (ex-Titus) <-> Uhaa Nation (ex-Apollo Crews); Trent (ex-Maryse) -> The Miz; Simon Gotch
+  (ex-Nash) <-> Chris Dickinson (ex-Hall); etc. 84 records have a manager set; list with original occupants in
+  `notes/characters/manager_links_2026-11-11.tsv` (keep_or_clear column for Matthew).
+- Main team is **not** stored in the save (didn't change in the diff) and Trent isn't in GOD's member list in the
+  MyWWE team table, so it is derived at runtime from something else (open: maybe a default team table keyed by the
+  original occupant). Edit screen's working copy: 0x143790008 (manager u16 +0, team byte +0x18).
+- Fix plan: a save tool that sets +0x58 to 1024 for the records Matthew marks "clear", in all copies (backup first,
+  game closed). Main team: find its source next.
