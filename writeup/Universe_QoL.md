@@ -509,3 +509,8 @@
   Same mechanism likely drives other "same person" logic (and maybe phantom managers / title attribution).
 - Fix: give every non-variant wrestler a unique pofo +4 (own slot id where free). Needs the pofo source (profile pac /
   CCT .pofo) changed, list of the 53 groups to be checked for genuine same-person variants (e.g. Raven x2, Marq Quen x2).
+- 03:00 Matthew: nobody should be duplicated, so every shared person id is a mistake. The MyWWE pofo array is in the
+  save (MAINBODY, 484-byte stride; A-Kid at 0x117f8), so fixed live: 98 pofo +4 pokes on 0x142840600 + idx*484 + 4
+  (keeper = the one whose slot id equals the person id; others get their own slot id if unused, else fresh 1100+).
+  List: notes/characters/person_id_fix_2026-11-11.tsv. Save backup `SAVEDATA.before_person_ids`. Existing Universe pofo
+  copies not touched (new Universes copy from MyWWE). To verify: save, restart, check A-Kid/Trent/Beth/Brie/AJ Lee.
