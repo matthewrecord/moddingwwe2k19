@@ -94,3 +94,7 @@ Note: device_commit_files served a stale copy twice for the same staged path; us
 514=910 515=774` (CCT ids from his slot notes) copied renders + all four Titantron pacs per slot with renamed
 internal names; replaces the 1 MB .dds-built renders. Chunk0.def ae6641c5.... Rule going forward: if the wrestler
 is installed with CCT, take renders/trons from the game; build from the folder only when they are not.
+20:08 Matthew: all six test wrestlers work. Five Titantron parts: apron, wall, mini (banner), ramp (ss_* pacs) and
+the main screen = loose Bink videos movies\titantron\ent_<char id>_<a>_<b>[_c].bk2 (not in Chunk0.def). Added to
+--from-game; copied for 510-515 (48 videos). Open risks to test: Universe save/reload with them on shows/titles
+(save copies are 509-wide), edit/creation menus (unpatched 508 loops), Create an Entrance for them.
