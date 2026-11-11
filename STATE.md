@@ -50,7 +50,8 @@
   XOR key 37 36 35 36). Overflow wrestlers survive Universe save/reload and work in title/non-title matches; bug:
   Universe creation gives them 3 phantom CAW managers (show-1 glitches tracked to that). DLL test3b installed (memory
   reads + Universe probe).
-- **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe).
+- **2026-11-11 04:15 (handoff 014, claude/universe-qol): managers & main teams.** Wrong main teams fixed (unique pofo person ids); stale managers fixed at the source (`profile_pro.pac`); Matthew's team managers set; 6 wrong pofo slot ids fixed. DLL test12 (manager sync) built, not installed. Start with `handoff/014_managers_teams_2026-11-11.md`.
+- **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe), `handoff/014_managers_teams_2026-11-11.md` (managers/teams).
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
 
