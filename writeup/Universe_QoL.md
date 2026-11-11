@@ -357,3 +357,12 @@
   * Next: writer. Preferred = offline save edit on the test Universe first (format fully understood: chunk tag,
     u32 size, "ZLIB", 0x1230, csize, usize, zlib; XOR key), with game closed and Steam Cloud considered; verify in
     game that the teams appear and matches load. Live-memory route stays as alternative.
+- 2026-11-11 00:05 (Matthew) Prefer making the game's own import bring teams (like superstars) over brute-force
+  writing. Finding: the slot-2 Universe's 25 teams are the **game's default team list**, not copies of the main
+  (MyWWE) table: e.g. Universe THE REVIVAL members are 618,615 while main #2 THE REVIVAL is 615,618, and Universe teams
+  like THE DELETERS OF WORLDS / THE B-TEAM / HEATH SLATER & RHYNO have no named counterpart in the main table. So
+  Universe creation seeds teams from a default source and never reads the main table. Static search for the copy
+  code is impractical (0x1B8 appears in ~4,000 instructions). Plan: telemetry watchpoint (tools/telemetry) / DLL
+  probe on reads of the main team table and writes to the Universe team table during one Universe creation ->
+  locate the seeding routine -> DLL patch to seed from the main table (custom teams 0-99 + defaults), i.e. the game
+  does the import itself. Needs one more Universe creation by Matthew (spare slot) with the probe build.
