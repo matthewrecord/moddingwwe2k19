@@ -412,3 +412,12 @@
   when the MyWWE roster was chosen, hand it Matthew's team table (teamimport.py output) instead of the default
   buffer; otherwise leave the default. Step 1 = DLL test7 (seeder probe, md5 2efc7298...) + two Universe creations
   (default roster, then MyWWE roster) -> diff the blob/args at seeding time for the roster-choice flag.
+- 2026-11-11 01:35 **Seeder probe results** (two creations in slot 3: default superstars, then MyWWE superstars):
+  0x140FFF130 called once per creation, buffer = the 27,216-byte LBTS from wunistable.pac (identical both times),
+  caller 0x1406AB9E7 = the generic data-file loader dispatch (`call [table + type*16 + 8]` over loaded files). The
+  Universe blob at seeding time differs between the two runs in only 38 single bytes (per-superstar random values at
+  ~0x120 stride in 0x7c74-0x1d5d4, a name at 0x287750, one byte at 0x326da9): **no roster-choice flag visible at
+  seeding time** -> the superstar import is applied separately (later) and the team seeding never knows the choice.
+  Next to tie teams to the choice: find where the roster choice is stored (memory find/diff while toggling the option
+  in the creation menu) or hook the MyWWE superstar-import routine and re-seed teams there with Matthew's table.
+  Seed dumps kept in the game folder (seed_1/2_buf.bin, seed_1/2_blob.bin).
