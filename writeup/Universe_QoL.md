@@ -285,3 +285,10 @@
     id when the record is missing/out of range. Not confirmed.
   Conclusion: static search is slow without a reproduction; next step is a controlled repro (fresh Universe in a
   spare slot) with save captures before/after creation + DLL memory reads, then diff for the three id-0 fields.
+- 2026-11-10 22:54 Matthew created a new Universe (save 03:53:50 UTC, md5 b6b898da..., backup
+  `saves\20261110_2254_new_universe`). It went to a **second Universe slot: UNVSBODY0002** (+ UNVSBIGH0002,
+  UNVSHEAD0002); slot 1 (UNVSBODY0001) is the earlier test Universe, unchanged. The new Universe blob contains
+  **none of the overflow ids 937-942** -> they are not on any roster at creation; any Universe data for them is created
+  on demand (or looked up and missed). Waiting on Matthew: do the Test Wrestlers show phantom managers here?
+  **Tracker impact:** DLL capture + tracker read only UNVSBODY0001 -> a Universe in slot 2/3 is not tracked yet. Fix
+  planned: capture every UNVSBODY000N, tracker setting `universe_slot`.
