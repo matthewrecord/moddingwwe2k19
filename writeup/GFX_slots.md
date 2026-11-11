@@ -32,3 +32,19 @@ Create an Entrance. Matthew got 9 selectable with Wrestleminus.
   whether a registry record (MEMU-like) or the VMUM field-15 flags (TitantronFix) gate the entries, unlock fields
   (write "none"), name strings for new entries.
 - Scripts: `tools/gfx/lsd_survey.py` (list sizes), `lsd_diff.py <list id>` (modded vs unmodded), `tron_coverage.py`.
+
+## Redirect (Matthew 07:57): groundwork only, CCT does the installing
+- Not asking us to install characters or graphics. Goal: **open empty slots that CCT can then fill** (characters and
+  graphics). Character side: **64 overflow slots** (the DLL's current limit) is the target.
+- Design problem to solve for characters: CCT injects pofo/moveset live at `pofoStartAddress + slotNumber*484`
+  (data.xml: superstars 0x142840600). For slotNumber >= 509 that address is past the 509-entry array (0x14287C854 =
+  the MyWWE team table at 0x14287C860), while our overflow pofos live in the DLL's own buffer. So adding rows to
+  CCT's data.xml alone would corrupt the team table. Options: (a) DLL-side bridge (CCT writes somewhere safe, DLL
+  copies into the overflow slot; needs a CCT list with its own start address, like its `caws` list has); (b) a drop
+  folder the DLL/installer reads (CCT export .pofo/.moveset -> `slots\`); (c) patch CCT's address math. Needs CCT's
+  config/binary in hand (laptop link) to choose. File side (models by id, Chunk0.def) already matches CCT's layout.
+- GFX capacity, what is known: 229 video sets per screen already on disk without a menu entry + ~15 hidden by the
+  index collision. Ids in video names go beyond 999 (1001-1085, 1501, 2100, 2999 exist), so the id space is not the
+  limit. Other lists in the same menu file hold 1566 entries, and the music list runs at 515 in game. The exe's
+  per-list cap for lists 1/42/43/44 is NOT measured yet (exe not in the repo; needs the laptop).
+- Note: `tools/bootstrap_repo.sh` (named in the project instructions) does not exist in the repo.
