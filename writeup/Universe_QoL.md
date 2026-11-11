@@ -558,3 +558,4 @@
   Hero & Cesaro, Hero manages Kidd; Brick Lane = everyone. Time Splitters: 937 (overflow slot) taken as Sabin; has no
   record here, so only Kushida -> [Shelley, Sabin]. Scorpio Sky (210) has no record. Pending: Catch Point (which id
   is Thatcher? members 712, 786, 729).
+- 04:15 Catch Point: Gulak (729) manages 712 and 786 (applied live + pac).
