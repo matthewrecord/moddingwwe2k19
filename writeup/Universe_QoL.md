@@ -108,3 +108,13 @@
   Keith Lee vs Angel Garza (title), on show 1, twice. Remaining candidates: that exact pairing/title; state of the
   fresh Universe on show 1 (e.g. phantom managers attached at the time); something since fixed by a reload. Next:
   rerun Keith Lee vs Angel Garza (title) now.
+- 2026-11-10 21:44 **Keith Lee vs Angel Garza (title) rerun: normal**, entrances fine; the three phantom CAW managers
+  are no longer shown. Only new log line: TRACE pofo-by-id from 0x1404c748a (harmless getter caller).
+  **Conclusion:** the show-1 breakage (skipped entrances, falling/glitching) was tied to the fresh Universe state,
+  most likely the phantom managers that every overflow wrestler got at Universe creation (removing them per match
+  was not enough; after the managers were cleared and the save reloaded, all title matches work).
+  Status: overflow wrestlers survive save/reload and work in title and non-title matches **once the phantom managers
+  are gone**. Remaining bug: Universe creation assigns them 3 copies of a CAW as managers. Next: find where Universe
+  creation picks default managers (per-superstar default relationship data, likely read by profile index / 509-wide
+  table) and give overflow slots "none"; verify on a fresh test Universe. Until fixed: after creating a Universe,
+  remove those managers in the roster/relationship menu before booking.
