@@ -80,3 +80,6 @@ does real Alex (id 779) skip in the same arenas (then not slot-related), else en
 slot 511 id 938 Rhea Ripley | 512 939 Angel Garza | 513 940 Ace Austin | 514 941 Darby Allin | 515 942 Toni Storm.
 Chunk0.def f39c7626..., string_win.pac 1f2738e9..., dinput8.dll test2 a1ef925e.... No renders/trons for 938-942.
 Matthew's check: all six in the select screen; matches with several of them (incl. two new ones against each other).
+19:40 Matthew wants all men: slots 511/515 (Rhea Ripley, Toni Storm) removed with `--remove` (files in
+`_to_delete\`), reinstalled as Keith Lee (511, id 938) and Moose (515, id 942). Now: 510 Alex Shelley, 511 Keith Lee,
+512 Angel Garza, 513 Ace Austin, 514 Darby Allin, 515 Moose (Test Wrestler 1-6).
