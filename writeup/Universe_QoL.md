@@ -118,3 +118,13 @@
   creation picks default managers (per-superstar default relationship data, likely read by profile index / 509-wide
   table) and give overflow slots "none"; verify on a fresh test Universe. Until fixed: after creating a Universe,
   remove those managers in the roster/relationship menu before booking.
+- 2026-11-10 22:00 **SAVE DECODED.** The real obfuscation is XOR with a **128-byte key** indexed by file offset mod 128
+  (the 4-byte key was only its first bytes); key in `tools/universe/savedecode.py`. Decoded file: magic `VCGD`, chunk
+  directory of 12-byte tags + u32 size; BODY chunks = `ZLIB` + csize/usize + zlib. **Universe = `UNVS*` chunks** near
+  the end of the file (`UNVSHEAD0000/0001`, `UNVSBIGH0000/0001`, `UNVSBODY0000` (0x30 bytes), `UNVSBODY0001`
+  (0x777b zlib -> **3,304,944 bytes**)). The Universe blob holds show/PPV names (SMACKDOWN LIVE, AEW DYNAMITE, NXT
+  TAKEOVER..., WRESTLEMANIA, ...), superstar/team names (incl. "Test Wrestler 3", "THE DELETERS OF WORLDS") and ids as
+  u16. Overflow ids 938/939/940 occur (u16 at 0x3abe2.., 0x193e14.., 0x1955ac..); 937/941/942 do not. Save diffs
+  show 1 -> 2 -> 3 change bytes only in the UNVS area (plus header/time and a small block at 0x29b6f40) and the file
+  grows each show -> results appear to be appended. Next: map the Universe blob (rosters, titles, managers, match
+  history) by diffing UNVSBODY0001 across the three backed-up saves.
