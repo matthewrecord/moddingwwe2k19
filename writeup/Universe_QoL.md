@@ -565,3 +565,8 @@
   array (save layer; save backup SAVEDATA.before_idfix). The CCT source pofos still hold the wrong id (re-injecting
   them would bring it back). With ids fixed: Cass <-> Enzo (760), Vincent -> 881 (The Righteous), Scorpio Sky ->
   Daniels & Kazarian (live + profile_pro.pac).
+- 2026-11-11 04:20 (new session) **Save re-verified independently** (SAVEDATA written 04:06 local, after the last
+  poke): 6 slot ids fixed (low 10 bits of pofo +0: 115/147/160/194/210/255; upper bits unchanged), 170 copy-0 records
+  carry a manager (83 before the fix), Cass -> [760], Sky -> [130, 445], Trent -> [8]. Script
+  `tools/universe/verify_mgr_ids.py SAVEDATA [...]`. test12 installed (aa5b46ef...), test10 backup present in
+  `_moddingwwe2k19_builds`. Next: Matthew's in-game sync test (log line "manager sync: N records updated").
