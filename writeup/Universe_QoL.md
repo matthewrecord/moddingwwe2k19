@@ -96,3 +96,6 @@
   title on the line (Raw and SmackDown). Ace Austin was a champion but never wrestled. Works: Keith Lee vs HHH (title),
   and the non-title control. Open split: Angel Garza vs a vanilla wrestler (title / non-title) -> is it Angel's slot,
   or two overflow wrestlers in one title match?
+- 2026-11-10 21:27 test3b probe: 0x140bbe5e0 called at 200 s with obj 0x76c24d20 for ids 689-756 only (no overflow
+  ids); reading obj later gave all zeros (temporary object, freed). So this lookup is not the roster table; it was a
+  wrong lead. Matthew's match in progress (Angel Garza vs a vanilla wrestler, title): entrances normal.
