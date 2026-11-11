@@ -459,3 +459,10 @@
   Universe copy is a different/stale structure or ratings live elsewhere (candidate: Universe default data
   `pac\universe\wunidata.pac`, by analogy with teams). Plan: controlled diff (change one wrestler's ratings in MyWWE,
   live-read before/after) to locate the rating fields, then the same post-import copy as the teams.
+- 2026-11-11 02:25 Ratings, diff 1 (.data snapshot before/after Matthew lowered AJ Styles' Aerial Offense 79 -> 59 in
+  MyWWE): exactly one byte = **MyWWE pofo of AJ (id 610, index 333, 0x142867B94) + 0x124**. Attributes are a byte
+  block in the pofo, ~+0x120..+0x142 (AJ: 30 30 31 45 [79->59] 69 80 30 47 70 55 30 80 63 57 80 80 80 75 75 75 75 90 80
+  55 82 44 30 69 75 66 80 83 86 50). The Universe pofo copies (universe1/2/3 arrays) hold the MyWWE values from
+  creation time (79), i.e. the import DOES copy his attributes. No 509-entry per-superstar rating array found in the
+  Universe blob. Open: why the Universe shows AJ 80+ while MyWWE shows 71 - need the exact numbers/screens from
+  Matthew (overall may be computed differently, or a different AJ slot).
