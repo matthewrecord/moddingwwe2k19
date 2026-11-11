@@ -195,3 +195,15 @@
   (Paul Heyman's original slot, now "AVAILABLE GFX" in CCT); Matthew saw "Marq Quen" on screen. **Marq Quen is the
   name in CAW slot id 0** (CCT data: id 0 = CAW "Marq Quen"), and the overflow wrestlers' "three copies of one CAW"
   managers fit a manager field holding **0 instead of 0x400 (none)**: strong lead for the phantom-manager fix.
+- 2026-11-10 23:05 **Tracker v1 delivered** (`tools/universe/tracker.py`; uses savedecode.py + matches.py).
+  Output folder on the PC: `D:\Documents\WWE2K19 Universe Tracker\`: `history.csv` (one row per participant per
+  match, permanent; person resolved at capture time), `records.csv` (W, L, pins scored, pinned, title matches,
+  streak, last-5 form per person), `titles.csv` (reigns: champion, won from, defenses, lost to), `log.md` (readable
+  results per show), `titles.tsv` (editable title names; 150 = AEW US Championship), optional `aliases.tsv`
+  (merge variants, e.g. "Triple H '13<TAB>Triple H"). Person names come from Matthew's Wrestlers sheet ('Character
+  Slot' number = game id; rows with Gen M/F only), then CCT's current name; freed "AVAILABLE GFX" slots fall back to
+  the original name (Dash Wilder, Scott Dawson, Bo Dallas, Paul Heyman resolved correctly). Re-running on the same
+  save adds nothing (match_key dedupe). Capture 1 = tonight's 7 matches. `Update tracker.cmd` in that folder runs
+  it with Windows Python (needs python + openpyxl on Windows, unverified) — or the agent runs it via the shell.
+  Known limits v1: Universe day is 0 for some cards (in-progress region); show name/brand not yet decoded; match
+  type ("kind") not named; tag teams listed as their members.

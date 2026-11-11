@@ -7,26 +7,31 @@ Match header: entries start 0x28 bytes after a u16 'title|kind' word: high byte 
 0x96 = 150 = Matthew's AEW US Championship), low byte = kind/position; the u16 before the ffff ffff pair (-0x30) is
 the Universe day when set. Every card seems stored twice (copy +0x3C00); duplicates are dropped by content."""
 import csv, struct, sys
-b = open(sys.argv[1], 'rb').read()
-nm = {int(r['id']): (r['current'] or r['original']) for r in csv.DictReader(open(sys.argv[2]), delimiter='\t')} if len(sys.argv) > 2 else {}
 RES = {0x1FF: 'won (pin)', 0x3FF: 'won', 0x2FF: 'lost (pinned)', 0x4FF: 'lost'}
-def entry(o):
-    i, r, i2, r2, res = struct.unpack_from('<5H', b, o)
-    return (i, r, res) if i == i2 and r == r2 and i < 1024 and res in RES else None
-seen, out, o = set(), [], 0
-while o < len(b) - 16:
-    e = entry(o)
-    if not e: o += 2; continue
-    group = []
-    while o < len(b) - 16 and (e := entry(o)): group.append(e); o += 16
-    start = o - 16 * len(group)
-    tk = struct.unpack_from('<H', b, start - 0x28)[0]; day = struct.unpack_from('<H', b, start - 0x30)[0]
-    key = (tk, tuple(group))
-    if key in seen: continue
-    seen.add(key)
-    title = None if tk >> 8 == 0xFF else tk >> 8
-    out.append((start, day, title, tk & 0xFF, group))
-for start, day, title, kind, group in out:
+def parse(b):
+  def entry(o):
+      i, r, i2, r2, res = struct.unpack_from('<5H', b, o)
+      return (i, r, res) if i == i2 and r == r2 and i < 1024 and res in RES else None
+  seen, out, o = set(), [], 0
+  while o < len(b) - 16:
+      e = entry(o)
+      if not e: o += 2; continue
+      group = []
+      while o < len(b) - 16 and (e := entry(o)): group.append(e); o += 16
+      start = o - 16 * len(group)
+      tk = struct.unpack_from('<H', b, start - 0x28)[0]; day = struct.unpack_from('<H', b, start - 0x30)[0]
+      key = (tk, tuple(group))
+      if key in seen: continue
+      seen.add(key)
+      title = None if tk >> 8 == 0xFF else tk >> 8
+      out.append((start, day, title, tk & 0xFF, group))
+  return out
+
+if __name__ == '__main__':
+  b = open(sys.argv[1], 'rb').read()
+  nm = {int(r['id']): (r['current'] or r['original']) for r in csv.DictReader(open(sys.argv[2]), delimiter='\t')} if len(sys.argv) > 2 else {}
+  out = parse(b)
+  for start, day, title, kind, group in out:
     sides = {}
     for i, r, res in group:
         who = nm.get(i, str(i)) + (' (manager)' if r & 0xFF == 2 else '')
