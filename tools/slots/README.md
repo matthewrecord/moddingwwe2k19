@@ -6,7 +6,7 @@ checked first; on any mismatch nothing is applied. Log: `wwe2k19_slots.log` next
 Remove: rename/delete `dinput8.dll` in the game folder.
 
 Build: `apt-get install gcc-mingw-w64-x86-64`, then
-`x86_64-w64-mingw32-gcc -O2 -shared -masm=intel -o dinput8.dll dinput8_slots.c dinput8.def -static-libgcc`
+`x86_64-w64-mingw32-gcc -O2 -shared -masm=intel -o dinput8.dll dinput8_slots.c -static-libgcc`
 (`-DSLOT_CAP=520` for later stages).
 
 ## Stages
@@ -34,3 +34,8 @@ The proxy loads every `slots\IIII_DDDD_SSSS.pofo/.moveset`, sets the lookup cap 
 traces all overflow slots. Install wrestlers with `tools/build/slotinstall.py` (see its docstring): spec file of
 pictures-folder names -> next free slot (510 = index 509, ...) and id (937-999), models renamed internally,
 Chunk0.def sorted insert, name string 39370 + (id - 937). Renders/Titantrons: not yet.
+
+## test3 (2026-11-10 21:30): memory reads for Universe work
+- `slots_mem.request` in the game folder: lines `<hex VA> <hex len> [deref]` -> `slots_mem_<sec>_<n>.bin` (raw bytes,
+  ReadProcessMemory, so bad addresses only log). `deref` reads a pointer at VA first.
+- `slots_fulldump.request` -> `slots_full_<sec>.dmp` (MiniDumpWithFullMemory; several GB).

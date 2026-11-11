@@ -304,14 +304,38 @@ static int hook_all(void) {
    process: every thread's registers and stack. Read with tools/exe/crashdump.py --all. (test1d's own thread
    suspension was blocked by Windows security, so this build uses the standard dump API instead.) ---- */
 typedef BOOL (WINAPI *MDWD)(HANDLE, DWORD, HANDLE, int, void *, void *, void *);
-static void dump_threads(void) {
+static void dump_kind(int type, const char *stem);
+static void dump_threads(void) { dump_kind(0x0, "slots_snapshot"); }
+/* test3: memory reads for Universe work. slots_mem.request = lines "<hex VA> <hex len> [deref]" (deref: read a
+   pointer at VA first, then dump len bytes at that pointer); output slots_mem_<sec>_<n>.bin + a log line. Reads use
+   ReadProcessMemory, so a bad address only logs an error. slots_fulldump.request = full-memory minidump (large). */
+static void mem_request(const char *q) {
+    FILE *f = fopen(q, "r"); if (!f) return;
+    char line[256]; int n = 0; unsigned long sec = (GetTickCount() - g_t0) / 1000;
+    while (fgets(line, sizeof line, f)) {
+        unsigned long long va = 0, len = 0; char kw[16] = {0};
+        if (sscanf(line, "%llx %llx %15s", &va, &len, kw) < 2 || !len || len > (64ull << 20)) continue;
+        if (!strcmp(kw, "deref")) { unsigned long long ptr = 0; SIZE_T got = 0;
+            if (!ReadProcessMemory(GetCurrentProcess(), (void *)va, &ptr, 8, &got) || got != 8) { L("mem: deref %llx failed", va); continue; }
+            L("mem: [%llx] = %llx", va, ptr); va = ptr; }
+        void *b = malloc((size_t)len); if (!b) continue; SIZE_T got = 0;
+        BOOL ok = ReadProcessMemory(GetCurrentProcess(), (void *)va, b, (SIZE_T)len, &got);
+        char o[MAX_PATH]; GetModuleFileNameA(NULL, o, MAX_PATH); char *z = strrchr(o, '\\'); if (z) z[1] = 0;
+        sprintf(o + strlen(o), "slots_mem_%lu_%d.bin", sec, n++);
+        FILE *w = fopen(o, "wb"); if (w) { fwrite(b, 1, got, w); fclose(w); }
+        L("mem: %llx len %llx -> %s (%s, %llu bytes)", va, len, o, ok ? "ok" : "partial/failed", (unsigned long long)got);
+        free(b);
+    }
+    fclose(f); DeleteFileA(q);
+}
+static void dump_kind(int type, const char *stem) {
     static MDWD f; if (!f) { HMODULE d = LoadLibraryA("dbghelp.dll"); if (d) f = (MDWD)GetProcAddress(d, "MiniDumpWriteDump"); }
     if (!f) { L("no MiniDumpWriteDump"); return; }
     char p[MAX_PATH]; GetModuleFileNameA(NULL, p, MAX_PATH); char *s = strrchr(p, '\\'); if (s) s[1] = 0;
-    sprintf(p + strlen(p), "slots_snapshot_%lu.dmp", (unsigned long)((GetTickCount() - g_t0) / 1000));
+    sprintf(p + strlen(p), "%s_%lu.dmp", stem, (unsigned long)((GetTickCount() - g_t0) / 1000));
     HANDLE h = CreateFileA(p, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
     if (h == INVALID_HANDLE_VALUE) { L("snapshot: cannot create %s", p); return; }
-    BOOL ok = f(GetCurrentProcess(), GetCurrentProcessId(), h, 0x0 /* MiniDumpNormal: all thread stacks */, 0, 0, 0);
+    BOOL ok = f(GetCurrentProcess(), GetCurrentProcessId(), h, type /* 0 = MiniDumpNormal (thread stacks), 2 = full memory */, 0, 0, 0);
     CloseHandle(h); L("snapshot %s: %s", p, ok ? "written" : "FAILED");
 }
 static DWORD WINAPI rec_thread(LPVOID p) {
@@ -323,6 +347,9 @@ static DWORD WINAPI rec_thread(LPVOID p) {
         if (i % 10 == 0) {   /* remote trigger: an agent creates slots_snapshot.request in the game folder */
             char q[MAX_PATH]; GetModuleFileNameA(NULL, q, MAX_PATH); char *z = strrchr(q, '\\'); if (z) strcpy(z + 1, "slots_snapshot.request");
             if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) { DeleteFileA(q); L("[%8.2f] snapshot requested by file", (GetTickCount() - g_t0) / 1000.0); dump_threads(); dump_ring("request file"); }
+            if (z) { strcpy(z + 1, "slots_mem.request"); if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) mem_request(q);
+                     strcpy(z + 1, "slots_fulldump.request");
+                     if (GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES) { DeleteFileA(q); L("[%8.2f] full dump requested", (GetTickCount() - g_t0) / 1000.0); dump_kind(0x2, "slots_full"); } }
         }
         int k = (GetAsyncKeyState(VK_F12) & 0x8000) != 0 || (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
         if (k && !down) { L("[%8.2f] F12", (GetTickCount() - g_t0) / 1000.0); dump_threads(); dump_ring("F12 pressed"); }

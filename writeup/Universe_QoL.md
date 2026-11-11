@@ -74,3 +74,13 @@
   up the champion in a 509-wide table or asset index and gets bad data for overflow slots. The phantom-manager bug
   is a separate default-data bug. Next tests: same overflow wrestler in a title match vs a vanilla opponent, and a
   vanilla champion in a title match (control), with snapshots + TRACE lines during the entrance.
+- 2026-11-10 21:30 **Universe per-superstar table (static).** Cluster 0x140bb0000-0x140bd5000 holds ~250 loops bounded
+  by 0x1FD (509). Function 0x140bbe5e0 (called from 0x140bbf2f8, 0x140bbf5df) linearly searches an array of **509
+  records x 0x450 bytes** at obj+8 for a **character id at +0x38c** (0x400 = none), then reads +0x36c (value < 6)
+  and a 6 x 0x48 sub-array at +0xC (entries with -1 = empty, +0x14 == 2 checked by the caller). A 0x4000-byte init
+  at 0x140bc47c0 sets several (count 0, cap 0x1FD, default 0x400) lists. Hypothesis: this is the Universe roster
+  (one record per superstar, keyed by id, 509 max); overflow wrestlers either occupy free rows (fine) or get
+  half-initialised rows (managers = leftover/default data). Most-referenced globals in the cluster: 0x1425e7e20 (13),
+  0x1425e6968 (9) -> candidate Universe manager pointers. Next: read them live with DLL test3 (`slots_mem.request`).
+- Save: ids 937-939 do not occur as u32 anywhere in the decoded save; 940-942 only sporadically -> the Universe
+  section is probably compressed (zlib chunks) or keyed differently; decoding continues after the live dump.
