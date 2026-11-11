@@ -439,3 +439,9 @@
   AOP, Gallows & Anderson, Rusev Day, Usos, Street Profits, Undisputed Era, Bella Twins, Evolution). Result: 68
   teams, names reuse the strings already installed. `universe_teams_mine.lbts` replaced in place (read at each
   creation, no restart needed). Open question for Matthew: are any rows 100+ teams he actually keeps?
+- 2026-11-11 01:46 **TEAM IMPORT WORKS (Matthew).** Creating a Universe with "import MyWWE superstars" now brings in
+  exactly his 68 MyWWE teams; the default-roster choice keeps the vanilla teams. Installed: DLL test8, SuperString
+  string_win.pac with team names 39600-39656, `universe_teams.ini` (2 -> universe_teams_mine.lbts), vanilla
+  wunistable.pac. Limitation: the team file is a snapshot of the MyWWE team table from 2026-11-10; after editing teams
+  in the game/CCT, rerun teamimport.py (needs a fresh live dump of 0x14287C860) - next improvement: have the DLL build
+  the table from the live MyWWE team table at seeding time (always current; new names would still need strings).

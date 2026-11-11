@@ -44,6 +44,7 @@
 - **2026-11-10 17:35 (handoff 011): character slots stage 1: test0 proxy `dinput8.dll` installed (behaviour-neutral patch mechanism check). Waiting on Matthew's boot + one match.**
 - **2026-11-10 18:54-19:07 (handoff 012): FIRST CHARACTER BEYOND THE 509 CAP WORKS (Exhibition singles + tag, Universe).** Open: entrance skipped in some arenas. Test Wrestler (Alex Shelley clone) in overflow slot 509, id 937, via `tools/slots` proxy dinput8.dll (test1k) + `tools/build/charslot.py`. Root cause of the earlier hangs: copied asset pacs must carry their new internal names (notes/characters step 1j). The DLL also carries permanent diagnostics (crash log, file log, code trace, VFS not-found log, remote snapshot).
 - **Next thread (Matthew 20:14): Universe QoL (record keeping, title history) incl. overflow-slot save safety: `handoff/013_universe_qol_2026-11-10.md`.**
+- **2026-11-11 01:46 (handoff 013, claude/universe-qol, merged): Universe QoL.** Tracker live (auto capture -> D:\Documents\WWE2K19 Universe Tracker\Universe N\standings.html; PPV calendar from the save). **Team import works**: DLL test8 swaps the Universe team seed for Matthew's 68 MyWWE teams when he imports his MyWWE superstars. Earlier notes:
 - **2026-11-10 21:44 (handoff 013, branch claude/universe-qol): Universe QoL thread.** Requirements + plan in
   `writeup/Universe_QoL.md` (Matthew's tracker `D:\Documents\wrestling ratings.xlsx`; saves `Steam\userdata\93452036\817130\remote`,
   XOR key 37 36 35 36). Overflow wrestlers survive Universe save/reload and work in title/non-title matches; bug:
