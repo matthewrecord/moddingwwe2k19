@@ -83,3 +83,10 @@ Matthew's check: all six in the select screen; matches with several of them (inc
 19:40 Matthew wants all men: slots 511/515 (Rhea Ripley, Toni Storm) removed with `--remove` (files in
 `_to_delete\`), reinstalled as Keith Lee (511, id 938) and Moose (515, id 942). Now: 510 Alex Shelley, 511 Keith Lee,
 512 Angel Garza, 513 Ace Austin, 514 Darby Allin, 515 Moose (Test Wrestler 1-6).
+
+## 19:55 renders (Matthew 19:49: no render for any new test wrestler; installer did not make them yet)
+`tools/build/renderpac.py`: render pac = EPK8 + LTSA entry (MD5 name) + SHDC{BPE name list, OODL}; rebuilds three
+real CCT renders byte-identically. OODL = Oodle Tools output (.OODL in folders) or, from a .dds, a valid Kraken
+stream of stored blocks (0xCC 0x06 + 256 KB; ~1 MB pac; verified with the ooz decoder). Installed for slots
+511-515 (`--renders 511 512 513 514=Darby_Allin_New.dds 515`), Chunk0.def 422364f3....
+Note: device_commit_files served a stale copy twice for the same staged path; use a new staged filename per upload.
