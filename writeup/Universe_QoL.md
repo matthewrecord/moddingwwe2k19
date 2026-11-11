@@ -366,3 +366,19 @@
   probe on reads of the main team table and writes to the Universe team table during one Universe creation ->
   locate the seeding routine -> DLL patch to seed from the main table (custom teams 0-99 + defaults), i.e. the game
   does the import itself. Needs one more Universe creation by Matthew (spare slot) with the probe build.
+- 2026-11-11 00:40 **Universe team seeding located** (watchpoint run: Matthew created Universe 3 with his MyWWE roster).
+  * Live Universe blob of slot 2 was at 0x6dd40010 (heap, 0x380000 region); team table = **blob + 0x31BF54**,
+    100 records x 0x1B8 (0xABE0 bytes). The write watch only caught the freed buffer being reused (memset of a new
+    0x850 object from 0x14099bd90 <- loop 0x140996b10 over [obj+0x90] records x 0x1B8, count [obj+0x70]: builds
+    per-team runtime objects).
+  * Static: 16 code sites use 0x31BF54. 0x140fce978 = blob constructor (clears the 100 team records via
+    0x1404ca380). 0x140fdf614 = whole-blob copy. **0x140FFF130 = the seeder**: (buffer, size) -> 0x1404cc200 copies
+    and validates the buffer, then for each entry i (< 100) 0x1404cc410 converts it into a 0x1B8 record (local) and
+    it is stored at Universe blob ([[0x1425e7e20]+0x22F0]+8) + 0x31BF54 + i*0x1B8 (two near-identical loops at
+    0x140fff1f0 / 0x140fff3a0). Not called directly: registered as handler of data type **4** in a table at
+    0x14259E3A0 {4, 0x141035470, 0, 0x140FFF130} -> the default Universe teams come from a **game data file** handed
+    to this loader, not from the MyWWE table.
+  * Fix options: (A) generate that data file from the MyWWE team table (data-file edit; pac tools exist from the
+    music work) so every new Universe seeds Matthew's teams; (B) DLL hook on 0x140FFF130 that, after the default
+    seeding, appends the MyWWE custom teams into the free Universe slots. Next: identify the file (log VFS/file opens
+    during Universe creation; trace caller of the type-4 handler) and the entry format of 0x1404cc410.
