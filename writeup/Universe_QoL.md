@@ -177,3 +177,21 @@
   185 Jeff Hardy vs Shinsuke Nakamura, 653 Seth Rollins vs KENOH. These are earlier (AI/sim) shows + tonight's promo;
   tonight's played matches (Garza-Lee title etc.) are NOT in it -> the real results store is still to be found
   (next: diff show-3 save against show-2 at the u16 level for tonight's participant ids).
+- 2026-11-10 22:55 **MATCH RESULTS DECODED** (`tools/universe/matches.py`, verified against Matthew's card). Output for
+  the save after tonight's show:
+  ```
+  day 119 non-title kind 5: Uhaa Nation won (pin), Kenny King won, Dana Brooke (manager) | Tyler Breeze lost (pinned), Dirty Johnny Curtis lost
+  day 119 non-title kind 0: Seth Rollins lost (pinned) | KENOH won (pin)
+  day 119 non-title kind 2: Brock Lesnar won (pin), slot 374 (manager) | Triple H lost (pinned), Kay Lee Ray (manager)
+  day 119 non-title kind 0: Roman Reigns won (pin) | John Cena lost (pinned)
+  title 150 kind 0: Keith Lee lost (pinned) | Angel Garza won (pin)        (150 = AEW US Championship)
+  non-title kind 1: Alexa Bliss lost (pinned), Mickie James (manager) | Bayley won (pin)
+  non-title kind 3: Hikuleo lost (pinned), Bo Dallas (425) lost | Dash Wilder (615) won (pin), Scott Dawson (618) won
+  ```
+  Entry format, result codes, manager role and title byte: see the docstring. Seth vs KENOH is stored as a match
+  (promo battle). Key fact for record keeping: **the save only holds the current/latest show's cards** (the show-1
+  and show-2 saves have none left), so history must be captured after every show -> tracker v1 = run
+  savedecode + matches after each save and append to a permanent log. Manager notes: Brock's manager is slot 374
+  (Paul Heyman's original slot, now "AVAILABLE GFX" in CCT); Matthew saw "Marq Quen" on screen. **Marq Quen is the
+  name in CAW slot id 0** (CCT data: id 0 = CAW "Marq Quen"), and the overflow wrestlers' "three copies of one CAW"
+  managers fit a manager field holding **0 instead of 0x400 (none)**: strong lead for the phantom-manager fix.
