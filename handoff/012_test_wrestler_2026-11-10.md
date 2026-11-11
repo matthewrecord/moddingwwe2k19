@@ -67,3 +67,11 @@ string_win.pac 54361b8d..., 10 renamed asset copies for id 937. Backups: *.orig_
 ## 19:07 Matthew: Test Wrestler works in Exhibition singles, Exhibition tag, and Universe mode.
 Open (not priority, Matthew): in some arenas his entrance (Alex Shelley's) plays, in others it is skipped. To check:
 does real Alex (id 779) skip in the same arenas (then not slot-related), else entrance/CAE lookups for id 937.
+
+## 19:25 multi-slot + installer delivered (not yet used in game)
+- Matthew 19:09: real Alex also skips his entrance in some arenas (Mexico Plaza) -> not slot-related, set aside.
+- dinput8.dll test2 (a1ef925e...) installed: any number of slots\*.pofo, runtime cap, traces all overflow slots.
+- `_moddingwwe2k19_builds/tools/slotinstall.py` (+ yukes.py) on the PC. Dry run over the pictures folder:
+  160 folders installable as-is (`_moddingwwe2k19_builds/tools/ready_wrestlers.txt`), 220 not
+  (`not_ready_wrestlers.txt`: 106 no .pofo, 21/17 several pofo/moveset -> name one in the spec, 10 no EPK8 model, ...).
+- slots\installed.json seeded with Test Wrestler. Next: Matthew names the first wrestlers; renders/trons writers.
