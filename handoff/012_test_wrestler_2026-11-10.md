@@ -90,3 +90,7 @@ real CCT renders byte-identically. OODL = Oodle Tools output (.OODL in folders) 
 stream of stored blocks (0xCC 0x06 + 256 KB; ~1 MB pac; verified with the ooz decoder). Installed for slots
 511-515 (`--renders 511 512 513 514=Darby_Allin_New.dds 515`), Chunk0.def 422364f3....
 Note: device_commit_files served a stale copy twice for the same staged path; use a new staged filename per upload.
+20:05 Matthew: wrestlers already in the game have renders -> use those. `--from-game 511=925 512=799 513=496
+514=910 515=774` (CCT ids from his slot notes) copied renders + all four Titantron pacs per slot with renamed
+internal names; replaces the 1 MB .dds-built renders. Chunk0.def ae6641c5.... Rule going forward: if the wrestler
+is installed with CCT, take renders/trons from the game; build from the folder only when they are not.
