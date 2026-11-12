@@ -105,3 +105,49 @@ Corrections to the table above come from the creators' own notes and the fresh o
   into that Dynamite stage, not a stage file. **NXT 2.0 original** (slot 2, stadium 3; Matthew's copy = slot 164,
   stadium 55). **NXT White & Gold**: re-skin of NXT 2.0's parts (apron 195, cornerpost 35, commentary 82) + videos
   and two graphics for slot 2; one or the other. **AEW Crowd Shirts**: one crowd file (arcrowd00010).
+
+## 2026-11-12 00:20 Game folders renamed; 81-arena pack slots; replacement plan
+- **Folder change (Matthew):** `...\common\WWE 2K19` is now the former unmodded copy with the **Modding Militia
+  Arena Essential Pack** ("81 arenas", installed through Genesis 23:41, markers `modding_militia_arena_essential_
+  pack.installed`, `unpacked_gfx.installed`; stock exe 41,065,640) = the clean test install. The modded game (ground
+  truth, Genesis exe, our builds folder) is now `...\common\WWE 2K19 - modded`. Genesis's game directory setting
+  points at `WWE 2K19`, i.e. the clean one.
+- **Arena slot table decoded** (`tools/arena/arena_slots.py`): misc01_start.pac, SHDC file 2, 124-byte rows: name
+  string id, arena slot, select number, ... 213 rows in the pack install; full list
+  `notes/arena_slots_81pack_2026-11-12.tsv`. Select number 24 = not offered in the arena list.
+- **Slots of the arenas Matthew does not want** (pack install):
+  WrestleMania 13 = 123, WrestleMania 15 = 132, Vengeance '01 = 119, Vengeance '11 = 159, Revenge of the Taker =
+  124 (listed as "IN YOUR HOUSE '97"), Fully Loaded '99 = 135, Great Balls of Fire = 96, Over the Edge '98 = 128,
+  Over the Limit '11 = 158, Payback = 140 ('13) / 160 ('14) / 4 ('17, not selectable) (which one: to confirm),
+  Night of Champions '09 = 143, Battleground '13 = 5 (not selectable; '15 = 141), Unforgiven '98 = 127, Backlash
+  '00 = 133, '01 = 138, '03 = 112, Bad Blood '04 = 118, Armageddon '99 = 139, '02 = 117, '03 = 149, Rock Bottom
+  '98 = 130. = 20 selectable slots + the Payback choice.
+- **Proposed assignment (draft for Matthew):**
+  | Downloaded arena | Made for slot | Proposed slot | Re-slot needed |
+  | --- | --- | --- | --- |
+  | AEW All Out '21 | 118 | 118 (Bad Blood '04) | no |
+  | AEW Double or Nothing '19 | 119 | 119 (Vengeance '01) | no |
+  | AEW Dark '21 | 117 | 117 (Armageddon '02) | no |
+  | ROH Death Before Dishonor | 138 | 138 (Backlash '01) | no |
+  | WrestleMania 35 | 130 | 130 (Rock Bottom '98) | no |
+  | Raw 18 videos | 96 | 96 (Great Balls of Fire) | no |
+  | AEW Rampage '21 | 116 (Survivor Series '02, not on the list) | 139 (Armageddon '99) | yes |
+  | AEW Road Rager '21 | 120 (Judgment Day '04, not on the list) | 149 (Armageddon '03) | yes |
+  | AEW Grand Slam | 3 (205 Live) | 159 (Vengeance '11) | yes |
+  | AEW Revolution | 10 (Backlash '18) | 112 (Backlash '03) | yes |
+  | AEW Full Gear | 14 (Fastlane '18) | 133 (Backlash '00) | yes |
+  | AEW Dynamite '22 | 17 (Main Event) | 158 (Over the Limit '11) | yes |
+  | AEW x NJPW Forbidden Door | 4 (Payback '17) | 140 or 160 (Payback) | yes (4 is not selectable) |
+  | NXT 2.0 | 2 (NXT) | 127 (Unforgiven '98) | yes |
+  | NXT White & Gold | 2 | 128 (Over the Edge '98) | yes + part renumbering |
+  | WrestleMania 34 | 15 (exists in game) | keep vanilla 15, or 123 (WrestleMania 13) | optional |
+  | WrestleMania 38 | (re-skin of WM34 parts) | 132 (WrestleMania 15) | yes |
+  | Royal Rumble Retro | 14 | 124 (In Your House '97) | yes |
+  | Royal Rumble 2020 | 13 (Royal Rumble '18) | 135 (Fully Loaded '99) | yes |
+  | Summerslam 09 | 30 | 143 (Night of Champions '09) | yes |
+  Not needing a discard slot: All In (re-skin of 142, Money in the Bank '13: overwrites that arena, not on the
+  list), ROH '05 (312 Metropolitan Center), Tokyo Dome (316 Japan Dome), WrestleMania 27 (402 Extreme Rules '14),
+  WrestleMania 31 (105, already an arena in the pack), Smackdown 21 (0), Raw (1), Dynamite 20 (same slots as
+  Dynamite 22: pick one). Left free after this draft: 123 or none, one Payback slot, 5.
+- Not yet known: what the pack already puts in each of these slots part-wise (misc04 rows), so part-number
+  collisions with the pack are unchecked; "WrestleMania 13 - broken?" not tested.
