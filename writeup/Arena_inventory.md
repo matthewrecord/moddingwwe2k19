@@ -236,3 +236,21 @@ Smackdown '08 (157).
   `notes/arena_pack_part_use_2026-11-12.json`.
 - Next: installer (`arena install`), first test = AEW Dynamite '22 into slot 158 on the clean install, then
   Matthew launches and checks.
+
+## 01:20 Installer pieces built; first test build (Dynamite '22 -> slot 158)
+- `tools/arena/epk.py`: EPK8/EPAC read, rename, payload, single-entry build, rewrap (keep the target slot's
+  container and internal name, swap the payload). Format per WrestleMINUS: directory at 0x800, data at 0x4000,
+  entry offset in 0x800 units, size in 0x100 units, header word 8 = data size, tail block kept. Round-trip checked
+  byte-identical on 27 pack/mod files.
+- `tools/arena/tables.py`: row editors for misc01_start (124-byte rows, all WrestleMINUS fields), misc04_arena (JSON per
+  slot, archive rebuilt with NUL + 16-byte alignment like the original), initposition (WPAR rows slot,i2,i3,i4),
+  prm_ar_lg_color (NIBJ table, 10 colour columns x 1000 slots, column-major from 0x170).
+- Findings: stock slots use HSPC files found by path; pack/mod slots use EPK8/EPAC with internal names (MD<slot>,
+  M000<slot>, part codes AP/BR/CL/CP/RM/SP/ST/TB + 2 digits, CC/CO/CB for *_CM). Every Dynamite '22 part differs
+  from the pack's file with the same number, and 6 of those numbers are used by arenas that stay.
+- Test build `tools/arena/build_dyn22_158.py`: stage + 3 videos rewrapped into slot 158's containers; parts
+  renumbered apron 75->7, barricade 22->6, ceiling light 20->4, corner post 7->17, ring mat 2->7, spotlight 20->2,
+  stadium 29->1, turnbuckle 15->13 (CM files kept at 2, no clash); rope 3 not installed (no known part code; uses
+  the game's rope 3); 4 menu graphics (mod's slot-3 Dynamite '22 set) renamed to slot 158's names; name string
+  48158 "AEW DYNAMITE '22"; the creator's misc01/misc04/initposition/light values on row 158 only (other rows checked
+  unchanged). bgeffect.pac (global) not installed.
