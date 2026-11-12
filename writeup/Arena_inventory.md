@@ -254,3 +254,10 @@ Smackdown '08 (157).
   the game's rope 3); 4 menu graphics (mod's slot-3 Dynamite '22 set) renamed to slot 158's names; name string
   48158 "AEW DYNAMITE '22"; the creator's misc01/misc04/initposition/light values on row 158 only (other rows checked
   unchanged). bgeffect.pac (global) not installed.
+- 01:30 **Test build installed on the clean game** (`...\common\WWE 2K19`): 24 files (5 new, 19 replaced) + 5 lines
+  appended to chunk0.def (CRLF kept). Originals backed up to `_arena_work\backup_dyn22_158\` (same relative paths,
+  incl. chunk0.def); build copy + manifest in `_arena_work\out\`. Uninstall = copy the backup tree back and delete
+  the 5 new files. **Matthew to check:** arena select shows "AEW DYNAMITE '22" in the Over the Limit '11 spot; a
+  match loads; stage, ring (apron, ring mat, turnbuckles, posts), barricade, lighting colour and the three screens
+  look right; menu graphics (locator/nameplate/match result/copyright); another arena (e.g. Raw, slot 1, uses
+  stadium 29) still looks normal.
