@@ -322,3 +322,14 @@ Smackdown '08 (157).
   AEW Ceiling Light files installed in the clean game (13 new files, ids unused by the pack, def lines added);
   slot 158 row: CeilingLighting 73, Spotlight 91, Floor 3 (misc04 fe272943). Build script updated. **For the batch:
   every AEW arena gets 73/91 + its floor from that list.**
+- 08:10 Matthew: **lighting fixed by the AEW Ceiling Light settings.** Next three, installed 08:10:
+  - **Ramp walk-through:** misc01 Stage 2 -> 1 ("Fix Floating on Air Issue.txt": 1 = shorter inclined stage, AEW/NXT;
+    the modded slot-3 Dynamite also uses 1). misc01 2cd64408.
+  - **Transitions:** from the modded game's Dynamite (slot 3, = AEW Dynamite GFX Easy Install): transition payload
+    rewrapped into slot 158's container (357b09be); transition_replay copied as `pac\mov\transition_replay\000158.pac`
+    (new; def line added).
+  - **Match card foreground:** decoded with texture2ddecoder (BC7). Slot 158's layout draws its 1024x256 foreground
+    as a strip about 6.7:1 on screen (measured from the screenshot); the mod's image has its content in the bottom
+    half of 2048x1024. `tools/arena/card_fg_fit.py`: crop the mod image to 6.7:1 from the bottom (keeps 'UP NEXT' and
+    the colour splash), resize to 1024x256, BC7 via etcpak, ZLIB. Card 22e4f4d4 (previous dfa1abd4 kept in
+    `_arena_work\cardfix\ltag_158_before_cardfix.pac`).

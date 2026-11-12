@@ -42,7 +42,7 @@ row.update({'Stadium': 1, 'Advertisement': 0, 'CornerPost': 17, 'LED_CornerPost'
 put('pac/root/misc04_arena.pac', misc04_set(m04, SLOT, row))
 m01 = rd(G + 'pac/root/misc01_start.pac')
 put('pac/root/misc01_start.pac', misc01_set(m01, SLOT, {'name': SID, 'A1': 0, 'A2': 17, 'B1': 0xC, 'B2': 0x1B, 'B3': 0xFFFF,
-    'C1': 1, 'C2': 1, 'C3': 1, 'C4': 1, 'C5': 0, 'C6': 0, 'C7': 0, 'C8': 0, 'Stage': 2, 'D1': 0, 'D2': 2, 'D3': 1, 'D4': 0, 'D5': 1,
+    'C1': 1, 'C2': 1, 'C3': 1, 'C4': 1, 'C5': 0, 'C6': 0, 'C7': 0, 'C8': 0, 'Stage': 1, 'D1': 0, 'D2': 2, 'D3': 1, 'D4': 0, 'D5': 1,
     'Ref': 4, 'Filter': '000000FFFFFF', 'F1': 0, 'F2': 0x5A, 'F3': 0, 'F4': 0, 'H1': 5, 'H2': 4, 'H3': 1, 'H4': 3, 'Bar': 6,
     'I1': 0, 'I2': 0, 'I3': 0x3A, 'Live': 0, 'J': 0}))
 put('pac/prop/propdata/initposition.pac', initpos_set(rd(G + 'pac/prop/propdata/initposition.pac'), SLOT, 9, 9, 9))
