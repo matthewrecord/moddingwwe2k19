@@ -271,3 +271,10 @@ Smackdown '08 (157).
   ppv logo renamed to 158's name. Installed 01:55 (backups in `_arena_work\backup_dyn22_158`). Risk named in the
   tutorial: foreground image in a different size format (158's is about 0.25 MB, the mod's 2 MB) can show too big or
   small; text positions are slot 158's.
+- 02:05 Matthew's test 2 (screenshots): match card works, foreground slightly squished (the size-format issue the
+  tutorial warns about); **arena lighting dark and static until the entrance starts**. Cause found: in Matthew's
+  modded game this exact stage file (md5 6bceeda2) runs at slot 17 with different settings than the creator's txt:
+  misc01 Stage 2, Ref 4, Bar 6, Live 0, Filter 000000FFFFFF; light row = slot 17 stock colours; initposition 9,9,9;
+  misc04 Crowd 10. **v2 tables** use those values (now identical to the modded slot-17 rows except the renumbered
+  part ids) and are installed (misc01 9330973a, misc04 e09d6feb, initposition 9694f195, light 8193d58d). Rule for the
+  batch: **take settings from the working modded game where the arena exists there; creator txt only otherwise.**
