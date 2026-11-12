@@ -333,3 +333,10 @@ Smackdown '08 (157).
     half of 2048x1024. `tools/arena/card_fg_fit.py`: crop the mod image to 6.7:1 from the bottom (keeps 'UP NEXT' and
     the colour splash), resize to 1024x256, BC7 via etcpak, ZLIB. Card 22e4f4d4 (previous dfa1abd4 kept in
     `_arena_work\cardfix\ltag_158_before_cardfix.pac`).
+- 10:40 Matthew: **ramp, transitions, match card, lighting all confirmed working.** New issue: arena names show
+  "53E2 -EMPTY STRING TO BE FILLED" etc. and Dynamite '22 has no name. Cause: the clean game has TWO SuperString
+  files in chunk0.def: `mods\SuperString\pac\string\win\string_win.pac` (the pack's, edited by us, correct: 26,676
+  strings incl. 48158 "AEW DYNAMITE '22", every other string unchanged) and a stray older
+  `mods\SuperString\string_win.pac` (2024-07-30, b4d256ff) whose arena strings are placeholders. After our edit the
+  game reads the stray one (why it switched is not known). Fix 10:40: stray file replaced by a copy of the good one
+  (original kept in `_arena_work\backup_strings\`). For the batch: string edits go to both, or remove the stray line.
