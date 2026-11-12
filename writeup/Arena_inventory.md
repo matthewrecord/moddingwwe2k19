@@ -79,3 +79,29 @@ Retro). Whichever was installed last wins in the game; the other arena shows the
 5. **Test on one arena** (Dynamite 22: fully documented) before doing the rest; then Matthew names arena -> slot
    pairs and they are applied in a batch.
 Open: what "the 81 arenas" pack is (asked), menu-hash rule, table formats.
+
+## Update 23:30: fresh downloads read (7 archives in the arenas folder; unpacked in the work container only)
+Corrections to the table above come from the creators' own notes and the fresh originals:
+- **AEW Grand Slam (MattFick), original**: made for **slot 3**; entrance, stadium 74, floor 1, ceilinglight 73,
+  spotlight 91; videos ar_wall, ar_ramp, bg_wall, bg_ramp. **The original has no mini/apron video, no transition and
+  no menu graphics**, so those were never "missing". Needs Titavius' AEW apron/barricade/posts/buckles/ropes and the
+  AEW Ceiling Light (both in the folder). The slot-118 transition, the stray NXT TakeOver file and the partial move
+  to 163 were additions in Matthew's copy. Use the fresh download as the base.
+- **WrestleMania 31, original**: the copyright file is a duplicate of the match_result file **in the original too**
+  (creator's error), and there is no ppv_logo in the original. Re-download does not fix it. Original part ids:
+  apron 29, cornerpost 7, commentary 17; Matthew's copy has them renumbered to 42 / 37 / 77 (avoids the cornerpost 7
+  collision), which is the better set.
+- **All In**: note says slot 142 "from Abhilash's pack" (the 2K15-2K18 port) with misc01 Bar 7, Live 7. It is a
+  re-skin of that pack's slot 142 and takes stage/screens from it. **Complete as designed** if the ported pack is in.
+- **ROH Death Before Dishonor**: note says slot 138, misc01 Stage 0 (= no stage, no screens), Bar 7, initposition
+  01 01 01. **No videos is by design.** Still lacking: copyright, ppv_logo, replay graphics.
+- New material: **ROH '05 V2 (MopeLovesAsians)**: slot 312 (Metropolis Center); entrance, stadium 47, apron 20,
+  ringmat 16, turnbuckle 17, barricade 25, cornerpost 23, ppv_logo; misc04 row given in text; no videos. Its part
+  ids collide with AEW Dark (stadium 47, turnbuckle 17) and Rampage (ringmat 16, barricade 25): needs renumbering.
+  For Death Before Dishonor it can supply an ROH ring mat/stadium and a ppv_logo; the "ROH Copyright, Locators"
+  set (slot 17) can be re-slotted for its copyright. **AEW x NJPW Forbidden Door (iTwistedSpartan)**: slot 4
+  (Payback); apron 141, ringmat 20, turnbuckle 23, barricade 32, all six videos, six menu graphics, match-up .dds;
+  prerequisites 2K15-2K18 port + AEW Dynamite LA Forum '22; includes an entrance *texture* (03E8.pac) to inject
+  into that Dynamite stage, not a stage file. **NXT 2.0 original** (slot 2, stadium 3; Matthew's copy = slot 164,
+  stadium 55). **NXT White & Gold**: re-skin of NXT 2.0's parts (apron 195, cornerpost 35, commentary 82) + videos
+  and two graphics for slot 2; one or the other. **AEW Crowd Shirts**: one crowd file (arcrowd00010).
