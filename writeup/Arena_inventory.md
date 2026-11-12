@@ -285,3 +285,12 @@ Smackdown '08 (157).
   mod's) 454 + 0.5 x 0.5. Fix: those values in 158's layout set to the 205 Live ones (text positions stay 158's),
   layout stored ZLIB. Installed 02:20 (md5 660eae54, same as the container build); previous version kept as
   `_arena_work\cardfix\ltag_158_before_cardfix.pac`.
+- 02:35 Matthew's test 3: lighting still static before the entrance; card fix made it worse (foreground misplaced).
+  Changes (on the laptop, with the repo's yukes.py):
+  - **Per-arena prop file:** every slot has `pac\prop\0NNN.pac` (128 of them; 0158 = 0.3 MB, 0017 = 1 MB). The mod
+    "replaces WWE Main Event", i.e. it was built on slot 17's prop file (light rigs/props, hypothesis). Slot 158 now
+    carries 0017's payload in its own container (backup in `_arena_work\backup_dyn22_158\pac\prop\0158.pac`).
+    **To add to the installer if confirmed:** copy the prop file of the slot the mod was built for.
+  - **Match card:** layout patch reverted; slot 158's card now holds the mod's whole card (the 205 Live layout with its
+    own texture names, self-consistent), as the pack itself clones cards (158's own layout references slot 13's
+    names). md5 a014fc30.
