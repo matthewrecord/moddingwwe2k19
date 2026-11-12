@@ -349,3 +349,4 @@ Smackdown '08 (157).
 - The shirts mod (iTwistedSpartan) replaces stock crowd 10 (md5 1f5a1c34, same as the modded game). Crowd 10 is shared by 10 pack slots, so it went in as a **new crowd id 15** instead: `pac\arena\crowd\arcrowd00015.pac` plus a `.def` copied from 00010, and a chunk0.def line.
 - misc04 row 158: Crowd 10 → 15 (misc04 md5 fe272943 → 0427cfe4). Backups are in `_arena_work\backup_crowd`. The saved Resources package and README are updated.
 - Needs an in-game check: if crowd 15 doesn't load (empty or stock crowd), fall back to an EPAC wrapper, or overwrite crowd 10 globally.
+- **Result:** the game ignored crowd 15, and the stock crowd showed. The game seems to load only crowd ids 0–14. Crowd id 3 is assigned to no arena slot in misc04, so the shirts now sit in `arcrowd00003.pac`. Stock 3 is backed up in `backup_crowd`. Row 158 has Crowd 3 (misc04 md5 d061d9e2). Waiting on an in-game check.
