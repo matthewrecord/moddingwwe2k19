@@ -294,3 +294,8 @@ Smackdown '08 (157).
   - **Match card:** layout patch reverted; slot 158's card now holds the mod's whole card (the 205 Live layout with its
     own texture names, self-consistent), as the pack itself clones cards (158's own layout references slot 13's
     names). md5 a014fc30.
+- 02:45 Test 4: lighting unchanged by the prop file; whole-card swap = no card at all. **Both reverted**: card back
+  to the first build (dfa1abd4, slightly squished but correct), prop 0158 back to stock (a229c42b). Lessons: a card
+  cannot be moved whole (its layout's texture names are tied to the slot), the prop file is not the lighting. Open
+  question to Matthew before more guessing: does the same arena at slot 17 in the modded game show the same static
+  idle lighting (i.e. is this the mod's own behaviour)?
