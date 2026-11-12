@@ -304,3 +304,8 @@ Smackdown '08 (157).
   rows for 17 were already identical to the modded game). Temporary: this overwrites stock parts other arenas use
   (stadium 29 = Raw etc.); backups in `_arena_work\backup_ctl17` (misc04 e09d6feb). Question it answers: is the idle
   lighting right when the arena sits in its own slot?
+- 03:05 Control result: **idle lighting static in slot 17 too** (mod in its own slot, modded-game settings). So not
+  slot-related. Only other file the mod ships: `pac\bg\bgeffect.pac` (global; the modded game has the mod's copy,
+  fcf3ecc9; clean has 38ff566d). Its only difference: VTGN = three 64x64 textures (mod BC-DX10, clean DXT5);
+  EFFC/VTGL identical. Unlikely to be lighting. Open: does the modded game's Main Event (same Dynamite files) light
+  correctly before the entrance? Asked Matthew.
