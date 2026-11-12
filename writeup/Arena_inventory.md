@@ -161,3 +161,11 @@ number 24 (not offered in the arena list) and need their select number set to be
 Draft v2: as the table above with Forbidden Door -> 4; Raw Arena + the Raw 18 videos combined in 96; free: 123, 5.
 Still without a slot: All In, Smackdown 21, Dynamite 20, ROH '05, Tokyo Dome, WrestleMania 27, WrestleMania 31
 (WrestleMania 34 already exists at 15). 21 slots for about 26 arenas: Matthew to name more slots or drop arenas.
+- 00:30 More unwanted slots from Matthew: No Way Out '01 = 107, No Mercy '16 = 53, King of the Ring '99 = 134
+  (24 named slots). Dynamite 20 + 22 and NXT 2.0 + White & Gold all stay (multiple looks wanted).
+  Draft v3 additions: All In -> 123, Smackdown 21 -> 53, Dynamite 20 -> 107, ROH '05 -> 134, Tokyo Dome -> 5.
+  Unplaced: WrestleMania 27, WrestleMania 31 (2 slots short).
+- WrestleMania 31, pack (slot 105) vs Matthew's download: different files throughout. Stage 10.81 MB vs 10.45 MB;
+  wall video 0.92 vs 3.62 MB; mini 1.46 vs 1.19 MB; apron 1.46 vs 0.32 MB; transition 2.05 vs 3.07 MB;
+  transition_replay none vs 1.58 MB. Matthew's also has locator/match_result/nameplate/replay graphics. In his copy
+  the DAY and EVENING stage files are byte-identical (70c411a3...), NIGHT differs.
