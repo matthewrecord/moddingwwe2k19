@@ -344,3 +344,8 @@ Smackdown '08 (157).
   to its Resources folder: `AEW Dynamite 22\Installed - slot 158 (Over the Limit 11) 2026-11-12\` = the 23 files as
   installed (pac + mods tree), files_md5.txt, README.txt with every change and the four settings rows. Rule for the
   batch: same "Installed - slot N (...) <date>" folder per arena.
+
+### Dynamite '22 (158): AEW Crowd Shirts (2026-11-12)
+- The shirts mod (iTwistedSpartan) replaces stock crowd 10 (md5 1f5a1c34, same as the modded game). Crowd 10 is shared by 10 pack slots, so it went in as a **new crowd id 15** instead: `pac\arena\crowd\arcrowd00015.pac` plus a `.def` copied from 00010, and a chunk0.def line.
+- misc04 row 158: Crowd 10 → 15 (misc04 md5 fe272943 → 0427cfe4). Backups are in `_arena_work\backup_crowd`. The saved Resources package and README are updated.
+- Needs an in-game check: if crowd 15 doesn't load (empty or stock crowd), fall back to an EPAC wrapper, or overwrite crowd 10 globally.
