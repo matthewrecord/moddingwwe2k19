@@ -299,3 +299,8 @@ Smackdown '08 (157).
   cannot be moved whole (its layout's texture names are tied to the slot), the prop file is not the lighting. Open
   question to Matthew before more guessing: does the same arena at slot 17 in the modded game show the same static
   idle lighting (i.e. is this the mod's own behaviour)?
+- 02:55 **Control test installed on the clean game:** Dynamite '22 exactly as its creator ships it, into slot 17
+  (Main Event), files under their own names + misc04 row 17 = the modded game's row 17 (misc01, initposition, light
+  rows for 17 were already identical to the modded game). Temporary: this overwrites stock parts other arenas use
+  (stadium 29 = Raw etc.); backups in `_arena_work\backup_ctl17` (misc04 e09d6feb). Question it answers: is the idle
+  lighting right when the arena sits in its own slot?
