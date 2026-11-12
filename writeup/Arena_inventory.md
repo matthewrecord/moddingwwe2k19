@@ -169,3 +169,41 @@ Still without a slot: All In, Smackdown 21, Dynamite 20, ROH '05, Tokyo Dome, Wr
   wall video 0.92 vs 3.62 MB; mini 1.46 vs 1.19 MB; apron 1.46 vs 0.32 MB; transition 2.05 vs 3.07 MB;
   transition_replay none vs 1.58 MB. Matthew's also has locator/match_result/nameplate/replay graphics. In his copy
   the DAY and EVENING stage files are byte-identical (70c411a3...), NIGHT differs.
+
+## 00:30 Assignment v4 (Matthew-approved slots; pairings are Claude's draft unless Matthew changes them)
+Named unwanted slots (27): 123, 132, 119, 159, 124, 135, 96, 128, 158, 4, 143, 5, 127, 133, 138, 112, 118, 139, 117,
+149, 130, 107, 53, 134, 125 (D-Generation X), 140 (Payback '13), 160 (Payback '14).
+| Arena | Slot | Was |
+| --- | --- | --- |
+| AEW All Out '21 | 118 | Bad Blood '04 |
+| AEW Double or Nothing '19 | 119 | Vengeance '01 |
+| AEW Dark '21 | 117 | Armageddon '02 |
+| AEW Rampage '21 | 139 | Armageddon '99 |
+| AEW Road Rager '21 | 149 | Armageddon '03 |
+| AEW Grand Slam | 159 | Vengeance '11 |
+| AEW Revolution | 112 | Backlash '03 |
+| AEW Full Gear | 133 | Backlash '00 |
+| AEW Dynamite '22 | 158 | Over the Limit '11 |
+| AEW Dynamite '20 | 107 | No Way Out '01 |
+| AEW x NJPW Forbidden Door | 4 | Payback '17 |
+| All In | 123 | WrestleMania 13 |
+| ROH Death Before Dishonor | 138 | Backlash '01 |
+| ROH '05 | 134 | King of the Ring '99 |
+| NXT 2.0 | 127 | Unforgiven '98 |
+| NXT White & Gold | 128 | Over the Edge '98 |
+| Raw (arena + Raw 18 videos) | 96 | Great Balls of Fire |
+| Smackdown 21 | 53 | No Mercy '16 |
+| Tokyo Dome | 5 | Battleground '13 |
+| WrestleMania 27 | 125 | D-Generation X |
+| WrestleMania 31 | 140 | Payback '13 |
+| WrestleMania 35 | 130 | Rock Bottom '98 |
+| WrestleMania 38 | 132 | WrestleMania 15 |
+| Royal Rumble Retro | 124 | In Your House '97 (Revenge of the Taker) |
+| Royal Rumble 2020 | 135 | Fully Loaded '99 |
+| Summerslam 09 | 143 | Night of Champions '09 |
+Spare: 160 (Payback '14).
+**Reserve list (Matthew agrees with the reasoning; use when more slots are needed, in this order):** Battleground
+'15 (141); two of Survivor Series '11/'12/'13 (153, 154, 145; keep one, which one to ask); Hell in a Cell '10/'11
+(152, 144); TLC '13 (146); Elimination Chamber '13 (147); Extreme Rules '11 (156); St. Valentine's Day Massacre
+(131); Judgment Day '04 (120). Keep: Capitol Punishment '11 (41), Money in the Bank '11 (148), Raw '11 (150),
+Smackdown '08 (157).
