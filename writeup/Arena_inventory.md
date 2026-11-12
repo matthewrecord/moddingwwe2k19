@@ -261,3 +261,13 @@ Smackdown '08 (157).
   match loads; stage, ring (apron, ring mat, turnbuckles, posts), barricade, lighting colour and the three screens
   look right; menu graphics (locator/nameplate/match result/copyright); another arena (e.g. Raw, slot 1, uses
   stadium 29) still looks normal.
+- 01:55 Matthew's test: **arena works; locator, nameplate, match result right; arena-select logo still Over the
+  Limit; match card not Dynamite.** Cause: those two live in other files (`texture\ppv_logo\158 - ...pac`,
+  `pac\menu\win\Assets\wwe19_anime\match_up\ltag_158_overlimit_2011_win.pac`). Sources: `AEW Dynamite GFX\Easy
+  Install` (made for slot 3). Match-card pacs are an SHDC variant (header 0x40, dir at w2+w3, table 16-aligned after
+  w6 bytes of 20-byte dir entries; reader/writer `tools/arena/shdc2.py`); files: 1 = background movie (BIKi), 3 =
+  foreground image (DDS), 4 = unknown, last = text layout (atb0). Slot 158's card has 8 files, the Dynamite (205 Live)
+  card 7. Built per the community tutorial: slot 158's card with files 1, 3, 4 from the mod, its own layout kept;
+  ppv logo renamed to 158's name. Installed 01:55 (backups in `_arena_work\backup_dyn22_158`). Risk named in the
+  tutorial: foreground image in a different size format (158's is about 0.25 MB, the mod's 2 MB) can show too big or
+  small; text positions are slot 158's.
