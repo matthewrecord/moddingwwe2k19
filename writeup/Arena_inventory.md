@@ -370,3 +370,22 @@ Smackdown '08 (157).
   - Open: the cards draw the wrestler names over the Create-a-Show strip; asked whether to remove them.
 - **Hiding card names (test 1):** the ATB0 layout (card file 7, identical in 117/118/119) has 17 nodes. Each node has 12 property tracks (ids 0–9, 0x11, 0x12), and the 16-byte keyframes start at 0xf60, (node*12 + i)*16. Property 0 = position, 1 = scale. Nodes 7, 9, 11 and 14 (text, y 790–805, scale 0.65–0.7) are set to scale 0. The layout is stored ZLIB-wrapped. The cards with names are kept as `_arena_work\cards\withnames_*.pac`. The node↔name pairing from the name table is not certain yet.
 - Dark logo fix: the pack names this file `117- Armageddon '02.pac` (no space before the dash; 28, 37, 141 and 151 are irregular too), so the installer missed it and Armageddon won the duplicate name 781E9B35. That file now carries the Dark logo. The extra `117 - AEW Dark.pac` (same content, same name) stays, because deletion isn't permitted. The installer now matches `N\s*-`. Crowd shirts and mats confirmed by Matthew.
+
+## Batch 1, part B (2026-11-12): WrestleMania 35 → 130, Raw → 96, ROH Death Before Dishonor → 138
+Backups are in `_arena_work\backup_batch1b`. Plans: `plan_b1b.json`, `plan_raw96.json` (+ `plan_raw96t.json`, tables only), `plan_dbd.json`. The AEW set (117/118/119/158) is saved back to Resources as "Installed - slot N 2026-11-12" folders.
+- **New technique: HSPC → EPAC.** When a mod part is an HSPC replacing a stock id that kept arenas use, its payload goes into a named EPAC at a free id (`build_single(b'EPAC', b'SGSN', b'ST48', payload)`), the same way as the Dynamite '22 parts.
+- **WM35 (130)**, from the modded game (ground truth):
+  - stadium 31 → 48 (ST48), apron 79 → 42 (AP42) and corner post 7 → 23 (CP23), all converted;
+  - ceiling light 69 and commentary 76 are new ids; the misc04/misc01 rows are the modded game's 130 rows;
+  - menu graphics come from the Resources folder; name "WRESTLEMANIA 35".
+  - Card: the mod's card (`130 - Wrestlemania 35.pac`, a 9-file WM layout) supplies movie file 1 (KB2j, raw OODL entry), and its 2048x256 strip is resized to 1024x256 into slot 130's own card. Names are kept (WWE style).
+- **Raw (96)**:
+  - Raw Arena mod: entrance 1 re-stamped as entrance 96 (HSPC header/hash stamps from stock 96; the mod file has no inner SHDC). Its stadium 29 payload = the installed stadium 1. IBL 0 is re-stamped as IBL 34 (only unwanted slots used it).
+  - Raw '18 videos go in at 000096. misc04 = clean Raw row 1 with Stadium 1 and IBL 34; misc01 = the creator's row 1 (F4 = 1); light = the creator's row 1; initpos = row 1.
+  - Graphics: the pack's slot-1 Raw set, renamed. Card: the Raw 2018 card's movie + its foreground fitted. Name "RAW".
+  - Note: row 96 has no CrowdSeatsPlace/Model keys, so the installer filters on the keys present.
+- **DBD (138)**:
+  - Creator settings from misc04 PNGs: stadium 22, rope 3, apron 173, turnbuckle 46, barricade 41, fence 29, stairs 1, crowd 8, IBL 30, CM 2.
+  - Changes: the corner post (HSPC id 2, used by 25 kept slots) → EPAC CP24. The corner post CM differs from the Dynamite one → renamed CC00003 (CM 3). Ring mat = ROH '05 RM16; floor mattress 13, because 15 is now AEW. misc01 Stage 0, Bar 7; initpos 1,1,1.
+  - Graphics: DBD locator, match result and nameplate; copyright from the ROH set (17 - ROH). The ppv logo is the mod's `BAKLASH01.PAC` (internal name A8E18B96 = slot 138).
+  - Card: slot 138's own generic movie (the creator ships only still BG/FG PNGs; no Bink encoder). The FG PNG is padded to 6.7:1 → 1024x256; names are hidden (layout_noname). Name "ROH DEATH BEFORE DISHONOR".
