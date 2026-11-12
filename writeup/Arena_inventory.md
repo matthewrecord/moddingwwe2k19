@@ -340,3 +340,7 @@ Smackdown '08 (157).
   `mods\SuperString\string_win.pac` (2024-07-30, b4d256ff) whose arena strings are placeholders. After our edit the
   game reads the stray one (why it switched is not known). Fix 10:40: stray file replaced by a copy of the good one
   (original kept in `_arena_work\backup_strings\`). For the batch: string edits go to both, or remove the stray line.
+- 13:40 **Dynamite '22 in slot 158 declared a success by Matthew.** Per his request, each finished arena is saved back
+  to its Resources folder: `AEW Dynamite 22\Installed - slot 158 (Over the Limit 11) 2026-11-12\` = the 23 files as
+  installed (pac + mods tree), files_md5.txt, README.txt with every change and the four settings rows. Rule for the
+  batch: same "Installed - slot N (...) <date>" folder per arena.
