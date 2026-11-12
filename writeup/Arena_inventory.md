@@ -278,3 +278,10 @@ Smackdown '08 (157).
   misc04 Crowd 10. **v2 tables** use those values (now identical to the modded slot-17 rows except the renumbered
   part ids) and are installed (misc01 9330973a, misc04 e09d6feb, initposition 9694f195, light 8193d58d). Rule for the
   batch: **take settings from the working modded game where the arena exists there; creator txt only otherwise.**
+- 02:20 Match card squish: decoded with pyooz (Oodle Kraken, pip `pyooz`). Card files: 0 ?, 1 background movie
+  (KB2i/BIKi), 2 small layout (ATB0), 3 foreground image (BC7 DDS: slot 158 1024x256, mod 2048x1024), 4 font pack
+  (FTPK), 5/6 1024x1024 images, last = main layout (ATB0, references textures by name, e.g. "10024_fr", hence not
+  swappable). The layouts differ in the foreground quad: slot 158 size 908 + scale 0.5 x 1.0, 205 Live (= the
+  mod's) 454 + 0.5 x 0.5. Fix: those values in 158's layout set to the 205 Live ones (text positions stay 158's),
+  layout stored ZLIB. Installed 02:20 (md5 660eae54, same as the container build); previous version kept as
+  `_arena_work\cardfix\ltag_158_before_cardfix.pac`.
