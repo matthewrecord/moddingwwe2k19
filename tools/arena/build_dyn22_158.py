@@ -31,26 +31,27 @@ sp = rd(G + 'mods/SuperString/pac/string/win/string_win.pac'); Hs = HSPC(sp); Ss
 pre, ents = string_table_parse(Ss.files[0]['data']); d = dict(ents); SID = 48158; assert SID not in d
 d[SID] = b"AEW DYNAMITE '22\0"; Ss.files[0]['data'] = string_table_build(pre, sorted(d.items()))
 put('mods/SuperString/pac/string/win/string_win.pac', Hs.replace(0, Ss.build()))
-# 5 tables (creator's values: AEW Dynamite 22/Misc Data/*.txt; part ids renumbered as above)
+# 5 tables: v2 = the values this arena runs with in Matthew's modded game (slot 17 rows there); the creator's
+#   txt values (Stage 1, Ref 8, Bar 7, Live 7, filter 0A640000050A, red light, initpos 7) gave a dark static arena
 m04 = rd(G + 'pac/root/misc04_arena.pac'); base17 = misc04_get(m04, 17)
 row = {k: base17[k] for k in ('Titantron', 'Minitron', 'Wall_L', 'Wall_R', 'Header', 'Floor', 'MiscObjects', 'LightingType', 'Apron_CM', 'RingMat_CM')}
 row.update({'Stadium': 1, 'Advertisement': 0, 'CornerPost': 17, 'LED_CornerPost': -1, 'Rope': 3, 'Apron': 7, 'LED_Apron': -1,
             'Turnbuckle': 13, 'Barricade': 6, 'Fence': 0, 'CeilingLighting': 4, 'Spotlight': 2, 'Stairs': 0, 'CommentarySeat': 33,
-            'RingMat': 7, 'FloorMattress': 2, 'Crowd': 0, 'CrowdSeatsPlace': -1, 'CrowdSeatsModel': -1, 'IBL': 50,
+            'RingMat': 7, 'FloorMattress': 2, 'Crowd': 10, 'CrowdSeatsPlace': -1, 'CrowdSeatsModel': -1, 'IBL': 50,
             'CornerPost_CM': 2, 'Rope_CM': 2, 'Turnbuckle_CM': 2})
 put('pac/root/misc04_arena.pac', misc04_set(m04, SLOT, row))
 m01 = rd(G + 'pac/root/misc01_start.pac')
 put('pac/root/misc01_start.pac', misc01_set(m01, SLOT, {'name': SID, 'A1': 0, 'A2': 17, 'B1': 0xC, 'B2': 0x1B, 'B3': 0xFFFF,
-    'C1': 1, 'C2': 1, 'C3': 1, 'C4': 1, 'C5': 0, 'C6': 0, 'C7': 0, 'C8': 0, 'Stage': 1, 'D1': 0, 'D2': 2, 'D3': 1, 'D4': 0, 'D5': 1,
-    'Ref': 8, 'Filter': '0A640000050A', 'F1': 0, 'F2': 0x5A, 'F3': 0, 'F4': 0, 'H1': 5, 'H2': 4, 'H3': 1, 'H4': 3, 'Bar': 7,
-    'I1': 0, 'I2': 0, 'I3': 0x3A, 'Live': 7, 'J': 0}))
-put('pac/prop/propdata/initposition.pac', initpos_set(rd(G + 'pac/prop/propdata/initposition.pac'), SLOT, 7, 7, 7))
+    'C1': 1, 'C2': 1, 'C3': 1, 'C4': 1, 'C5': 0, 'C6': 0, 'C7': 0, 'C8': 0, 'Stage': 2, 'D1': 0, 'D2': 2, 'D3': 1, 'D4': 0, 'D5': 1,
+    'Ref': 4, 'Filter': '000000FFFFFF', 'F1': 0, 'F2': 0x5A, 'F3': 0, 'F4': 0, 'H1': 5, 'H2': 4, 'H3': 1, 'H4': 3, 'Bar': 6,
+    'I1': 0, 'I2': 0, 'I3': 0x3A, 'Live': 0, 'J': 0}))
+put('pac/prop/propdata/initposition.pac', initpos_set(rd(G + 'pac/prop/propdata/initposition.pac'), SLOT, 9, 9, 9))
 put('pac/misc/parameter/light/prm_ar_lg_color.pac', light_set(rd(G + 'pac/misc/parameter/light/prm_ar_lg_color.pac'), SLOT,
-    ['FF1911FF', 'FF1911FF', 'FF1911FF', 'FFFFFF00', 'FF8181E2', 'FFFFFFFF', 'FF1911FF', 'FF1911FF', 'FF1911FF', 'FF1911FF']))
+    ['822D0CFF', 'FF0808FF', '00FFFBFF', '0505FFFF', '822D0CFF', 'FFFFFFFF', '0505FFFF', 'EE1C08FF', '0505FFFF', 'EE1C08FF']))
 # verify by re-reading
 assert misc04_get(files['pac/root/misc04_arena.pac'], SLOT)['Stadium'] == 1 and misc04_get(files['pac/root/misc04_arena.pac'], 17) == base17
-assert misc01_get(files['pac/root/misc01_start.pac'], SLOT)['Bar'] == 7 and misc01_get(files['pac/root/misc01_start.pac'], 17) == misc01_get(m01, 17)
-assert initpos_get(files['pac/prop/propdata/initposition.pac'], SLOT) == (7, 7, 7)
+assert misc01_get(files['pac/root/misc01_start.pac'], SLOT)['Bar'] == 6 and misc01_get(files['pac/root/misc01_start.pac'], 17) == misc01_get(m01, 17)
+assert initpos_get(files['pac/prop/propdata/initposition.pac'], SLOT) == (9, 9, 9)
 for rel in ('pac/arena/entrance/arentrance00158.pac', 'pac/mov/ar_wall/0000158.pac'): assert names(files[rel])[0].startswith(b'M')
 man = {}
 for rel, data in files.items():
