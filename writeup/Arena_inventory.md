@@ -151,3 +151,13 @@ Corrections to the table above come from the creators' own notes and the fresh o
   Dynamite 22: pick one). Left free after this draft: 123 or none, one Payback slot, 5.
 - Not yet known: what the pack already puts in each of these slots part-wise (misc04 rows), so part-number
   collisions with the pack are unchecked; "WrestleMania 13 - broken?" not tested.
+
+## 00:25 Rule from Matthew (binding)
+**A downloaded arena may only go into a slot Matthew has named as unwanted. The slot a mod was made for is
+irrelevant. Nothing else gets replaced** (not Money in the Bank '13 for All In, not the current SmackDown/Raw/NXT/
+Main Event/205 Live slots, not 312/316/402/105). Payback = Payback '17 (slot 4). Named slots: 123, 132, 119, 159,
+124, 135, 96, 128, 158, 4, 143, 5, 127, 133, 138, 112, 118, 139, 117, 149, 130 = 21. Slots 4 and 5 have select
+number 24 (not offered in the arena list) and need their select number set to become usable.
+Draft v2: as the table above with Forbidden Door -> 4; Raw Arena + the Raw 18 videos combined in 96; free: 123, 5.
+Still without a slot: All In, Smackdown 21, Dynamite 20, ROH '05, Tokyo Dome, WrestleMania 27, WrestleMania 31
+(WrestleMania 34 already exists at 15). 21 slots for about 26 arenas: Matthew to name more slots or drop arenas.
