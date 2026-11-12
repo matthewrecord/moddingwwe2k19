@@ -362,3 +362,9 @@ Smackdown '08 (157).
 - Match cards are not done yet: these mods ship no slot card. Their art is in the AEW Matchup Screens (Create-a-Show) packs.
 - **Match cards 117/118/119** (2026-11-12): each slot's card keeps its own container, layout and fonts. File 1 (background movie) = the arena's own transition movie (BIKi, 3840x2160, ZLIB-wrapped). File 3 (foreground) = the arena pack's Create-a-Show foreground (`ltag_30001_90s0X`, DXT5 2048x1024): the bottom strip is cropped to 6.7:1, resized to 1024x256 and BC7-encoded. These cards use the same layout as 158, so the same fit applies. Card md5s: 118 83f9a5bd, 119 900f5bcb, 117 d573ba2d. The Create-a-Show background stills (with the show logos) can't be used, because the card background has to be a Bink movie.
 - **Rope:** the AEW rope is re-stamped to rope id 7 (stamps from stock 7, md5 1be3c4cd). Rope 7's only other user is misc04 row 81, which has no misc01 row, graphics or card, so it isn't a selectable arena. Rows 117/118/119/158 use Rope 7 (misc04 689ae6ab).
+- Matthew's test (15:27): arenas and cards good. Changes:
+  - Dark ppv logo moved to the Unpacked Arena Graphics folder; its def line was rewritten to that path.
+  - Dark Stage 0/1 → 3 (flat), because of floating on air (misc01 79cd9103).
+  - The Double or Nothing apron 137 and ring mat 18 now go on 117/118/158 too (misc04 9cc67af3).
+  - Crowd was already 3 (shirts) on all four AEW rows.
+  - Open: the cards draw the wrestler names over the Create-a-Show strip; asked whether to remove them.
