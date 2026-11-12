@@ -21,9 +21,9 @@ def target_for(rel, slot):
     if '/mov/' in rel:
         for c in sorted(os.listdir(G + d)) if os.path.isdir(G + d) else []:
             if re.fullmatch(r'0*%d\.pac' % slot, c, re.I): return d + '/' + c
-    if '/wwe19_singleread/' in rel and re.match(r'%d - ' % slot, f):
+    if '/wwe19_singleread/' in rel and re.match(r'%d\s*-' % slot, f):
         for c in os.listdir(G + 'mods/WWE 2K19 Unpacked Arena Graphics/' + d):
-            if c.startswith('%d - ' % slot): return 'mods/WWE 2K19 Unpacked Arena Graphics/' + d + '/' + c
+            if re.match(r'%d\s*-' % slot, c): return 'mods/WWE 2K19 Unpacked Arena Graphics/' + d + '/' + c
     return rel
 for a in plan['arenas']:
     slot, src = a['slot'], a.get('src')
