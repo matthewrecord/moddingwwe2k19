@@ -36,7 +36,7 @@ put('mods/SuperString/pac/string/win/string_win.pac', Hs.replace(0, Ss.build()))
 m04 = rd(G + 'pac/root/misc04_arena.pac'); base17 = misc04_get(m04, 17)
 row = {k: base17[k] for k in ('Titantron', 'Minitron', 'Wall_L', 'Wall_R', 'Header', 'Floor', 'MiscObjects', 'LightingType', 'Apron_CM', 'RingMat_CM')}
 row.update({'Stadium': 1, 'Advertisement': 0, 'CornerPost': 17, 'LED_CornerPost': -1, 'Rope': 3, 'Apron': 7, 'LED_Apron': -1,
-            'Turnbuckle': 13, 'Barricade': 6, 'Fence': 0, 'CeilingLighting': 4, 'Spotlight': 2, 'Stairs': 0, 'CommentarySeat': 33,
+            'Turnbuckle': 13, 'Barricade': 6, 'Fence': 0, 'CeilingLighting': 73, 'Spotlight': 91, 'Floor': 3,  # AEW Ceiling Light mod (needs its files) 'Stairs': 0, 'CommentarySeat': 33,
             'RingMat': 7, 'FloorMattress': 2, 'Crowd': 10, 'CrowdSeatsPlace': -1, 'CrowdSeatsModel': -1, 'IBL': 50,
             'CornerPost_CM': 2, 'Rope_CM': 2, 'Turnbuckle_CM': 2})
 put('pac/root/misc04_arena.pac', misc04_set(m04, SLOT, row))

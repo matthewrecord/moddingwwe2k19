@@ -314,3 +314,11 @@ Smackdown '08 (157).
   (modded b2d8b93f, the Genesis entrance pack's... / clean 641e5be5), 33 entrance light files (evt\light, absent in the
   clean game: entrance lighting only), the four tables (expected), misc05_save_p30, attire file. Test 5: the modded
   game's evt_light.pac copied into the clean game (backup in `_arena_work\backup_ctl17\pac\evt\`).
+- 03:35 Matthew: the modded game's slot 17 (same Dynamite '22) is static too = **the mod's own ceiling light/
+  spotlight (CL20/SP20) are static.** His good-lighting Dynamite (modded slot 3) uses MattFick's **AEW Ceiling
+  Light** mod: CeilingLighting 73, Spotlight 91, Floor 3 (its readme lists floors per AEW arena: 1 Grand Slam,
+  3 Dynamite, 4 Rampage, 5 Double or Nothing, 7 Road Rager, 8 All Out, 17 Revolution, 19 Full Gear, 20 Fyter Fest,
+  21 Winter is Coming, 22 Battle of the Belts). Done: control test and evt_light reverted (slot 17 stock again);
+  AEW Ceiling Light files installed in the clean game (13 new files, ids unused by the pack, def lines added);
+  slot 158 row: CeilingLighting 73, Spotlight 91, Floor 3 (misc04 fe272943). Build script updated. **For the batch:
+  every AEW arena gets 73/91 + its floor from that list.**
