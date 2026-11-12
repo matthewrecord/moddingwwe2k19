@@ -309,3 +309,8 @@ Smackdown '08 (157).
   fcf3ecc9; clean has 38ff566d). Its only difference: VTGN = three 64x64 textures (mod BC-DX10, clean DXT5);
   EFFC/VTGL identical. Unlikely to be lighting. Open: does the modded game's Main Event (same Dynamite files) light
   correctly before the entrance? Asked Matthew.
+- 03:15 Matthew: the modded game's Dynamite '22 lights normally. Compared everything slot 17 uses in both games via
+  each chunk0.def (624 paths): differences = crowd 10 (AEW crowd shirts), bgeffect, **`pac\evt\evt_light.pac`**
+  (modded b2d8b93f, the Genesis entrance pack's... / clean 641e5be5), 33 entrance light files (evt\light, absent in the
+  clean game: entrance lighting only), the four tables (expected), misc05_save_p30, attire file. Test 5: the modded
+  game's evt_light.pac copied into the clean game (backup in `_arena_work\backup_ctl17\pac\evt\`).
