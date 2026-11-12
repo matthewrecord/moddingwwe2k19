@@ -207,3 +207,32 @@ Spare: 160 (Payback '14).
 (152, 144); TLC '13 (146); Elimination Chamber '13 (147); Extreme Rules '11 (156); St. Valentine's Day Massacre
 (131); Judgment Day '04 (120). Keep: Capitol Punishment '11 (41), Money in the Bank '11 (148), Raw '11 (150),
 Smackdown '08 (157).
+
+## 00:50 Groundwork for the installer (read-only work on the clean install)
+- **misc04_arena.pac decoded** (`tools/arena/misc04_arena.py`): SHDC file 920 is a small archive (u32 count, 16-byte
+  header, 32-byte entries: 16-char name, type, size, offset) of **one JSON text per arena slot**, `arenaInfoNNNNN`
+  (181 in the pack install): Stadium, Advertisement, CornerPost, LED_CornerPost, Rope, Apron, LED_Apron, Turnbuckle,
+  Barricade, Fence, CeilingLighting, Spotlight, Stairs, CommentarySeat, RingMat, FloorMattress, Crowd,
+  CrowdSeatsPlace/Model, IBL, Titantron, Minitron, Wall_L/R, Header, Floor, MiscObjects, LightingType, *_CM.
+  Rows can be rewritten one arena at a time.
+- **misc01_start.pac rows** (124 bytes): name string id, slot, select number, a1, a2, b1, b2 ... In Matthew's modded
+  game All Out/Double or Nothing (118/119) carry a2 = 3 (the creator's note: "everything the same as 003"), most
+  ported arenas a2 = 249; so a2 looks like "which slot's presentation set to use". Select number 24 is common there
+  for working arenas, so **it does not mean "not selectable"** (earlier statement about slots 4 and 5 withdrawn;
+  what makes an arena appear in the list is still to be determined).
+- **Re-slotting method (community tutorial in Resources, "HOW TO CHANGE THE SLOT OF WWE 2K19 GRAPHICS PACK MOD"):**
+  graphics/videos/stage are moved by putting the mod's inner file into the *target slot's own* container, which
+  already carries the right internal name. So the internal name for any slot can be read from the clean install's
+  per-arena files (`mods\WWE 2K19 Unpacked Arena Graphics`, installed with the pack); no hash rule has to be
+  guessed. WrestleMINUS source (cloned for reference): file-name hash = bytes 11..8 of MD5 of the name; CAK names
+  FNV-1a 64 of the lower-case name.
+- **Part-number clashes with arenas that stay** (pack's misc04 vs the downloads): 21 part numbers, e.g. stadium 29
+  (Dynamite/Revolution/Raw; used by 8 kept slots), stadium 31 and apron 79 and commentary 32 (WrestleMania 35 vs
+  WrestleMania 33 slots), apron 75 (Dynamite vs slot 3), apron 74 + commentary 28 (Smackdown 21 vs slot 0), apron
+  78 + commentary 31 (Royal Rumble 2020 vs slot 13), corner post 2 (Death Before Dishonor, 25 kept slots), Tokyo
+  Dome's stadiums 40/41, ring mat 6, turnbuckle 4, corner post 3. Some of these are intended reuse of a stock part
+  (same file), others are replacements: each has to be compared by content; replacements get a free number (free
+  numbers exist in every category) and the arena's JSON row points at it. Usage table:
+  `notes/arena_pack_part_use_2026-11-12.json`.
+- Next: installer (`arena install`), first test = AEW Dynamite '22 into slot 158 on the clean install, then
+  Matthew launches and checks.
