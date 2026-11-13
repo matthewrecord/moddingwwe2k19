@@ -90,3 +90,27 @@ def untangle(PS,W,T,pin,rounds=200,step=0.5):
             W[v]=(1-step)*W[v]+step*W[list(nb[v])].mean(0)
     n1=np.cross(W[T[:,1]]-W[T[:,0]],W[T[:,2]]-W[T[:,0]])
     return W,int(((n0*n1).sum(1)<0).sum()),r
+
+def split_uv_seam(T,uv,extra_arrays,span=0.5):
+    """Triangles whose U (or V) span > span straddle a wrap seam: duplicate their low-side vertices with U shifted to the
+    high side (clamped to [0,1]), so each triangle samples one side. extra_arrays: list of per-vertex arrays to copy."""
+    T=T.copy(); uv=uv.copy(); add_uv=[]; add_src=[]; cache={}
+    nv=len(uv)
+    for t in range(len(T)):
+        for ax in (0,1):
+            vals=uv[T[t],ax] if all(v<nv for v in T[t]) else np.array([ (uv[v,ax] if v<nv else add_uv[v-nv][ax]) for v in T[t]])
+            if vals.max()-vals.min()<=span: continue
+            hi=vals.mean()>0.5
+            for q in range(3):
+                v=T[t,q]; val=vals[q]
+                if (hi and val<0.5) or ((not hi) and val>0.5):
+                    key=(int(v),ax,hi)
+                    if key not in cache:
+                        base=v if v<nv else add_src[v-nv]
+                        u2=(uv[base] if v<nv else add_uv[v-nv]).copy(); u2[ax]=np.clip(u2[ax]+(1 if hi else -1),0,1)
+                        cache[key]=nv+len(add_uv); add_uv.append(u2); add_src.append(base)
+                    T[t,q]=cache[key]
+    src=np.array(add_src,int)
+    uv2=np.vstack([uv,np.array(add_uv).reshape(-1,2)]) if add_uv else uv
+    ex=[np.concatenate([a,a[src]],axis=0) if len(src) else a for a in extra_arrays]
+    return T,uv2,ex,len(src)

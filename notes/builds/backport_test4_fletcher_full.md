@@ -38,3 +38,11 @@ What to watch: blinks (eyelids vs eyeballs), mouth open/close vs teeth, brows, a
 ## v4: face fit (built ~01:30 local) `fletcher_facefit_v4_ch50602.pac`: Andrade's 2K19 head fitted onto Fletcher's
 2K24 face (Backport.md section 21), with its own 119 expressions/weights. Watch: blinks, mouth open/close vs teeth,
 brows, texture alignment on eyelids/lips, the seam where the fitted head meets the neck.
+
+## Result v4 (2026-11-13 01:25 local, Matthew + 3 screenshots): "In general, it looks good."
+- Expressions work (snarl with teeth shown in screenshot 1). "Just the tiniest bit cross-eyed": not worth time (Matthew).
+- **Back of head showed a flat blond V ("empty hole").** Cause: the 2K24 head texture wraps at the back midline
+  (U = 0 / 1). 7 fitted triangles got corners from both sides, so they stretched across the whole texture.
+  Geometry was fine (back of head 0.15 cm from the 2K24 scalp).
+- Fix v5 (`fletcher_facefit_v5_ch50602.pac`): `facefit.split_uv_seam` duplicates the low-side vertices of
+  seam-straddling triangles (weights and 119 morphs copied): 7 vertices added, 0 seam triangles left.
