@@ -427,3 +427,18 @@ Measured on Fletcher and Gabe (vertices matched by position + normal):
 
   Rule: **template for everything, 7 influences**. Loose items (necklace, pads standing off the body) are where both
   methods disagree with him, so the app should flag them for a check in stress poses.
+
+## 18. First generated objects + first in-game test build (2026-11-13 ~04:15; `tools/backport/regen.py`)
+
+- `regen.py`: for each object of a port, find its 2K24 source mesh(es) by vertex match, then rebuild it from the MDL:
+  positions, negated normals, UVs, white colour, zero (or hair-parity) field-29 stream, template weights (nearest donor
+  skin vertex, top 7, renormalised, mapped to palette slots), strips from the LOD0 triangles.
+- **Fletcher (male, ch687 template):** all 8 attire objects regenerated (necklace, wrists x2, tights, shoes, elbow pad,
+  kneepads x2). Agreement with his weights: 85-95% dominant on 7 objects, 58% on the necklace. Vertex counts are
+  slightly above his (+8 to +33: he deleted a few vertices).
+- **Willow (female, ch756 template):** only shoes and kneepads regenerate cleanly; her other attire objects were
+  reshaped by him (2K24 coverage 0-57%), which matches the 8% moved vertices and the months he spent on her.
+- Installed copies found by main-JBOY size: **only Willow is installed** (slots 238 and 865, identical in CCT and
+  Genesis). Fletcher, Gabe and O-Khan aren't installed.
+- **Test 1 built (not installed):** Willow slot 865 with our shoes + kneepads. See `notes/builds/backport_test1_willow.md`.
+  This is the first build that needs Matthew (in-game check).
