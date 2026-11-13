@@ -1,8 +1,22 @@
 # Backport tool: newer WWE 2K mods (2K24 `.mdl` / 2K25 `.mcd`) into WWE 2K19
 
-Status (2026-11-13): validated in game on **Flash Morgan Webster (2K25)** and **Mark Briscoe (2K24)**. Both are
+Status (2026-11-13): validated in game on **Flash Morgan Webster (2K25)** and **Mark Briscoe (2K24)**. The first female, **Toni Storm (2K25)**, is built and passes every bench gate; awaiting an in-game test. Both are
 from-scratch ports with no porter involved. Findings are in `writeup/Backport.md`; per-build notes are in
 `notes/builds/backport_test5_fmw_scratch.md` and `backport_test6_briscoe.md`.
+
+## Templates (container + donor + reference), picked by `cfg['template']`
+| | male | female |
+|---|---|---|
+| Container | Fletcher port `ch50602.pac` | Willow port `ch50602.pac` |
+| Donor (head morphs, body weights) | Andrade ch68702 | stock ch75602 |
+| Reference 2K24 original (texture match, mouth-part offsets) | Kyle Fletcher | Willow (969_Doudrop) |
+| Main objects | 1 upper, 2 lower; eyes 3/4; overlay 5; mouth 6/7/8 | 1 upper, 2 hands (abs(x) > 66), 3 lower; eyes 4/5; overlay 6; mouth 7/8/9; obj 10 (lip ring) collapsed |
+| Hair slots | 0x2715 hair, 0x2716 hair2 | 0x2715 hair only (several meshes and textures -> rai atlas) |
+| Eyelashes | none | 0x4e22: the source's `M_transB_eyelash`, with morphs and skin taken from the built head |
+| Hide blocks | objects 1, 2 | objects 1, 3 |
+| Attire slots | necklace, l/r_wrist, bottoms, shoes; r_elbowpad, l/r_kneepad | brassiere, l/r_wrist, nets, shoes; outfit, l/r_kneepad |
+
+`hidetable.build_blocks` writes any block layout (it round-trips both containers byte for byte).
 
 ## What the builder does (`build_port.py`)
 1. **Container:** scorpionxxx's Kyle Fletcher port `ch50602.pac` (male, Andrade ch68702 palette; his 0x50/0xCA/0x2580
@@ -55,6 +69,7 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
    - Source vs build textured face (see `facecheck.py`, or the snippet in the Briscoe notes): at rest they must match.
    - `python3 -I tools/backport/morphgrid.py <pac> <out.png>`: the 12 mouth morphs, stock Andrade vs ours. There must be
      no curtains, tears or spikes.
+   - Female: lash blink check (head + lash under the strongest eyelid morph; lashes must close with the lid).
    - Jaw test with `pose.py` (rotate J_Jaw 15° plus morph 114 at 0.6, front and side): no spikes.
 6. Commit the notes and renders, then deliver to
    `D:\SteamLibrary\steamapps\common\WWE 2K19 - modded\_moddingwwe2k19_builds\backport\<testN_name>\`.
@@ -92,7 +107,6 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
 | `morphgrid` | mouth morph comparison |
 
 ## Open items
-- Female template (ch75602 / Willow port container) for female characters.
 - Eye pivots: J_Eye bones sit about 0.3-0.5 cm inward of some sources' eyeballs. Moving the bones is untested.
 - Beards are rigid (stock behaviour). An extreme open mouth shows the chin moving behind the beard.
 - The atlas halves resolution for the pieces it packs.

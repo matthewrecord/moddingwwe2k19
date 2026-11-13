@@ -24,3 +24,11 @@ def to_ranges(starts):
         if R and s==R[-1][1]+1: R[-1][1]=s
         else: R.append([s,s])
     return R
+def build_blocks(b,blocks):
+    """General writer. blocks: {object_index_minus_1: [(start,end),...]}. Header words 0..20 kept; word 4 = size-12;
+    word 21 = number of blocks; each block = [16, 8n+32, idx, 1, 16, 8n+16, 0, n, pairs...]."""
+    w=list(struct.unpack('<%dI'%(len(b)//4),b)); out=w[:21]+[len(blocks)]
+    for idx in sorted(blocks):
+        p=blocks[idx]; n=len(p); out+=[16,8*n+32,idx,1,16,8*n+16,0,n]+[int(x) for q in p for x in q]
+    out[4]=len(out)*4-12
+    return struct.pack('<%dI'%len(out),*out)

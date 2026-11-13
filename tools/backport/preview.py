@@ -11,7 +11,12 @@ def textures(B):
     return out
 def tris(pac,morph=None):
     hdr,bl=epkwrite.raw_blocks(pac); B={f:zlib.decompress(b[16:]) for f,b in bl}; TX=textures(B); out=[]
-    w,pairs,tail=hidetable.parse(B[0xce]); h1=set();[h1.update(range(s,e+1)) for s,e in pairs]; hide={1:h1,2:set(range(tail[-2],tail[-1]+1))}
+    import struct
+    w=struct.unpack('<%dI'%(len(B[0xce])//4),B[0xce]); i=22; hide={}
+    for _ in range(w[21]):
+        n=w[i+7]; hs=set()
+        for k in range(n): hs.update(range(w[i+8+2*k],w[i+9+2*k]+1))
+        hide[w[i+2]+1]=hs; i+=8+2*n
     for fid,d in B.items():
         if d[:4]!=b'JBOY': continue
         j=jboy.JBOY(d)
@@ -24,7 +29,7 @@ def tris(pac,morph=None):
                 if img is None: c=np.array([1,0,1.]); 
                 else:
                     u,v=o['uv'][list(t)].mean(0); hh,ww=img.shape[:2]; px=img[min(hh-1,max(0,int(v*hh))),min(ww-1,max(0,int(u*ww)))]
-                    if o['shader']=='yCS_hair' and px[3]<60: continue
+                    if o['shader'] in ('yCS_hair','yCS_trans') and px[3]<60: continue
                     c=px[:3]/255
                 out.append((P[list(t)],c))
     return out

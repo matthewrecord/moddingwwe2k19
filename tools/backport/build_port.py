@@ -61,12 +61,30 @@ def lip_class_topo(P,T,band=3.5):
     du=dijkstra(G,indices=up,min_only=True,limit=band); dl=dijkstra(G,indices=lo,min_only=True,limit=band)
     zone=c0!=0
     c=np.zeros(len(P),int); c[zone&(du<=dl)]=1; c[zone&(dl<du)]=-1; return c
+def meshes_all(M):
+    L=M.lods()[0]; return [(m['name'],m['streams'],L[i].reshape(-1,3).astype(int)) for i,m in enumerate(M.meshes)]
+def degenerate_m(m,k,j,donor):
+    """collapse an object (incl. its morph sets) to one hidden triangle"""
+    degenerate(m,k,j,donor,at=(0,-175,-8)); o=j.objs[k]
+    for n in range(1,o['f'][25]):
+        V=np.zeros(3,dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]); m.data[m.chunk(k,f'vset{n}')]=bytearray(V.tobytes())
+KYLE_DIR=os.path.dirname(glob.glob('/home/claude/pairs/Kyle*ORIG*/**/baseModel.mdl',recursive=True)[0])
+WILLOW_DIR='/home/claude/pairs/Willow_Nightingale 2k24 ORIGINAL/969_Doudrop/BaseModel'
+TEMPLATES={
+ 'male':dict(pac=PORT,donor='ch68702',ref=KYLE_DIR,body=[(1,'upper'),(2,'lower')],eyes=(3,4),ov=5,mouth=(6,7,8),off=[],
+             hair={0x2715:'hair',0x2716:'hair2'},lash=None,hide_objs=[1,2]),
+ 'female':dict(pac=glob.glob('/home/claude/pairs/Willow*PORT*/*.pac')[0],donor='ch75602',ref=WILLOW_DIR,
+             body=[(1,'upper'),(2,'hands'),(3,'lower')],hands_x=66,eyes=(4,5),ov=6,mouth=(7,8,9),off=[10],
+             hair={0x2715:'hair'},lash=0x4e22,hide_objs=[1,3]),
+}
 def build(cfg,outpath,PROP=None):
     W_=cfg['work']; os.makedirs(W_,exist_ok=True)
     BM=open_model(cfg['base'],W_+'/base.mdl'); AM=open_model(cfg['attire_model'],W_+'/attire.mdl'); MB=meshes(BM); MA=meshes(AM)
     TB,TA=cfg['tex_base'],cfg['tex_attire']
-    s=jboy.JBOY(oodl.blocks(open(U+'ch68702.pac','rb').read())[0][1]); donor=body_donor(s)
-    hdr,blocks=epkwrite.raw_blocks(PORT); B={f:zlib.decompress(b[16:]) for f,b in blocks}; J={}; info={}
+    TP=TEMPLATES[cfg.get('template','male')]
+    s=jboy.JBOY(oodl.blocks(open(U+TP['donor']+'.pac','rb').read())[0][1]); donor=body_donor(s)
+    hdr,blocks=epkwrite.raw_blocks(TP['pac']); B={f:zlib.decompress(b[16:]) for f,b in blocks}; J={}; info={}
+    MAL=meshes_all(AM)
     j=jboy.JBOY(B[0]); m=jbuild.Model(j); slot=palette_slot(j)
     # ---------------- head ----------------
     so=s.objs[0]; MDa=np.asarray(jboy.morphs(s,so)); ST=jboy.strip_to_tris(s.indices(so)[1])
@@ -120,19 +138,23 @@ def build(cfg,outpath,PROP=None):
     H=hpl.parse(cfg['hpl'])['M_Body'][0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True
     att=np.concatenate([MA[n][0]['POSITION'] for n in cfg['cover']]); near_att=cKDTree(att).query(Sb['POSITION'])[0]<1.0
     hid_t=hid_v[Tb].any(1)|near_att[Tb].all(1)
-    C=Sb['POSITION'][Tb].mean(1); up=(C[:,1]<-108)|(np.abs(C[:,0])>26); hide_n={}
-    for k_,msk in ((1,up),(2,~up)):
+    C=Sb['POSITION'][Tb].mean(1); hands=(np.abs(C[:,0])>TP['hands_x']) if TP.get('hands_x') else np.zeros(len(C),bool)
+    up=((C[:,1]<-108)|(np.abs(C[:,0])>26))&~hands; parts={'upper':up,'lower':~up&~hands,'hands':hands}; hide_n={}
+    for k_,role in TP['body']:
+        msk=parts[role]
         order=np.concatenate([np.where(msk&hid_t)[0],np.where(msk&~hid_t)[0]]); hide_n[k_]=int((msk&hid_t).sum())
         Tm=Tb[order]; used=np.unique(Tm); G=mesh_obj(Sb,Tm,np.ones(len(Tm),bool))
         put(m,k_,j,G,donor,weights=(bsl[used],bw[used]))
     # ---------------- eyes (own), eye overlay + mouth parts (his, shifted) ----------------
     S,T=MB['M_EYE']; cx=S['POSITION'][T].mean(1)[:,0]
     sides=lambda D:[D['M_EYE'][0]['POSITION'][D['M_EYE'][0]['POSITION'][:,0]*sg>0].mean(0) for sg in (1,-1)]
-    hisE=[j.objs[3]['pos'].mean(0),j.objs[4]['pos'].mean(0)]
-    for k_,msk,bone in ((3,cx>0,'J_Eye_L'),(4,cx<=0,'J_Eye_R')):
+    eL,eR=TP['eyes']
+    if j.objs[eL]['pos'][:,0].mean()<0: eL,eR=eR,eL
+    hisE=[j.objs[eL]['pos'].mean(0),j.objs[eR]['pos'].mean(0)]
+    for k_,msk,bone in ((eL,cx>0,'J_Eye_L'),(eR,cx<=0,'J_Eye_R')):
         Ge=mesh_obj(S,T,msk); n_=len(Ge['pos']); esl=np.full((n_,7),0xFFFF); esl[:,0]=slot[bone]; ew=np.zeros((n_,7),'f4'); ew[:,0]=1
         put(m,k_,j,Ge,donor,weights=(esl,ew))
-    KM=meshes(mdlfmt.MDL(glob.glob('/home/claude/pairs/Kyle*ORIG*/**/baseModel.mdl',recursive=True)[0]))
+    KM=meshes(mdlfmt.MDL(TP['ref']+'/baseModel.mdl'))
     ctr=lambda D,n:D[n][0]['POSITION'].mean(0)
     dT=ctr(MB,'M_Teeth')-ctr(KM,'M_Teeth'); dB=ctr(MB,'M_MouthBag')-ctr(KM,'M_MouthBag'); dG=ctr(MB,'M_Tongue')-ctr(KM,'M_Tongue')
     def shift(k_,fn):
@@ -141,16 +163,43 @@ def build(cfg,outpath,PROP=None):
     fE=sides(MB)
     def ov(p):
         p=p.copy(); L=p[:,0]>0; p[L]+=fE[0]-hisE[0]; p[~L]+=fE[1]-hisE[1]; return p
-    shift(5,ov); shift(6,lambda p:p+(dT+dB)/2); shift(7,lambda p:p+dT); shift(8,lambda p:p+dG)
+    kb,kt,kg=TP['mouth']; shift(TP['ov'],ov); shift(kb,lambda p:p+(dT+dB)/2); shift(kt,lambda p:p+dT); shift(kg,lambda p:p+dG)
+    for k_ in TP.get('off',[]): degenerate_m(m,k_,j,donor)
     info['mouth_shift']=np.round(dT,2).tolist()
     J[0]=m.build()
-    # ---------------- hair slots ----------------
-    for fid in (0x2715,0x2716):
+    # ---------------- hair slots (one or more meshes; several textures -> 2x2 rai atlas) ----------------
+    hairtex={}
+    for fid,base in TP['hair'].items():
         jh=jboy.JBOY(B[fid]); mh=jbuild.Model(jh); spec=cfg['hair'].get(fid)
-        if spec: put(mh,0,jh,whole(MA,spec[0]),donor,col=WHITE,hair=True)
+        if spec and isinstance(spec,tuple): spec=[spec]
+        if spec:
+            stems=list(dict.fromkeys(st for _,st in spec)); parts=[]; seen=[]
+            for name,st in spec:
+                for G in [mesh_obj(S_,T_,np.ones(len(T_),bool)) for n_,S_,T_ in MAL[::-1] if n_==name]:   # last copy of exact duplicates wins
+                    if any(len(x)==len(G['pos']) and np.allclose(x,G['pos']) for x in seen): continue   # exact duplicate mesh
+                    seen.append(G['pos'])
+                    if len(stems)>1:
+                        i_=stems.index(st); e=8/1024; G['uv']=(((np.clip(G['uv'].astype(float),0,1)*(1-2*e)+e)+[i_%2,i_//2])/2).astype('f4')
+                    parts.append(G)
+            put(mh,0,jh,concat(parts) if len(parts)>1 else parts[0],donor,col=WHITE,hair=True); hairtex[base]=stems
+            info.setdefault('hair_verts',{})[hex(fid)]=sum(len(G['pos']) for G in parts)
         else:
             p=np.array([[0,-185,0],[0.001,-185,0],[0,-185.001,0]],'f4'); put(mh,0,jh,dict(pos=p,nrm=np.tile(np.array([0,0,1],'f4'),(3,1)),uv=np.zeros((3,2),'f4'),tris=np.array([[0,1,2]])),donor,col=WHITE,hair=True)
         J[fid]=mh.build()
+    # ---------------- eyelash model (female template): own lashes, morphs + skin from the built head ----------------
+    if TP.get('lash') and 'M_transB_eyelash' in MB:
+        jl=jboy.JBOY(B[TP['lash']]); ml=jbuild.Model(jl); S,T=MB['M_transB_eyelash']; Gl=mesh_obj(S,T,np.ones(len(T),bool))
+        Hp=jboy.JBOY(J[0]).objs[0]; HT=jboy.strip_to_tris(jboy.JBOY(J[0]).indices(Hp)[1])
+        a_,b_,Ml,dl=xfer(Gl['pos'].astype(float),Hp['pos'].astype(float),HT,HS,HW,HM)
+        mainp=[j.bones[b]['name'] for b in j.palette]; sl2=palette_slot(jl)
+        for v in range(len(a_)):
+            row=[(sl2.get(mainp[x]),y) for x,y in zip(a_[v],b_[v]) if y>0 and x<len(mainp)]; row=[(x,y) for x,y in row if x is not None] or [(sl2['J_Head'],1.0)]
+            t=sum(y for _,y in row); a_[v]=0xFFFF; b_[v]=0
+            for q,(x,y) in enumerate(sorted(row)[:7]): a_[v,q]=x; b_[v,q]=y/t
+        put(ml,0,jl,Gl,donor,col=WHITE,weights=(a_,b_)); vc_=len(Gl['pos'])
+        for n in range(1,jl.objs[0]['f'][25]):
+            V=np.zeros(vc_,dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]); V['p']=Ml[n-1]; ml.data[ml.chunk(0,f'vset{n}')]=bytearray(V.tobytes())
+        J[TP['lash']]=ml.build(); info['lash']=(vc_,round(float(dl.max()),2))
     # ---------------- attire slots (single mesh, split by side, or 2x2 atlas) ----------------
     tex={}
     hp,hs,hw=headW; th=cKDTree(hp); tb=cKDTree(Sb['POSITION'])
@@ -184,27 +233,31 @@ def build(cfg,outpath,PROP=None):
                     cx_,ry=pos[st]; e=8/1024; G['uv']=(((np.clip(u,0,1)*(1-2*e)+e)+[cx_,ry])/2).astype('f4'); parts.append(G)
                 G=concat(parts); put(ma,k_,ja,G,donor,weights=att_w(G,ja)); tex[texname]=(Cc,Nn)
         J[fid]=ma.build()
-    # ---------------- hide table ----------------
-    our=jboy.JBOY(J[0]); ranges={}
-    for k_ in (1,2):
-        o=our.objs[k_]; st=hidetable.strip_tri_starts(our.indices(o)[1]); P=o['pos']
-        # starts of the first hide_n[k_] real triangles (degenerate joins don't count as triangles in hide_n)
-        real=[s_ for s_,t in st if len(set(t))==3]; ranges[k_]=real[:hide_n[k_]]
-    lo=ranges[2]; n_lo=len(hidetable.strip_tri_starts(our.indices(our.objs[2])[1]))
-    up_r=[(ranges[1][0],ranges[1][-1])] if ranges[1] else []
-    J[0xce]=hidetable.rebuild(B[0xce],up_r,(0,lo[-1]) if lo else (0,0))
-    info['hide']={'upper':(hide_n[1],int(up.sum())),'lower':(hide_n[2],int((~up).sum()))}
+    # ---------------- hide table: one hidden span per template hide object ----------------
+    our=jboy.JBOY(J[0]); blocks_={}
+    for k_ in TP['hide_objs']:
+        o=our.objs[k_]; st=hidetable.strip_tri_starts(our.indices(o)[1]); real=[s_ for s_,t in st if len(set(t))==3][:hide_n.get(k_,0)]
+        blocks_[k_-1]=[(real[0],real[-1])] if real else []
+    J[0xce]=hidetable.build_blocks(B[0xce],blocks_)
+    info['hide']={k_:hide_n.get(k_,0) for k_ in TP['hide_objs']}
     # ---------------- textures ----------------
     hd,E=texconv.read_pack(B[0xa]); E=dict(E)
     def setm(base,C,N,skin=False,nname=None,kyle=None):
         r=mats(C,N,skin,kyle); E[base]=r['']; E[base+'_mr']=r['_mr']; E[nname or base+'_n']=r['_n']
-    c,n=load_pair(TB,'body'); setm('all_color',c,n,True,'all_n',KYLE+'body_nrm.DDS')
-    c,n=load_pair(TB,'head'); setm('head',c,n,True,None,KYLE+'head_nrm.DDS')
+    c,n=load_pair(TB,'body'); setm('all_color',c,n,True,'all_n',ci(TP['ref']+'/Textures/body_nrm.dds'))
+    c,n=load_pair(TB,'head'); setm('head',c,n,True,None,ci(TP['ref']+'/Textures/head_nrm.dds'))
     c=texconv.load(ci(TB+'/eye_color.dds')); w,h=texconv.target_size(c.shape[1],c.shape[0]); col=texconv.resize(c,w,h).copy(); col[...,3]=255; E['eye']=texconv.dds_dxt5(col)
     if ci(TB+'/eye_nrm.dds'): c,n=load_pair(TB,'eye'); setm('eye',c,n)
     for name,(C,N) in tex.items(): setm(name,C,N)
-    for fid,spec in cfg['hair'].items():
-        if spec: base={0x2715:'hair',0x2716:'hair2'}[fid]; r=texconv.hair(None,ci(f"{TA}/{spec[1]}_rai.dds"),cfg.get('tint',(45,35,30))); E[base]=r['']; E[base+'_n']=r['_n']; E[base+'_mr']=r['_mr']
+    for base,stems in hairtex.items():
+        if len(stems)==1: r=texconv.hair(None,ci(f"{TA}/{stems[0]}_rai.dds"),cfg.get('tint',(45,35,30)))
+        else:
+            Rr=np.zeros((2048,2048,4),'u1')
+            for i_,st in enumerate(stems): Rr[(i_//2)*1024:(i_//2+1)*1024,(i_%2)*1024:(i_%2+1)*1024]=texconv.resize(texconv.load(ci(f"{TA}/{st}_rai.dds")),1024,1024)
+            Image.fromarray(Rr).save(W_+'/hair_atlas_rai.png'); r=texconv.hair(None,W_+'/hair_atlas_rai.png',cfg.get('tint',(45,35,30)))
+        E[base]=r['']; E[base+'_n']=r['_n']; E[base+'_mr']=r['_mr']
+    if TP.get('lash') and ci(TB+'/eyelash_color.dds'):
+        c=texconv.load(ci(TB+'/eyelash_color.dds')); w,h=texconv.target_size(c.shape[1],c.shape[0]); E['eyelash']=texconv.dds_dxt5(texconv.resize(c,w,h))
     J[0xa]=texconv.write_pack(list(E.items()),hd)
     pac=epkwrite.build_raw(hdr,[(fid,epkwrite.zblock(J[fid]) if fid in J else blk) for fid,blk in blocks]); open(outpath,'wb').write(pac)
     info['size']=len(pac); return info
@@ -225,7 +278,15 @@ FLASH=dict(work='/home/claude/ext/fmw2',base=F+'BaseModel/baseModel.mcd',attire_
     cover=['M_Bottoms','M_Shoes','M_Wrist'],hair={0x2715:('M_Hair','hair'),0x2716:('M_Combinations','combinations')},tint=(45,35,30),
     attire={(0x5601,1):('mesh','M_Wrist','wrist','L'),(0x5601,2):('mesh','M_Wrist','wrist','R'),
             (0x5601,3):('mesh','M_Bottoms','bottoms'),(0x5601,4):('mesh','M_Shoes','shoes')})
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH}
+T_='/home/claude/pairs/TS/817_Toni_Storm_AEWRev25/'
+TONI=dict(template='female',work='/home/claude/ext/ts',base=T_+'BaseModel/basemodel.mcd',attire_model=T_+'817_Default_Attire/817_Attire.mcd',
+    tex_base=T_+'BaseModel/Textures',tex_attire=T_+'817_Default_Attire/Textures',hpl=T_+'817_Default_Attire/817_Attire.hpl',
+    cover=['M_Outfit','M_Outfit_Belt','M_Tights','M_Shoes','M_Tape'],
+    hair={0x2715:[('M_Hair','hair'),('M_Hair2','hair2')]},tint=(232,214,178),
+    attire={(0x5602,0):('mesh','M_Outfit','outfit'),(0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5601,1):('mesh','M_Tape','tape','L'),(0x5601,2):('mesh','M_Tape','tape','R'),
+            (0x5601,0):('atlas',[('M_Outfit_Belt','outfit_belt'),('M_Rose','rose'),('M_Nails','nails')])})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))
