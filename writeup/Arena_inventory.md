@@ -406,3 +406,8 @@ Rampage 116→139, Road Rager 120→149, Grand Slam (New, made for slot 3, + ppv
   - Grand Slam/Revolution/Full Gear: Create-a-Show foregrounds from AEW Matchup Screens (steel02/hardcore02/80s02; ZLIB-wrapped DXT5 2048x1024). Movies: Dynamite GFX card movie, Revolution card movie, Full Gear card movie.
   - These five have names hidden. Foreground fit `fit2`: crop from the alpha top (or the 6.7:1 bottom strip), pad to 6.7:1.
   - Dynamite '20: Dynamite GFX card movie + foreground fitted, names kept (like Dynamite '22).
+
+## Plan changes (2026-11-12, 23:09)
+- **Forbidden Door dropped** (Matthew). The LA Forum mod it needs is gone.
+- **SummerSlam '22 added**, now in the Resources arena folder. Planned slot: **160** (the spare slot). Batch 3 order: WM27 → 125, WM31 → 140, WM38 → 132, RR Retro → 124, RR2020 → 135, SummerSlam 09 → 143, SmackDown 21 → 53, ROH '05 → 134, SummerSlam '22 → 160. Batch 4 is unchanged.
+- Batch 2 (six arenas) is waiting on Matthew's in-game test. WM35/Raw/DBD still need saving back to Resources after the Raw card font fix is confirmed.
