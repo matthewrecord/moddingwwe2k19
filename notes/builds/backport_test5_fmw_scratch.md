@@ -69,3 +69,21 @@ Next tests (built with `tools/backport/fmw_hairfix.py`):
   The writer is still byte-identical on 62/62 models.
 - New check: every bones/texnames/palhdr/objtable region must sit at (addr-8)%16==0. All v2 files pass.
 - Delivered: `fmw_v2_full` (Flash complete, hair in one piece) and `fmw_v2_hairsplit_backup` (hair split in two, in case of a real size limit).
+
+## v2 loads. Matthew's review lists 5 cosmetic issues. v3 (2026-11-13)
+Diagnosis, using the new textured face check (`facecheck.py`, `renders/face_cmp.png`):
+- **Ears/narrow "PS1" head.** The fitted Andrade mesh did not follow Flash's ears, so the ear texture was painted flat onto the skull.
+  The lips were smeared too (the mouth offset).
+  - **Fix: use Flash's own M_Head mesh.** Andrade's 119 morphs and skin weights are carried over by closest-point
+    barycentric lookup on the fitted Andrade surface W. Each morph keeps 80-100% of Andrade's maximum displacement (median 99%).
+  - Head vertices that sit on the neck seam take the body's weights.
+- **Eyes set back, cross-eyed look.** His eyeballs' UVs don't match Flash's eye texture (no pupils).
+  Fix: Flash's M_EYE, split by side and rigid on J_Eye_L/R.
+- **Mouth parts.** Flash's teeth, tongue and mouth bag sit about 1.2 cm lower and 0.4-1.2 cm further back than Kyle's, but the old shift moved them only about 0.1 cm.
+  Fix: shift by the Flash-minus-Kyle part centroids (eye overlay uses per-side eye centres).
+- **Shiny "liquid" torso and neck/torso tone break.** 2K25 `_nrm` has alpha 0 (2K24: 255) and its blue channel runs about +23 higher.
+  Blue correlates positively with 2K24 (0.65 body, 0.86 head), so it isn't inverted. Normals were checked and are fine.
+  Fix: match Flash's blue channel to Kyle's distribution (body to body, head to head) before applying the 2K24 rule.
+- **Light through body seams.** Smoothing ran per object and per duplicate vertex.
+  Fix: weights computed once on the welded full M_Body and shared by the upper and lower pieces.
+- Not changed: bone positions (the J_Jaw pivot is about 1.2 cm above Flash's mouth). Possible next step if the mouth moves oddly.
