@@ -2,7 +2,7 @@
 Copies the arena's own files (from the install logs, minus game-wide tables/strings) + its match card, writes files_md5.txt and
 README.txt with the four table rows and the name."""
 import sys,os,re,glob,shutil,hashlib,json,tables
-G=os.path.expanduser('~/mnt/common/WWE 2K19/'); R=os.path.expanduser('~/mnt/WWE 2K19/A - Resources/Back - Arenas and Arena GFX/')
+G=os.path.expanduser('~/mnt/common/WWE 2K19/'); R=os.path.expanduser('~/mnt/A - Resources/Back - Arenas and Arena GFX/')
 slot=int(sys.argv[1]); dst=R+sys.argv[2]+'/Installed - slot %d 2026-11-13/'%slot; title=sys.argv[3]
 SHARED=('pac/root/','pac/prop/','pac/misc/parameter','mods/SuperString')
 rels=set()

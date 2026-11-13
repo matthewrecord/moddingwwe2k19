@@ -6,7 +6,7 @@ import os, sys, json, re, hashlib, shutil
 from epk import names, rename
 import tables
 from yukes import HSPC, SHDC, string_table_parse, string_table_build
-G = '../../'; plan = json.load(open(sys.argv[1])); BK = G + plan['backup']; log = []
+G='../../WWE 2K19/'; plan = json.load(open(sys.argv[1])); BK = G + plan['backup'].replace('_arena_work/','../WWE2K19_arena_work/',1) if plan['backup'].startswith('_arena_work/') else G + plan['backup']; log = []
 DEF = open(G + 'chunk0.def', 'rb').read().decode('latin1'); have = {l.strip().lower() for l in DEF.split('\n')}; newdef = []
 def backup(rel):
     s, d = G + rel, BK + '/' + rel

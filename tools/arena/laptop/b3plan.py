@@ -22,14 +22,18 @@ for root,_,fs in os.walk(src):
             log.append('%s -> %d'%(key,n)); i=n
         o='%s/pac/arena/%s/ar%s%05d.pac'%(st,part,part,i); os.makedirs(os.path.dirname(o),exist_ok=True); open(o,'wb').write(data)
 row.update(spec.get('m04_set',{}))
+have_t=tables.misc04_get(open(os.path.expanduser('~/mnt/common/WWE 2K19/pac/root/misc04_arena.pac'),'rb').read(),T)
+row={k:v for k,v in row.items() if k in have_t}
 a={'slot':T,'src':st,'m04':row,'name':spec['name']}
 if 'm01_from_mod' in spec: a['m01_full']=tables.misc01_get(rd('pac/root/misc01_start.pac'),spec['m01_from_mod'])
 if 'm01_full' in spec: a['m01_full']=spec['m01_full']
+if 'm01_set' in spec:
+    G2=os.path.expanduser('~/mnt/common/WWE 2K19/'); r=tables.misc01_get(open(G2+'pac/root/misc01_start.pac','rb').read(),T); r.update(spec['m01_set']); a['m01_full']=r
 if 'initpos' in spec: a['initpos']=spec['initpos']
 if 'light_from_mod' in spec: a['light']=tables.light_get(rd('pac/misc/parameter/light/prm_ar_lg_color.pac'),spec['light_from_mod'])
 if 'light' in spec: a['light']=spec['light']
 if 'card' in spec:
-    import glob; G='../../'; MU='pac/menu/win/Assets/wwe19_anime/match_up/'
+    import glob; G='../../WWE 2K19/'; MU='pac/menu/win/Assets/wwe19_anime/match_up/'
     a['files']=[[spec['card'],MU+os.path.basename(glob.glob(G+MU+'ltag_%03d_*_win.pac'%T)[0])]]
-json.dump({'backup':'_arena_work/backup_b3_%d'%T,'exclude':spec.get('exclude','/mov/bg_|matchcard_bg|match_up/'),'arenas':[a]},open('plan_b3_%d.json'%T,'w'),indent=1)
+json.dump({'backup':'../WWE2K19_arena_work/backup_b3_%d'%T,'exclude':spec.get('exclude','/mov/bg_|matchcard_bg|match_up/'),'arenas':[a]},open('plan_b3_%d.json'%T,'w'),indent=1)
 print(log); print(json.dumps(a)[:1500])
