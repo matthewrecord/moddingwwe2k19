@@ -480,3 +480,16 @@ the goal; expressions that look right are. **Working method: barycentric transfe
    head. That's what he did (1-3 cm moves).
 3. In the app: preview the expressions (jaw open, smile, blink, brows) with a strength slider per region as the
    main touch-up control.
+
+## 20. Container bug fixed; first full-character build (2026-11-13 ~00:35 local)
+- **Crash cause (tests 1 and 2A):** our pac writer left out his 2,048-byte **EOP5 footer** (`EOP5/plugin version 1.26`,
+  tag, build-machine string; identical in all ports), so the EPK8 size field (total - 0x4800) ended inside the last
+  ZLIB block. Fixed; container rebuild byte-identical on 7/7 pacs. **B2 and C2 run in game (Matthew 00:31):
+  our weights and our regenerated shoes + kneepads work and look OK.**
+- Texture pack format corrected and confirmed: header `count, 0x100, 0, 0x10`, then 32-byte entries
+  `name[16], "dds\0", size, offset, 0`, then DDS files back to back (round trip byte-identical on all 6 ports).
+- His weighting conventions confirmed: eyes rigid 100% to J_Eye_L/R; hair rigid to a 1-entry palette with 4 slots of
+  1.0; empty skin slots 0xFFFF; bounding sphere = fixed template value; vertex colour 245/0/0/255 on skin, gear, trans
+  and eye objects, white on hair and eye overlay.
+- **Test 4 built:** Fletcher with body, hair, all attire and 39/48 textures regenerated (face still his).
+  `notes/builds/backport_test4_fletcher_full.md`.
