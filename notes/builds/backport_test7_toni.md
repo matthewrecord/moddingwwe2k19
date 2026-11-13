@@ -64,3 +64,16 @@ Flash v4 is rebuilt with both fixes.
 The lid-split experiment (`renders/toni_lids_v2v3.png`) is left off.
 
 ## v3 in game: Matthew says "I think that made the difference". The eye fix (container eye masks) is validated.
+
+## The download's three variants (all under `/home/claude/pairs/TS/`), differences measured by file hash and mesh list
+| Variant | Folder | Differs from standard |
+|---|---|---|
+| Standard (built, v3) | `817_Toni_Storm_AEWRev25` | none |
+| Facepaint | `817_Toni_Storm_AEWRev25_Facepaint` | new attire mesh `M_Face_Gems` (976 v) + `face_gems_color/_nrm`; different `head_color`/`head_nrm` (the facepaint) and `.mtls`. Body, hair and the other attire are identical. |
+| Black & white | `817_Toni_Storm_B&W` | different colour maps for body, head, eyes and all attire (outfit, belt, nails, shoes, tape, tights); different `basemodel.mcd` and attire `.mcd`; adds `head_flush` and `t_teeth_color`. Mesh list is the same as standard. |
+
+Porting notes:
+- **Facepaint:** the gems sit on the face, so they need a slot. Candidates: add `M_Face_Gems` to the brassiere atlas (it
+  takes head weights automatically, like the rose), or use a free kneepad slot.
+- **B&W:** the base `.mcd` differs, so diff the geometry before reusing the head fit. `head_flush` has no 2K19 target in
+  the female container (no flush entry in the pack).
