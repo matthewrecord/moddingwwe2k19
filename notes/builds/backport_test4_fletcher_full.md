@@ -25,3 +25,11 @@ fix, 0 body vertices are dominated by head/jaw.
 ## Result v2 (2026-11-13 00:50 local, Matthew): **"It looks great."**
 First full-character pipeline build validated in game: body, hair, all attire and 39/48 textures regenerated from
 the 2K24 files; face still his.
+
+## v3: our face (built 2026-11-13 ~01:05 local) `fletcher_face_v3_ch50602.pac`
+v2 plus: head object = the **complete 2K24 M_Head** (4,310 v; his object was 8,509 v: 3,411 2K24 verts + 5,099 verts
+of a re-meshed face area lying within 0.1 cm of the 2K24 face surface, i.e. he wrapped the 2K19 face mesh onto the
+2K24 face). Weights: template from Andrade's head object (face bones), outlier pass (0 found). 119 morph sets:
+barycentric transfer from the stock ch73304 face (offsets only; normals and colours 0 in morph sets, as in his).
+Vertex colour 245/0/0. Still his: eyes, eye overlay, mouth bag, teeth, tongue (they fit this head shape exactly).
+What to watch: blinks (eyelids vs eyeballs), mouth open/close vs teeth, brows, any face tearing in entrances/selling.
