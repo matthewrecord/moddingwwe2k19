@@ -52,3 +52,9 @@ New bench step: `morphgrid.py` puts Andrade's stock head and our head side by si
 - **New bench gate:** `preview.py` reports unweighted vertices per object. It must be "none".
 - **Flash v4 had the same defect** (140 vertices). Flash is rebuilt with the general builder as `flash_v3`
   (config FLASH, 142 fixed). That also gives Flash the per-channel texture resize, welded lip smoothing and head-attached attire weights.
+
+## v4 (2026-11-13): eye pivots
+Rebuilt with the general eye-pivot fix (J_Eye moved to the eyeball centres: L +0.17/+0.52/+0.48, R -0.60/+0.75/+0.38 cm).
+- Gaze test: drift went from 0.31 cm (v3) to 0.00.
+- Only the bone records changed in each model (every model carries a copy of the skeleton).
+- All gates pass.
