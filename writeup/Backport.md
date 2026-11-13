@@ -442,3 +442,26 @@ Measured on Fletcher and Gabe (vertices matched by position + normal):
   Genesis). Fletcher, Gabe and O-Khan aren't installed.
 - **Test 1 built (not installed):** Willow slot 865 with our shoes + kneepads. See `notes/builds/backport_test1_willow.md`.
   This is the first build that needs Matthew (in-game check).
+
+## 19. Face-shape transfer experiments (2026-11-13 ~00:30 local; `tools/backport/facexfer.py`)
+
+Truth = his 119 morph offsets on the 3,411 2K24 head vertices of Fletcher. Relative error = mean |pred - his| / mean |his|.
+
+| Method | Rel. error |
+|---|---|
+| Nearest vertex, stock head ch73304 (unfitted) | 0.53 |
+| **Barycentric closest point on the stock head surface, ch73304 (unfitted)** | **0.516** |
+| Same, donor ch38402 / ch68702 | 0.60 / 0.68 |
+| Donor = the stock part he grafted into the same head object (barycentric) | 0.41 overall, but it doesn't reach the forehead: brow/squint shapes come out near zero |
+| Gaussian smoothing of that donor (r 0.5-8 cm) | 0.53 -> 0.86 (worse) |
+| Closest-point non-rigid fit of the stock head onto the 2K24 head, then transfer | 0.57-0.67 (fit slides features) |
+| Landmark warp (eyes, mouth bag, teeth, tongue, head extents; thin-plate RBF) +/- light fit | 0.60-0.70 |
+
+Per expression (in-object donor): mouth/jaw shapes reproduce well (Mouth_Up 0.25, Mouth_L/R 0.26-0.27, Jaw_Chew 0.28);
+brows/squints fail because they need a full-face donor. His head object interleaves 2K24 and stock-like vertices (no
+stock ordering), so he rebuilt it in a 3D package. His exact correspondence can't be recovered from the file.
+
+**Conclusion:** none of the 333 superstar heads and no standard fitting reproduces his shapes better than about 50%. His
+source is something else (create-a-wrestler head is the remaining candidate). For the tool, matching his numbers isn't
+the goal; expressions that look right are. **Working method: barycentric transfer from the best-matching stock head
+(chosen per character by surface distance), reviewed in the app.** The CAW head probe is next (bounded).
