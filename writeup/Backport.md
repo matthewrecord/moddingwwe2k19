@@ -153,3 +153,33 @@ use it only if the template residual (about 10%) turns out to matter in stress p
   learning anything. More of the ~60 pairs will tighten the template, especially the female one (only 1 so far).
 - Side note: stock `ch13604` gives 2-4% agreement (bone indices don't line up). Some stock models must use per-object
   palettes or a different palette layout. Check this before using any stock model as a donor.
+
+## 7. Triangles, and what his ports are built from (2026-11-12, late)
+
+**Index buffers decoded.** Object field [39] points to `u8 primitive (6), ..., u32 index count, u32 ptr`, then BE u16
+indices. Type 6 = **triangle strip** with repeated indices as joins (`jboy.strip_to_tris`). All 110 objects in the 6
+ports decode, with indices in range and every vertex used. Where the port vertices come from the original, 80-99% of
+the decoded triangles match the original triangles exactly. The rest are most likely seam duplicates (same
+position, different index), so they don't indicate a decoding error.
+
+**Composition of a port, measured.** Every vertex was traced to the 2K24 original or to stock 2K19 objects
+(ch73304, ch38402, ch14704):
+- Body, attire, hair, gear, trans: **straight from the 2K24 original** (vertex match 94-100%; hair keeps its exact
+  vertex count, e.g. Fletcher M_Hair 3456 = port hair 3456).
+- **Stock 2K19 parts re-fitted to the new head** (same vertex count as the stock object, each vertex moved 1-3 cm):
+  eye overlay `yCS_eyeOv` (194 verts), mouth interior (1,974 verts = stock object 14), a 341-vertex part (stock
+  object 15). Willow also has the stock 2,014-vertex part (stock ch14704 object 4, female).
+- **Head object = the 2K24 M_Head merged with a stock 2K19 head.** Fletcher object 0 has 8,509 verts: 3,398 are
+  2K24 M_Head, and of the other 5,101, 90% sit within 1 cm of stock object 0 (3,936 verts) or object 24. The mouth
+  bag is likewise 2K24 M_MouthBag + stock object 2. Probable reason: 2K19 facial animation (the 119 morph names at
+  header 0x48: BrowInn_L_Dn ...) and the mouth/eye shaders are tied to 2K19 head topology, so he kept the 2K19 face
+  parts that animate and fitted them inside the new head. **This is the "neck/head" step of the pipeline, and it's
+  the part most likely to need a human touch-up.** Next check: whether the stock head part is visible or hidden
+  (material/shader flags), and how the morph targets attach.
+- **Exactly 17 vertices collapsed to the origin** in the head, eye-overlay, mouth and trans objects of every port
+  (male and female; 5-15 degenerate triangles each). The count never varies, so it's an artifact of his JBOY-writing
+  tool (or a deliberate hide), not hand work. The pipeline should reproduce it until we know why.
+
+Implication for the tool: the deterministic pipeline gains a fixed step, "graft the stock 2K19 face parts (eye
+overlay, mouth interior, 341-vertex part, head base) and fit them to the new head". This is a repeatable fit to the
+2K24 head, which always has the same topology (base meshes have 42,275-42,598 triangles on all 4 characters).

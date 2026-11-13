@@ -29,3 +29,15 @@ class JBOY:
     def remap(s,bi):
         if s.palette is None: return bi
         p=np.append(s.palette,[10**6]); return p[np.minimum(bi,len(s.palette))]
+def strip_to_tris(ix):
+    t=[]
+    for k in range(len(ix)-2):
+        a,b,c=ix[k],ix[k+1],ix[k+2]
+        if a==b or b==c or a==c: continue
+        t.append((a,b,c) if k%2==0 else (b,a,c))
+    return np.array(t,dtype=np.int64).reshape(-1,3)
+def obj_indices(j,o):
+    b=j.b; p=o['f'][39]+8; prim=b[p]; n,ptr=struct.unpack_from('>2I',b,p+4)
+    ix=np.frombuffer(b,'>u2',n,ptr+8).astype(np.int64)
+    return prim,ix
+JBOY.indices=lambda s,o: obj_indices(s,o)
