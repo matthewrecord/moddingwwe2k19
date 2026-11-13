@@ -21,3 +21,7 @@ belonged to Andrade's head/neck object, so they followed the head. His port uses
 Fix (v2, `fletcher_full_v2_ch50602.pac`, same folder): the weight donor now uses **only the stock body skin objects**
 (no head, morph, mouth, teeth, tongue or eye objects), plus a neighbour-outlier smoothing pass (found 0 more). After the
 fix, 0 body vertices are dominated by head/jaw.
+
+## Result v2 (2026-11-13 00:50 local, Matthew): **"It looks great."**
+First full-character pipeline build validated in game: body, hair, all attire and 39/48 textures regenerated from
+the 2K24 files; face still his.
