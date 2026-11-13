@@ -428,3 +428,20 @@ Backups: `_arena_work\backup_b2fix`. Plan `plan_b2fix.json`. New checker `partch
 - **Cards** (`cards_b2fix.py`, backups in `backup_b2fix`): Dynamite '20 (107) now uses layout_noname (md5 625e1098). Rampage/Road Rager movie = the arena's ar_mini loop (139: 7.4 s 1558x778; 149: 5.0 s) instead of the 1.3 s transition (139 dcfb0f9c, 149 86f165a9). ar_wall was 11.5 s for 139 but square 1024x1024; mini is wider.
 - Scripts that live only on the laptop are now copied into `tools/arena/laptop/`.
 - **All five batch 2 fixes are installed; waiting on Matthew's test.**
+
+## Saved to Resources (2026-11-13)
+- WM35 (130) and ROH DBD (138): "Installed - slot N 2026-11-13" folders with files, files_md5.txt and README (all four table rows + name). Tool `save_res.py <slot> <folder> <title> <install logs>` (laptop; repo copy in tools/arena/laptop). Raw (96) waits for the font check. The AEW saves from 2026-11-12 still show apron 137: re-save them after the apron change is confirmed.
+
+## Batch 3 survey (2026-11-13), `part_survey.py` (FREE / SAME / CLASH against the clean game, with the misc04 rows using the id)
+| Arena → slot | source slot | settings source | part clashes |
+| --- | --- | --- | --- |
+| WM27 → 125 | 402 | modded row 402 (installed there) | apron 136 = All Out's id → new id. IBL 88 SAME (shared with Grand Slam) |
+| WM31 → 140 | 105 | creator PNGs (day/evening/night entrances; modded 105 is not WM31) | apron 42 = WM35's AP42 → new id |
+| WM38 → 132 | 19/61 mixed | modded row 61 | none (IBL 88 SAME) |
+| RR Retro → 124 | 14 | creator PNGs (14 is Full Gear in the modded game) | none |
+| RR2020 → 135 | 13 | ships its own misc04/misc01/initpos (row 13); modded row 13 | apron 78, commentary 31 (HSPC, stock users 13/22) → EPK8 at free ids |
+| SS09 → 143 | 30 | creator PNGs, initpos 08 08 01 | apron 35 (HSPC, stock user 43) → EPK8 |
+| SD21 → 53 | 0 | modded row 0 (installed there) + its light file | apron 74, commentary 28, ceiling light 3, IBL 0, LED corner post 1 (all HSPC stock) → EPK8 |
+| ROH '05 → 134 | 312 | readme row: 47,-1,23,-1,3,20,-1,17,25,9,14,24,0,-1,16,-1,14,-1,-1,2,-1,-1,-1,-1,-1,16,0,-1,0,0,0,0,0 | files are named "arXXX - ROH'05.pac" (turnbuckle "0017"): rename. Its ids stadium 47/turnbuckle 17 (Dark), barricade 25 (Rampage), ring mat 16 (DBD/Rampage), corner post 23 (WM35) all clash → new ids |
+| SS22 → 160 | 44 | creator PNGs | corner post 37 differs from WM31's CP37 → new id; IBL 89, spotlight 51 identical to WM's (shared) |
+Shared identical files across mods: IBL 88, 89, 92, spotlight 51.
