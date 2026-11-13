@@ -45,3 +45,16 @@ Branch `claude/backport-tool` (not merged: no game-facing change, nothing instal
    moved them: 1-3 cm per vertex).
 3. Identify block 2 (3,056 B) and the M_Body table (block 4); check eyes/eyelash textures.
 4. First in-game test (needs Matthew): install a rebuilt Fletcher in a test slot.
+
+## 2026-11-13 00:00-01:00 local (Matthew: "please go")
+- Face experiments (Backport.md sections 19 and the design note): his 119 shapes aren't reproducible from any stock
+  head (best relative error 0.52, unfitted barycentric from ch73304), and the CAW head has only 30 sculpt shapes, so his
+  source is unknown. Decided design: barycentric transfer from the best-fitting stock head + stock interior parts
+  warped by landmarks; expressions reviewed in the app.
+- **Test 1 (Willow slot 865, Genesis) is still installed and waiting on Matthew's in-game check** (backup in builds folder).
+
+## Next (triage order, updated)
+1. Full Fletcher build on the donor ch68702 (body, head with transferred morphs, interior parts, attire, hair,
+   textures with our encoder) -> test pac for a free slot.
+2. DXT5 encoder (texture writer) + texture pack writer; stripifier polish.
+3. Identify block 2 (3,056 B) / block 4 (M_Body table).

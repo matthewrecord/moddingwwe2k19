@@ -465,3 +465,18 @@ stock ordering), so he rebuilt it in a 3D package. His exact correspondence can'
 source is something else (create-a-wrestler head is the remaining candidate). For the tool, matching his numbers isn't
 the goal; expressions that look right are. **Working method: barycentric transfer from the best-matching stock head
 (chosen per character by surface distance), reviewed in the app.** The CAW head probe is next (bounded).
+- **CAW head probe (closed):** `pac/edit/head/head_00000.pac` payload = 40-byte node records `u32 a, u32 count, name`
+  (model, tex x15, subobj x7, tex_name, **shape (30)**, bones, skin_bone_palette (93), abd, ycl_0000, lod, then
+  per-texture nodes: eyelash, eye_ov, head, head_Mask1, head_mr/_n, l_eye*, mouth*, r_eye*, wrinkles_n), then vertex
+  data (28-byte stride with a `b0 ff f0 f0` marker). **30 shapes = CAW face-sculpt sliders, not the 119 animation
+  morphs**, so the CAW head isn't his source either. His exact source stays unknown; it no longer matters.
+
+### Face step: decided design (2026-11-13)
+1. Head object = 2K24 M_Head (+ eyelash and eyeshadow meshes as their own objects), **119 morphs transferred by
+   barycentric closest point from the best-fitting stock head** (pick the stock head with the lowest median surface
+   distance to the 2K24 head; ch73304 for Fletcher, 0.39 cm).
+2. Stock interior parts (mouth bag 352, teeth 1,974, tongue 341, eye overlay 194, eyes 289 x2) come from the same
+   stock head's pac with **their own morphs**, moved by a landmark warp (eyes, mouth, teeth, tongue) onto the 2K24
+   head. That's what he did (1-3 cm moves).
+3. In the app: preview the expressions (jaw open, smile, blink, brows) with a strength slider per region as the
+   main touch-up control.
