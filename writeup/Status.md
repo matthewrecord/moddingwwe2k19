@@ -44,3 +44,6 @@ See `writeup/README.md` (write-up), `handoff/` (session notes), `notes/` (refere
 ## 5. Open project-wide issues
 
 - Survey the modded vs unmodded install and inventory the tools in `D:\Pictures\WWE 2K19`.
+
+## 2026-11-12 update
+Genesis clean rebuild; arena work tracked in writeup/Arena_inventory.md; see handoff/016.

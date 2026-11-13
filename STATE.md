@@ -1,5 +1,8 @@
 # Current state (one screen; read this first, then writeup/Status.md)
 
+- **2026-11-12 (handoff 016, latest): Genesis clean rebuild + arena installs.** Read `handoff/016_genesis_arenas_2026-11-12.md` and
+  `writeup/Arena_inventory.md`. 10 arenas confirmed; batch 2 has 5 fixes pending (Grand Slam won't load). Next: those fixes, then batch 3.
+
 - **2026-11-09 (setup chat): repository scaffolded**, structured like `matthewrecord/botf-tools` (README, CLAUDE.md,
   GEMINI.md, STATE.md, WORKFLOW.md, `writeup/`, `handoff/`, `notes/`, `tools/`, `reference/`, branch `assets`).
   No mod work started. Nothing in the game folders has been changed.
