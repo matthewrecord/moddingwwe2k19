@@ -7,6 +7,7 @@ No target -> internal names have S replaced by T. The output is then installed w
 import os, re, sys, shutil
 from epk import payload, rewrap, names, rename, tags, build_single
 G = '../../'; src, S, T, out = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
+MOVTAG = {'ar_apron': b'MVGA', 'ar_mini': b'MVGM', 'ar_ramp': b'MVGR', 'ar_wall': b'MVGW', 'transition': b'MOVT', 'transition_replay': b'MVTS', 'bg_apron': b'MVBA'}  # seen in pack EPK8s
 UN = 'mods/WWE 2K19 Unpacked Arena Graphics/'
 def restamp(mod, stock):
     b = bytearray(mod); b[0x10:0x14] = stock[0x10:0x14]; b[0x800:0x808] = stock[0x800:0x808]; b[0x814:0x81c] = stock[0x814:0x81c]
@@ -24,10 +25,7 @@ def fit(data, tgt_rel, new_rel):
         if data[:4] == b'HSPC': return tgt_rel, restamp(data, t)
         new_rel = tgt_rel   # EPK over a stock HSPC path: worked for the AEW transitions (118/119)
     if data[:4] == b'HSPC' and '/mov/' in new_rel:   # stock video with no pack container for T: new EPK8 named M000T
-        d = G + os.path.dirname(new_rel); tag = None
-        for c in sorted(os.listdir(d)) if os.path.isdir(d) else []:
-            b = open(d + '/' + c, 'rb').read(8)
-            if b[:4] == b'EPK8': tag = tags(open(d + '/' + c, 'rb').read())[0]; break
+        tag = MOVTAG.get(new_rel.split('/')[2])
         if tag: return new_rel, build_single(b'EPK8', tag, b'M%06d ' % T, payload(data))
     if data[:4] == b'HSPC': print('SKIP (HSPC, no target)', new_rel); return None, None
     nn = [re.sub(rb'0*%d(\s*)$' % S, lambda m: (b'%d' % T).rjust(len(m.group(0)) - len(m.group(1)), b'0') + m.group(1), n) for n in names(data)]
