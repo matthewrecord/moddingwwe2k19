@@ -1,5 +1,5 @@
 """Regenerate all non-face objects of a port from the 2K24 files, keeping his face objects. First full-character test."""
-import sys,glob,collections,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,glob,collections,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import jboy,jbuild,regen,epkwrite,zlib
 from scipy.spatial import cKDTree
 from tmpl import cloud,stock

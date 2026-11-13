@@ -1,5 +1,5 @@
 """Map a JBOY into regions and find every pointer word (value+8 = a region start)."""
-import sys,struct,numpy as np;sys.path.insert(0,'/home/claude/scripts');import jboy
+import sys,struct,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)));import jboy
 def regions(j):
     b=j.b; h=j.h; R=[]
     R.append(('hdr',0,0x58)); R.append(('objtable',0x58,0x58+184*h[6]))

@@ -1,4 +1,4 @@
-import sys,collections,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,collections,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import jboy,oodl,epk
 from scipy.spatial import cKDTree
 from bonemap import wdict,score

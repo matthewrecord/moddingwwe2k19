@@ -1,4 +1,4 @@
-import sys,glob,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__file__));import jboy,mdl as mdlfmt
+import sys,glob,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)));import jboy,mdlfmt
 from scipy.spatial import cKDTree
 P='/home/claude/pairs/'; E='/home/claude/ext/'
 PAIRS={'Fletcher':('Kyle Fletcher by*ORIGINAL','Kyle_Fletcher_ch50602'),'Gabe':('GabeKidd*ORIGINAL','Gabe_Kidd_ch50602'),

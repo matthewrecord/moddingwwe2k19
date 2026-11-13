@@ -1,5 +1,5 @@
 """Textured face comparison: Flash 2K25 M_Head (+M_EYE) vs our fitted head (+ eye objects as built)."""
-import sys,zlib,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import mdlfmt,jboy,epkwrite,texconv,render
 F='/home/claude/pairs/FMW/BaseModel/Textures/'
 def tex_tris(P,T,UV,img):

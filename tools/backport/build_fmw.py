@@ -1,6 +1,6 @@
 """From-scratch port of Flash Morgan Webster (2K25 .mcd) onto the Fletcher port container (male, Andrade-based palette).
 Usage: python3 build_fmw.py OUT.pac [tint_r tint_g tint_b]"""
-import sys,glob,pickle,zlib,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,glob,pickle,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 from regen_full import mesh_obj,template_weights,body_donor,smooth_outliers
 import jboy,jbuild,epkwrite,oodl,mdlfmt,facexfer as fx,facefit,jcheck,hidetable,hpl,texconv
 from scipy.spatial import cKDTree

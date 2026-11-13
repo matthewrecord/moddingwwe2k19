@@ -1,4 +1,4 @@
-import sys,glob,numpy as np;sys.path.insert(0,'/home/claude/scripts');import jboy,oodl,mdlfmt
+import sys,glob,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)));import jboy,oodl,mdlfmt
 from scipy.spatial import cKDTree
 def closest_bary(P,V,T):
     """closest point on triangle mesh (V,T) for each P via candidate triangles near nearest vertices. returns tri idx, bary."""

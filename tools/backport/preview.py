@@ -1,6 +1,6 @@
 """Textured preview of a built pac using its own texture pack (what the game will sample), hide table applied.
 Optional morph/bone pose for the head. Usage: preview.py PAC OUTPREFIX"""
-import sys,io,zlib,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,io,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import jboy,epkwrite,hidetable,texconv,render,pose,jlayout
 from PIL import Image
 def textures(B):

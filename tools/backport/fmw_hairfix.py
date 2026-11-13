@@ -1,5 +1,5 @@
 """Hair-limit experiments for FMW: rebuild the 0x2715/0x2716 blocks of fmw_v1 with split hair."""
-import sys,zlib,pickle,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,zlib,pickle,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import jboy,jbuild,epkwrite,oodl,mdlfmt
 from regen_full import mesh_obj,body_donor
 from build_fmw import put,meshes,PORT,U,WHITE

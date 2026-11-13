@@ -1,7 +1,7 @@
 """Object-level JBOY builder on top of the region/POF0 model.
 Chunks have ids; pointers are (loc_chunk, loc_off) -> (tgt_chunk). Objects can be cloned (all their chunks + their
 184-byte record + their pointers) and their chunk contents replaced."""
-import sys,struct,bisect;sys.path.insert(0,'/home/claude/scripts');import jboy,jlayout,pof0
+import sys,struct,bisect;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)));import jboy,jlayout,pof0
 class Model:
     def __init__(s,j,style='porter'):
         s.j=j; b=j.b; s.limit=0x3000 if style=='porter' else 0x4000

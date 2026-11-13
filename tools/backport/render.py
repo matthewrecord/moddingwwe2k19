@@ -1,6 +1,6 @@
 """Offline preview: render every object of a character pac (rest pose), with the M_Body hide table applied.
 Painter's algorithm with flat Lambert shading; background magenta so holes stand out."""
-import sys,zlib,struct,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,zlib,struct,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 import jboy,epkwrite,hidetable

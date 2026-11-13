@@ -3,7 +3,7 @@ A character is described by a config dict (see configs at the bottom). Everythin
 own head mesh + Andrade morphs/skin via the fitted surface (lip split), own eyes, his mouth parts shifted by
 part centroids, welded body weights, 2K24/25 nrm blue matched to Kyle, hide table from .hpl.
 New: texture atlases (several source meshes in one 2K19 slot), hidden-first triangle order for body objects."""
-import sys,os,glob,zlib,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,os,glob,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 from build_fmw import (mesh_obj,template_weights,body_donor,welded_weights,hist_match,KYLE,xfer,lip_class,put,degenerate,
                        meshes,palette_slot,PORT,U,RED,WHITE)
 import jboy,jbuild,epkwrite,oodl,mdlfmt,facexfer as fx,facefit,jcheck,hidetable,hpl,texconv

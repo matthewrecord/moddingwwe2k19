@@ -1,6 +1,6 @@
 """Offline posing for built pacs: linear-blend skinning with simple bone rotations about world axes through bone
 world positions, plus morph weights. Textured rendering of the face via facecheck.tex_tris."""
-import sys,zlib,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import jboy,epkwrite,jcheck,texconv,render,facecheck
 def rot(axis,deg):
     a=np.radians(deg); c,s=np.cos(a),np.sin(a); x,y,z=np.asarray(axis,float)/np.linalg.norm(axis)

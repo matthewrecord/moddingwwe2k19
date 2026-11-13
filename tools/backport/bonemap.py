@@ -1,4 +1,4 @@
-import sys,json,collections;sys.path.insert(0,__import__('os').path.dirname(__file__));from pairs import *
+import sys,json,collections;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)));from pairs import *
 def wdict(names,ws):
     d=collections.defaultdict(float)
     for n,w in zip(names,ws):

@@ -1,4 +1,4 @@
-import sys,glob,pickle,zlib,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,glob,pickle,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 from regen_full import *
 import oodl,facexfer as fx,facefit,jcheck,hidetable
 from scipy.spatial import cKDTree

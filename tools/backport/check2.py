@@ -1,4 +1,4 @@
-import sys,collections;sys.path.insert(0,__import__('os').path.dirname(__file__));from pairs import *;from bonemap import wdict,score
+import sys,collections;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)));from pairs import *;from bonemap import wdict,score
 import numpy as np
 def portcloud(n):
     Q=[q for q in port(n) if q['nb']==max(x['nb'] for x in port(n))]

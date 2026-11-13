@@ -1,5 +1,5 @@
 """Regenerate attire objects of a port JBOY from the 2K24 MDL meshes with our rules (first pipeline test)."""
-import sys,glob,collections,numpy as np;sys.path.insert(0,'/home/claude/scripts')
+import sys,glob,collections,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import jboy,jbuild,mdlfmt
 from scipy.spatial import cKDTree
 from tmpl import cloud,stock

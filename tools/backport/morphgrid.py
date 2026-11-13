@@ -1,5 +1,5 @@
 """Andrade stock vs built head for the 12 morphs that move the mouth most (shaded geometry). Usage: morphgrid.py PAC OUT"""
-import sys,numpy as np;sys.path.insert(0,'/home/claude/scripts');import jboy,oodl,pose,render
+import sys,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)));import jboy,oodl,pose,render
 from PIL import Image
 U='/mnt/user-data/uploads/WWE 2K19 - modded/pac/ch/'
 def grid(pac,out,top=None):

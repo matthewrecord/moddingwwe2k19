@@ -1,6 +1,6 @@
 """Relocating JBOY writer (v2). Pointer list = the file's own POF0 table. Every pointer target is a region start, so any
 region (chunk = region start .. next region start) can be replaced by bytes of a different length."""
-import sys,struct,bisect;sys.path.insert(0,'/home/claude/scripts');import jboy,jlayout,pof0
+import sys,struct,bisect;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)));import jboy,jlayout,pof0
 class Writer:
     def __init__(s,j,style='porter'):
         s.limit=0x3000 if style=='porter' else 0x4000
