@@ -33,3 +33,8 @@ of a re-meshed face area lying within 0.1 cm of the 2K24 face surface, i.e. he w
 barycentric transfer from the stock ch73304 face (offsets only; normals and colours 0 in morph sets, as in his).
 Vertex colour 245/0/0. Still his: eyes, eye overlay, mouth bag, teeth, tongue (they fit this head shape exactly).
 What to watch: blinks (eyelids vs eyeballs), mouth open/close vs teeth, brows, any face tearing in entrances/selling.
+
+## v3 skipped (Matthew: skeptical of plain shape transfer; go straight to the robust version).
+## v4: face fit (built ~01:30 local) `fletcher_facefit_v4_ch50602.pac`: Andrade's 2K19 head fitted onto Fletcher's
+2K24 face (Backport.md section 21), with its own 119 expressions/weights. Watch: blinks, mouth open/close vs teeth,
+brows, texture alignment on eyelids/lips, the seam where the fitted head meets the neck.

@@ -493,3 +493,20 @@ the goal; expressions that look right are. **Working method: barycentric transfe
   and eye objects, white on hair and eye overlay.
 - **Test 4 built:** Fletcher with body, hair, all attire and 39/48 textures regenerated (face still his).
   `notes/builds/backport_test4_fletcher_full.md`.
+
+## 21. Face fitting (his method, rebuilt) (2026-11-13 ~01:30 local; `tools/backport/facefit.py`, `loops.py`)
+- His head object = 2K24 head outside the face + a **re-meshed face area lying within 0.1 cm of the 2K24 face**:
+  he wrapped a 2K19 face mesh onto the 2K24 face so its own 119 expression shapes apply unchanged.
+- **The stock and 2K24 heads share openings with identical vertex counts:** neck loop 58 = 58, mouth 48 = 48
+  (eyes 36 vs 32). The 2K24 head derives from the same base topology.
+- Our fit of Andrade's head (ch687 obj 0, 3,936 v): match the boundary loops (arc-length, best rotation/direction),
+  thin-plate warp (smoothing 1), then a **regularized non-rigid fit** (pull to the 2K24 surface only where normals
+  agree, Laplacian smoothness of the displacement, loop vertices pinned, decreasing stiffness 50 -> 2; inner-lip band
+  within 0.6 cm of the mouth loop free).
+  Result: surface distance median 0.07 cm (p99 0.56); triangles: 0-1 collapsed, about 39 flipped, all slivers
+  (median 0.006 cm2) near the eye openings. Raw closest-point snapping instead gave 654 flipped / 873 collapsed. His
+  fitted face vertices are 0.23 cm (median) from ours (0.57 cm before fitting).
+- New head object (v4): fitted geometry + **Andrade's own 119 morph offsets, face-bone weights and strips by
+  vertex index**; UVs and normals taken from the 2K24 surface at each vertex (3 UV islands; the high UV density at
+  the eyes is genuine, not seams). Mouth bag, teeth, tongue, eyes and eye overlay are still his.
+- Test file: `test4_fletcher_full\fletcher_facefit_v4_ch50602.pac` (not installed).
