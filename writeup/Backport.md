@@ -383,3 +383,22 @@ after resizing (mean absolute error, 0-255 scale):
 **Next engineering step:** object-level JBOY builder: add/remove objects, so the donor (ch68702) can receive the
 2K24 attire objects. That means new object records, new chunks and new POF0 entries; the writer already relocates
 everything else. Then the geometry/skin/morph generators.
+
+## 16. Object-level builder (2026-11-13 ~03:20; `tools/backport/jbuild.py`)
+
+- `Model(j)`: chunk/pointer model where pointers are (location chunk, offset) -> target chunk; rebuilds byte-identical.
+- `clone_object(k)`: appends a copy of object k (all its chunks, its 184-byte record with [30] = new index, all
+  its pointers) and bumps header [6]. Tested: clone == source, every other object unchanged.
+- `set_object(m, k, pos, nrm, col, uv, tan, slots, weights, strip)`: writes new vertex set, skin (palette **slot**
+  indices, BE, `u16 slot, u16 0, f32 w`), UV, tangent, strip, and updates record fields [0] / [23] / [40] (+ bounding
+  sphere [42..45]). Tested by re-encoding his kneepad object from decoded arrays: positions, normals, UVs, bones,
+  weights and triangles (with winding) read back identical.
+- `tris_to_strip`: naive triangle-list -> strip with degenerate joins (3.7x longer than his strips). A proper
+  stripifier is optional polish.
+- Vertex set = pos f32x3, normal f32x3, colour u8x4. Field 29 stream = 3 floats per vertex (tangent; to be confirmed
+  by checking orthogonality with the normals).
+
+**Plan for the first real build:** "re-port" Fletcher: take his port as the container, regenerate the non-face
+objects (attire, hair, body) from the 2K24 files with our rules (geometry, template weights, textures), and compare
+to his port object by object. That tests the generators against ground truth before the donor-based build (Andrade
+ch68702 + new objects).
