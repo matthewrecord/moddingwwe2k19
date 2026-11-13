@@ -40,6 +40,14 @@ def xfer(Pt,Ps,Ts,sl,w,MD=None):
         for q,(a,b) in enumerate(it): SL[v,q]=a; W[v,q]=b/t
     M=None if MD is None else np.einsum('vc,ncvd->nvd' if False else 'vc,nvcd->nvd',BC,MD[:,tri,:])
     return SL,W,M,dist
+def lip_class(P,T,band=3.5):
+    """+1 upper lip side, -1 lower lip side, 0 elsewhere, from the mouth boundary loop (lip line = mean of loop y at x)."""
+    import loops
+    L=[l for l in loops.boundary_loops(T,P)]; L=[l for l in L if 30<=len(l)<=80]
+    mouth=min(L,key=lambda l:abs(P[l,1].mean()+174)+abs(P[l,0].mean())*3)
+    Q=P[mouth]; xs=np.linspace(Q[:,0].min(),Q[:,0].max(),41); ly=np.array([Q[np.abs(Q[:,0]-x)<=max(0.5,(xs[1]-xs[0])),1].mean() for x in xs])
+    lip=np.interp(P[:,0],xs,ly); zc=Q[:,2].mean(); inside=(np.abs(P[:,0])<np.abs(Q[:,0]).max()*1.05)&(np.abs(P[:,1]-lip)<band)&(P[:,2]<zc+4)
+    c=np.zeros(len(P),int); c[inside&(P[:,1]<lip)]=1; c[inside&(P[:,1]>=lip)]=-1; return c
 def put(m,k,j,G,donor,col=RED,hair=False,weights=None):
     vc=len(G['pos']); tan=np.zeros((vc,3),'f4')
     if hair:
@@ -48,6 +56,7 @@ def put(m,k,j,G,donor,col=RED,hair=False,weights=None):
         sl,w=weights if weights is not None else welded_weights(G['pos'],G['tris'],donor,palette_slot(j))
     jbuild.set_object(m,k,G['pos'],G['nrm'].astype('f4'),np.tile(np.array(col,'u1'),(vc,1)),G['uv'].astype('f4'),tan,sl,w,jbuild.tris_to_strip(G['tris']))
 
+PROP='fletcher'
 def build(outpath,tint=(45,35,30)):
     BM=mcd_to_mdl(SRC+'BaseModel/baseModel.mcd',EXT+'base.mdl'); AM=mcd_to_mdl(SRC+'159_Default_Attire/159_Attire.mcd',EXT+'attire.mdl')
     MB=meshes(BM); MA=meshes(AM)
@@ -70,6 +79,14 @@ def build(outpath,tint=(45,35,30)):
         aw[v]/=max(aw[v].sum(),1e-6)
     MDa=np.asarray(SD)  # (119, va, 3)
     HS,HW,HM,hd=xfer(PT.astype(float),W,ST,asl,aw,MDa)
+    # lip split: upper-lip vertices may only borrow from Andrade's upper-lip triangles (and lower from lower)
+    cF=lip_class(PT.astype(float),TT); cA0=lip_class(np.asarray(W,float),ST)
+    dy=MDa[113][:,1]; near=cA0!=0; cA=np.zeros(len(W),int); cA[near&(dy>0.5*dy[near].max())]=-1; cA[near&(dy<=0.5*dy[near].max())]=1; tc=cA[ST]
+    for side in (1,-1):
+        vs=np.where(cF==side)[0]; ts=ST[(tc==side).all(1)]
+        if len(vs) and len(ts):
+            a,b_,c_,_=xfer(PT[vs].astype(float),W,ts,asl,aw,MDa); HS[vs]=a; HW[vs]=b_; HM[:,vs]=c_
+    lipinfo=(int((cF==1).sum()),int((cF==-1).sum()),int((cA==1).sum()),int((cA==-1).sum()))
     # neck seam: head vertices that coincide with body vertices take the body's weights
     Sb,Tb=MB['M_Body']; bsl,bw=welded_weights(Sb['POSITION'],Tb,donor,slot)
     tb=cKDTree(Sb['POSITION']); dd,ii=tb.query(PT); seam=dd<1e-3; HS[seam]=bsl[ii[seam]]; HW[seam]=bw[ii[seam]]
@@ -92,7 +109,13 @@ def build(outpath,tint=(45,35,30)):
     ctr=lambda D,n:D[n][0]['POSITION'].mean(0)
     sides=lambda D:[D['M_EYE'][0]['POSITION'][D['M_EYE'][0]['POSITION'][:,0]*sg>0].mean(0) for sg in (1,-1)]
     dEye=(np.array(sides(MB))-np.array(sides(KM))).mean(0); dTeeth=ctr(MB,'M_Teeth')-ctr(KM,'M_Teeth'); dTong=ctr(MB,'M_Tongue')-ctr(KM,'M_Tongue'); dBag=ctr(MB,'M_MouthBag')-ctr(KM,'M_MouthBag')
-    shifts={5:dEye,6:(dTeeth+dBag)/2,7:dTeeth,8:dTong}
+    # eye overlay: per side, keep his overlay-to-eyeball offset, re-anchored on Flash's eyeballs
+    o5=j.objs[5]; ch=m.chunk(5,'vset0'); V=np.frombuffer(bytes(m.data[ch][:o5['vc']*28]),dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]).copy()
+    hisE=[j.objs[3]['pos'],j.objs[4]['pos']]; flE=sides(MB)
+    for sg,he,fe in ((1,hisE[0],flE[0]),(-1,hisE[1],flE[1])):
+        sel=V['p'][:,0]*sg>0; V['p'][sel]+=fe-he.mean(0)
+    m.data[ch][:len(V.tobytes())]=V.tobytes()
+    shifts={6:(dTeeth+dBag)/2,7:dTeeth,8:dTong}
     for k_,d in shifts.items():
         o=j.objs[k_]; ch=m.chunk(k_,'vset0'); V=np.frombuffer(bytes(m.data[ch][:o['vc']*28]),dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]).copy()
         V['p']+=d; m.data[ch][:len(V.tobytes())]=V.tobytes()
@@ -132,8 +155,9 @@ def build(outpath,tint=(45,35,30)):
     for base,rai in (('hair',A_+'hair_rai.dds'),('hair2',A_+'combinations_rai.dds')):
         r=texconv.hair(None,rai,tint); E[base]=r['']; E[base+'_n']=r['_n']; E[base+'_mr']=r['_mr']
     J[0xa]=texconv.write_pack(list(E.items()),hd)
+    if PROP=='andrade': J[0x50]=[d for _,d in oodl.blocks(open(U+'ch68702.pac','rb').read()) if len(d)==3056][0]
     pac=epkwrite.build_raw(hdr,[(fid,epkwrite.zblock(J[fid]) if fid in J else blk) for fid,blk in blocks]); open(outpath,'wb').write(pac)
-    return dict(size=len(pac),neck_seam_verts=nadd,shifts=shifts,hide_upper=len(res[1][0]),lower_frac=round(lo_frac,3),objs={f:len(jboy.JBOY(J[f]).objs) for f in (0,0x2715,0x2716,0x5601,0x5602)})
+    return dict(size=len(pac),neck_seam_verts=nadd,lip=lipinfo,shifts=shifts,hide_upper=len(res[1][0]),lower_frac=round(lo_frac,3),objs={f:len(jboy.JBOY(J[f]).objs) for f in (0,0x2715,0x2716,0x5601,0x5602)})
 if __name__=='__main__':
     t=tuple(int(x) for x in sys.argv[2:5]) if len(sys.argv)>4 else (45,35,30)
     print(build(sys.argv[1],t))

@@ -87,3 +87,21 @@ Diagnosis, using the new textured face check (`facecheck.py`, `renders/face_cmp.
 - **Light through body seams.** Smoothing ran per object and per duplicate vertex.
   Fix: weights computed once on the welded full M_Body and shared by the upper and lower pieces.
 - Not changed: bone positions (the J_Jaw pivot is about 1.2 cm above Flash's mouth). Possible next step if the mouth moves oddly.
+
+## v3 in game: big improvement. Remaining: hovering hands, puffy/sleepy eyes, mouth opening over the moustache. v4
+- New `tools/backport/pose.py`: offline posing (linear-blend skinning about bone world positions plus morph weights),
+  rendered with textures through `facecheck.tex_tris`.
+- **Mouth.** The head has no J_Jaw weights (Andrade's either): 2K19 opens the mouth with morphs (114 and 45 are the biggest
+  downward ones). In v3 the open-mouth morph put the opening above the upper lip, because some of Flash's upper-lip vertices
+  borrowed from Andrade's lower lip (`renders/fmw_mouth_v3.png`).
+  - **Fix: lip-split transfer.** Flash vertices near the mouth are classed upper or lower by the lip line, taken from Flash's
+    mouth boundary loop. Andrade's side is classed by his own morph 114: lower lip = moves more than half the max.
+    Each class borrows only from its own side. Result: `renders/fmw_mouth_v4.png`.
+  - Andrade's mouth loop is not at his lip line (it gave 499 upper vs 156 lower), so his classes must come from the morph.
+- **Eyes.** The eye overlay floated 0.29 cm off Flash's eyeballs (his port: 0.17). It is now re-anchored per side using his
+  overlay-to-eyeball offset: 0.22 cm.
+- **Hands.** Not solved:
+  - Flash's hand mesh occupies the same space as Andrade's.
+  - Finger bone weights match Andrade's.
+  - Fletcher's 0x50 proportion block is byte-identical to Andrade's.
+  So the hover comes from somewhere else. Next: check whether Andrade's own model or scorpion's ports hover too.
