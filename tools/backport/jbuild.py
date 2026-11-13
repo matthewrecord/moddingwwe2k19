@@ -32,7 +32,7 @@ class Model:
         ins=last+1
         for c in src:
             nid=s.next_id; s.next_id+=1; mp[c]=nid
-            s.data[nid]=bytearray(s.data[c]); s.name[nid]=f'o{new}.'+s.name[c].split('.',1)[1]
+            s.data[nid]=bytearray(s.data[c]); s.__dict__.setdefault('src',{})[nid]=c; s.name[nid]=f'o{new}.'+s.name[c].split('.',1)[1]
             s.order.insert(ins,nid); ins+=1
         # object record
         T=s.data[s.objtab]; rec_off=0x58-0x58  # objtable chunk starts at 0x58
@@ -51,9 +51,11 @@ class Model:
     def build(s):
         out=bytearray(); pos={}
         for c in s.order:
-            a=c if c<10**9 else None
-            al=16 if (a is not None and a%16==0) else 4
-            if out: out+=b'\0'*((-len(out))%al)
+            a=c if c<10**9 else getattr(s,'src',{}).get(c)
+            # keep every chunk at its original address mod 16 (bones/matrices need 16-byte alignment relative to base 8)
+            if out:
+                if a is not None and a%4==0: out+=b'\0'*((a-len(out))%16)
+                else: out+=b'\0'*((-len(out))%4)
             pos[c]=len(out); out+=s.data[c]
         newP=[]
         starts=sorted(c for c in pos if c<10**9)

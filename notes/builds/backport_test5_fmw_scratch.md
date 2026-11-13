@@ -59,3 +59,13 @@ Next tests (built with `tools/backport/fmw_hairfix.py`):
   Its `nobj` lookup was fixed for 8-byte hair headers.
 - **F:** half the hair in 0x2715 and half in 0x2716, with no beard. Only known-safe layouts.
 - **G:** Fletcher's hair with Flash's beard, to confirm the beard is fine on its own.
+
+## E/F/G all crashed. The real cause was misaligned chunks in the writer
+- Every crashing build (v1, B, C, E, F, G) has a hair model whose `bones` region is not 16-byte aligned (relative to base +8).
+  Every build that loaded (A, D, all Fletcher v4-v7) has it aligned. The "hair vertex limit" theory is withdrawn.
+- Bug: `jbuild.build` tested alignment with `a%16==0` on file addresses. The right test is `(a-8)%16==0`, i.e. keep each
+  chunk at its original address mod 16. Big models stayed aligned by luck; hair index lists (u16, odd lengths) did not.
+- Fix: pad each chunk back to its original address mod 16 (clones inherit their source's alignment).
+  The writer is still byte-identical on 62/62 models.
+- New check: every bones/texnames/palhdr/objtable region must sit at (addr-8)%16==0. All v2 files pass.
+- Delivered: `fmw_v2_full` (Flash complete, hair in one piece) and `fmw_v2_hairsplit_backup` (hair split in two, in case of a real size limit).

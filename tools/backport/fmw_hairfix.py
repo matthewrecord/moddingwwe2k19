@@ -3,7 +3,7 @@ import sys,zlib,pickle,numpy as np;sys.path.insert(0,'/home/claude/scripts')
 import jboy,jbuild,epkwrite,oodl,mdlfmt
 from regen_full import mesh_obj,body_donor
 from build_fmw import put,meshes,PORT,U,WHITE
-hdr,bl=epkwrite.raw_blocks('/home/claude/out/fmw_v1_ch50602.pac'); B={f:zlib.decompress(b[16:]) for f,b in bl}
+hdr,bl=epkwrite.raw_blocks(sys.argv[1] if len(sys.argv)>1 else '/home/claude/out/fmw_v1_ch50602.pac'); B={f:zlib.decompress(b[16:]) for f,b in bl}
 _,pb=epkwrite.raw_blocks(PORT); O={f:zlib.decompress(b[16:]) for f,b in pb}
 G=pickle.load(open('/home/claude/ext/fletcher_full_jboys_v2.pkl','rb'))
 MA=meshes(mdlfmt.MDL('/home/claude/ext/fmw/attire.mdl')); S,T=MA['M_Hair']
@@ -20,4 +20,4 @@ V={'E_hairsplit':{0x2715:two(0x2715,HA,HB)},
 for n,rep in V.items():
     J=dict(B); J.update(rep)
     for f in rep: jj=jboy.JBOY(J[f]); print(n,hex(f),[o['vc'] for o in jj.objs])
-    open('/home/claude/out/fmw_%s_ch50602.pac'%n,'wb').write(epkwrite.build_raw(hdr,[(f,epkwrite.zblock(J[f])) for f,_ in bl]))
+    open('/home/claude/out/fmw_v2%s_ch50602.pac'%n,'wb').write(epkwrite.build_raw(hdr,[(f,epkwrite.zblock(J[f])) for f,_ in bl]))
