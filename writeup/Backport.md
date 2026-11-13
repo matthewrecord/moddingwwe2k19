@@ -361,3 +361,25 @@ after resizing (mean absolute error, 0-255 scale):
 - Next: helpers that build each chunk from arrays (vertex sets incl. morph offsets, skin with palette + 7-weight trim,
   UV, tangent, strips via a stripifier or "list as strip", parameter records), then the texture pack writer, then
   pac packing (EPK8 + zlib as in his ports).
+
+## 15. Pac writer (his EPK8 layout) (2026-11-13 ~03:00)
+
+`tools/backport/epkwrite.py`. Layout measured on his 6 ports:
+- 0x0 `EPK8`, u32 0x1C, **u32 size = total length - 0x4800**, u32 7 ... (the rest of the first 0x4000 bytes is
+  copied from a template).
+- 0x800 `EMD `, `04 00 01 00`, 0, **virtual name** (8 ASCII digits, e.g. `00050602`; it must match the slot, see
+  notes/characters step 1j), u32 at 0x818 = size / 256.
+- 0x4000 `PACH`, u32 count, then per file `u32 id, u32 offset, u32 size`. Offsets are relative to the end of the
+  table, and **data starts right after the table (no alignment)**. Each file is a `ZLIB` block (`ZLIB`, u32 0x1230,
+  u32 compressed, u32 raw, stream), 4-byte aligned. The file is padded to 2,048 bytes.
+- File ids in his ports: 0x0 main JBOY, 0xA texture pack, 0x50 the 3,056-byte block, 0xCA yM_* table, 0xCE M_Body
+  table, 0x2580 block 5, 0x2715 / 0x2716 / 0x5601 / 0x5602 ... further JBOYs (hair, gear, trans).
+- His deflate output can't be reproduced byte for byte (`78 01` streams from a non-zlib encoder; no zlib
+  level/memLevel/strategy matches), and it doesn't need to be. **All 6 ports repack with identical decompressed
+  contents and identical header/EMD**. They're 18-20% smaller because we compress at level 6 instead of his fastest
+  setting.
+- Combined with section 14, the tool can now unpack -> edit -> repack a complete character pac.
+
+**Next engineering step:** object-level JBOY builder: add/remove objects, so the donor (ch68702) can receive the
+2K24 attire objects. That means new object records, new chunks and new POF0 entries; the writer already relocates
+everything else. Then the geometry/skin/morph generators.
