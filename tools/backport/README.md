@@ -1,6 +1,6 @@
 # Backport tool: newer WWE 2K mods (2K24 `.mdl` / 2K25 `.mcd`) into WWE 2K19
 
-Status (2026-11-13): validated in game on **Flash Morgan Webster (2K25)** and **Mark Briscoe (2K24)**. The first female, **Toni Storm (2K25)**, is built and passes every bench gate; awaiting an in-game test. Both are
+Status (2026-11-13): Keith Lee (2K24, big body, source weights) is built and passes all gates. Validated in game on **Flash Morgan Webster (2K25)** and **Mark Briscoe (2K24)**. The first female, **Toni Storm (2K25)**, is built and passes every bench gate; awaiting an in-game test. Both are
 from-scratch ports with no porter involved. Findings are in `writeup/Backport.md`; per-build notes are in
 `notes/builds/backport_test5_fmw_scratch.md` and `backport_test6_briscoe.md`.
 
@@ -31,7 +31,12 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
    - bridge triangles behind the lips are dropped;
    - vertices left unweighted take the nearest weighted vertex's skin;
    - neck-seam vertices take the body's weights.
-3. **Body:** `M_Body` split upper/lower (triangle centroid y < -108 or |x| > 26 = upper). Weights come from the body-only
+3. **Body weights:** `cfg['weights']='source'` uses the mod's own BI/BW, remapped to 2K19 palette slots by bone name
+   (a missing bone hands its weight to its nearest ancestor that exists; for Keith, 99% of the weight is on shared names).
+   The default is still the donor's nearest-point weights, which fail for big bodies (Keith v1: shoulder wings, knee spike).
+   **Recommended for every new character.** Big builds also take `prop_from` (the 0x50 proportion block of a similar
+   stock wrestler, e.g. ch23802 Big Boss Man), as scorpion does; the skeleton itself is identical in his big-man ports.
+   Body: `M_Body` split upper/lower (triangle centroid y < -108 or |x| > 26 = upper). Weights come from the body-only
    Andrade donor, welded by position and outlier-smoothed. Triangles are ordered hidden-first so each hide range is one span.
 4. **Eyes:** the source's own `M_EYE`, rigid on J_Eye_L/R. Eye overlay and mouth parts (teeth, tongue, mouth piece) are
    his Fletcher objects, shifted by the source-minus-Kyle part centroids.
@@ -81,6 +86,8 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
    - Source vs build textured face (see `facecheck.py`, or the snippet in the Briscoe notes): at rest they must match.
    - `python3 -I tools/backport/morphgrid.py <pac> <out.png>`: the 12 mouth morphs, stock Andrade vs ours. There must be
      no curtains, tears or spikes.
+   - **Body pose test**: `bodypose.py <pac> <out.png>` (arms down, elbows bent, arms forward, squat; hierarchical
+     `pose.pose_fk`). There must be no skin left behind (shoulder "wings"), no smeared sleeves and no knee spikes.
    - `preview.py` also prints **`eye masks: ok`**. FLAT means dead eyes (see "Eyes" below).
    - **Eye/brow morphs**: `eyemorphs.py <pac> <out.png> <donor>` (add `--lashes` to draw lashes). The lids must close
      like the donor's. Never judge lid closure with the lashes drawn: opaque lashes in the flat renderer look like half-closed lids.

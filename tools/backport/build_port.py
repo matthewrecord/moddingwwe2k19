@@ -137,14 +137,34 @@ def eye_loops(P,T):
     import loops
     L=[l for l in loops.boundary_loops(T,P) if 20<=len(l)<=60 and abs(P[l,1].mean()+181)<4 and 2<abs(P[l,0].mean())<6]
     return sorted(L,key=lambda l:-P[l,0].mean())   # [left (+x), right]
+def source_weights(S,bones,slot,idx=None):
+    """the mod's own skin weights (BI/BW, by its bone names) -> 2K19 palette slots; bones missing from the palette
+    hand their weight to the nearest ancestor that exists. idx: subset of vertices."""
+    names=[b['name'] for b in bones]; par=[b['parent'] for b in bones]; memo={}
+    def to_slot(i):
+        if i in memo: return memo[i]
+        k=i
+        while k>=0 and names[k] not in slot: k=par[k]
+        memo[i]=slot[names[k]] if k>=0 else slot['J_Head']; return memo[i]
+    BI=S['BI'] if idx is None else S['BI'][idx]; BW=S['BW'] if idx is None else S['BW'][idx]
+    BW=BW.astype(float)/(255.0 if BW.dtype==np.uint8 else 1.0); vc=len(BI); sl=np.full((vc,7),0xFFFF); w=np.zeros((vc,7),'f4')
+    for v in range(vc):
+        acc={}
+        for i,x in zip(BI[v],BW[v]):
+            if x>0: a=to_slot(int(i)); acc[a]=acc.get(a,0)+x
+        it=sorted(sorted(acc.items(),key=lambda t:-t[1])[:7]); t=sum(x for _,x in it) or 1
+        for q,(a,x) in enumerate(it): sl[v,q]=a; w[v,q]=x/t
+    return sl,w
 def build(cfg,outpath,PROP=None):
     W_=cfg['work']; os.makedirs(W_,exist_ok=True)
     BM=open_model(cfg['base'],W_+'/base.mdl'); AM=open_model(cfg['attire_model'],W_+'/attire.mdl'); MB=meshes(BM); MA=meshes(AM)
     TB,TA=cfg['tex_base'],cfg['tex_attire']
     TP=TEMPLATES[cfg.get('template','male')]
-    s=jboy.JBOY(oodl.blocks(open(U+TP['donor']+'.pac','rb').read())[0][1]); donor=body_donor(s)
+    s=jboy.JBOY(oodl.blocks(open(U+TP['donor']+'.pac','rb').read())[0][1])
+    sw=jboy.JBOY(oodl.blocks(open(U+cfg['weight_donor']+'.pac','rb').read())[0][1]) if cfg.get('weight_donor') else s
+    donor=body_donor(sw)
     hdr,blocks=epkwrite.raw_blocks(TP['pac']); B={f:zlib.decompress(b[16:]) for f,b in blocks}; J={}; info={}
-    MAL=meshes_all(AM)
+    MAL=meshes_all(AM); info['weight_donor']=cfg.get('weight_donor',TP['donor'])
     j=jboy.JBOY(B[0]); m=jbuild.Model(j); slot=palette_slot(j)
     # ---------------- head ----------------
     so=s.objs[0]; MDa=np.asarray(jboy.morphs(s,so)); ST=jboy.strip_to_tris(s.indices(so)[1])
@@ -201,7 +221,9 @@ def build(cfg,outpath,PROP=None):
         Hg=np.zeros((ng,3)); np.add.at(Hg,inv,HM[k]); Hg/=np.bincount(inv,minlength=ng)[:,None]
         for it in range(15): Hg[zone]=(A@Hg)[zone]
         HM[k]=Hg[inv]
-    Sb,Tb=MB['M_Body']; bsl,bw=welded_weights(Sb['POSITION'],Tb,donor,slot)
+    Sb,Tb=MB['M_Body']
+    if cfg.get('weights')=='source': bsl,bw=source_weights(Sb,BM.bones,slot)
+    else: bsl,bw=welded_weights(Sb['POSITION'],Tb,donor,slot)
     dd,ii=cKDTree(Sb['POSITION']).query(PT); seam=dd<1e-3; HS[seam]=bsl[ii[seam]]; HW[seam]=bw[ii[seam]]; info['neck_seam']=int(seam.sum())
     headW=(PT.copy(),HS.copy(),HW.copy())
     ct=np.where(opid==1,cF,0)[TT]; keep=~((ct==1).any(1)&(ct==-1).any(1)&(np.abs(PT[TT][:,:,0].mean(1)-x0)<xc)); info['mouth_bridge_tris_removed']=int((~keep).sum())
@@ -210,7 +232,7 @@ def build(cfg,outpath,PROP=None):
     for n in range(1,120):
         V=np.zeros(vc,dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]); V['p']=HM[n-1]; m.data[m.chunk(0,f'vset{n}')]=bytearray(V.tobytes())
     # ---------------- body: hidden-first triangle order so each hide range is one block ----------------
-    H=hpl.parse(cfg['hpl'])['M_Body'][0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True
+    H=hpl.parse(cfg['hpl']).get('M_Body',[[]])[0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True; info['hpl_body_verts']=len(H)
     att=np.concatenate([MA[n][0]['POSITION'] for n in cfg['cover']]); near_att=cKDTree(att).query(Sb['POSITION'])[0]<1.0
     hid_t=hid_v[Tb].any(1)|near_att[Tb].all(1)
     C=Sb['POSITION'][Tb].mean(1); hands=(np.abs(C[:,0])>TP['hands_x']) if TP.get('hands_x') else np.zeros(len(C),bool)
@@ -289,8 +311,11 @@ def build(cfg,outpath,PROP=None):
     # ---------------- attire slots (single mesh, split by side, or 2x2 atlas) ----------------
     tex={}
     hp,hs,hw=headW; th=cKDTree(hp); tb=cKDTree(Sb['POSITION'])
-    def att_w(G,ja):
-        """attire weights: body donor, except points whose nearest skin is the head take the head's own weights"""
+    def att_w(G,ja,src=None):
+        """attire weights: the mod's own (cfg weights='source'), else body donor with head-nearest points taking the head's weights"""
+        if cfg.get('weights')=='source' and src is not None:
+            parts_=[source_weights(S_,AM.bones,palette_slot(ja),u_) for S_,u_ in src]
+            return np.concatenate([p[0] for p in parts_]),np.concatenate([p[1] for p in parts_])
         sl,w=welded_weights(G['pos'],G['tris'],donor,palette_slot(ja)); dh,ih=th.query(G['pos']); db,_=tb.query(G['pos']); onh=dh<db
         if onh.any():
             # main-model slots -> this attire model's slots, by bone name
@@ -311,13 +336,13 @@ def build(cfg,outpath,PROP=None):
             if kind=='mesh':
                 _,name,stem=spec[:3]; S,T=MA[name]; msk=np.ones(len(T),bool)
                 if len(spec)>3: cxs=S['POSITION'][T].mean(1)[:,0]; msk=cxs>0 if spec[3]=='L' else cxs<=0
-                G=mesh_obj(S,T,msk); put(ma,k_,ja,G,donor,weights=att_w(G,ja)); tex[texname]=load_pair(TA,stem)
+                G=mesh_obj(S,T,msk); put(ma,k_,ja,G,donor,weights=att_w(G,ja,[(S,np.unique(T[msk]))])); tex[texname]=load_pair(TA,stem)
             else:   # ('atlas', [(mesh, stem), ...])
-                Cc,Nn,pos=atlas(TA,[st for _,st in spec[1]]); parts=[]
+                Cc,Nn,pos=atlas(TA,[st for _,st in spec[1]]); parts=[]; srcs=[(MA[n_][0],np.unique(MA[n_][1])) for n_,_ in spec[1]]
                 for name,st in spec[1]:
                     G=whole(MA,name); u=G['uv'].astype(float); info.setdefault('uv_out',{})[name]=round(float(((u<-0.01)|(u>1.01)).any(1).mean()),3)
                     cx_,ry=pos[st]; e=8/1024; G['uv']=(((np.clip(u,0,1)*(1-2*e)+e)+[cx_,ry])/2).astype('f4'); parts.append(G)
-                G=concat(parts); put(ma,k_,ja,G,donor,weights=att_w(G,ja)); tex[texname]=(Cc,Nn)
+                G=concat(parts); put(ma,k_,ja,G,donor,weights=att_w(G,ja,srcs)); tex[texname]=(Cc,Nn)
         J[fid]=ma.build()
     # ---------------- hide table: one hidden span per template hide object ----------------
     our=jboy.JBOY(J[0]); blocks_={}
@@ -348,6 +373,7 @@ def build(cfg,outpath,PROP=None):
     if TP.get('lash') and ci(TB+'/eyelash_color.dds'):
         c=texconv.load(ci(TB+'/eyelash_color.dds')); w,h=texconv.target_size(c.shape[1],c.shape[0]); E['eyelash']=texconv.dds_dxt5(texconv.resize(c,w,h))
     J[0xa]=texconv.write_pack(list(E.items()),hd)
+    if cfg.get('prop_from'): J[0x50]=[d for _,d in oodl.blocks(open(U+cfg['prop_from']+'.pac','rb').read()) if len(d)==3056][0]; info['prop_from']=cfg['prop_from']
     # eye pivots -> eyeball sphere centres, in every model that carries the eye bones
     if cfg.get('eye_pivots',True):
         jj=jboy.JBOY(J[0]); tg={}
@@ -385,7 +411,14 @@ TONI=dict(template='female',undereye_lighten=0.45,work='/home/claude/ext/ts',bas
     attire={(0x5602,0):('mesh','M_Outfit','outfit'),(0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5601,1):('mesh','M_Tape','tape','L'),(0x5601,2):('mesh','M_Tape','tape','R'),
             (0x5601,0):('atlas',[('M_Outfit_Belt','outfit_belt'),('M_Rose','rose'),('M_Nails','nails')])})
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI}
+K_='/home/claude/pairs/KL/710_Noam_Dar/'
+KEITH=dict(template='male',weights='source',work='/home/claude/ext/kl',base=K_+'BaseModel/BaseModel.mdl',attire_model=K_+'710_Default_Attire/710_Attire.mdl',
+    tex_base=K_+'BaseModel/Textures',tex_attire=K_+'710_Default_Attire/Textures',hpl=K_+'710_Default_Attire/710_Attire.hpl',
+    cover=['M_Jacket','M_Underwear','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Elbowpad'],prop_from='ch23802',
+    hair={0x2715:None,0x2716:[('M_Combinations','combinations')]},tint=(25,20,18),
+    attire={(0x5601,0):('mesh','M_Jacket','jacket'),(0x5601,3):('mesh','M_Underwear','underwear'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5602,0):('mesh','M_L_Elbowpad','l_elbowpad'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))

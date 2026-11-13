@@ -29,3 +29,28 @@ def pose(j,k,bones={},morph={}):
     return out
 def jaw_weight(j,k):
     return np.array([sum(w for n,w in inf if n=='J_Jaw') for inf in skin(j,k and j.objs[k] or j.objs[0])])
+
+def pose_fk(j,k,rots,morph=None):
+    """Hierarchical pose: rots = {bone: (world_axis, degrees)} applied at each bone's bind position; children follow
+    their parents. Linear-blend skinning with the resulting per-bone deltas."""
+    import build_port as _bp
+    from scipy.spatial.transform import Rotation as Rot
+    o=j.objs[k]; P=o['pos'].astype(float).copy()
+    if morph:
+        M=np.asarray(jboy.morphs(j,o))
+        for n,a in morph.items(): P+=a*M[n-1]
+    W={n:p for n,(R,p) in _bp.bone_world(j).items()}; bs=j.bones; names=[b['name'] for b in bs]; D={}
+    def delta(i):
+        if i in D: return D[i]
+        b=bs[i]; A=np.eye(3); t=np.zeros(3)
+        if b['name'] in rots:
+            ax,deg=rots[b['name']]; R=Rot.from_rotvec(np.radians(deg)*np.asarray(ax,float)/np.linalg.norm(ax)).as_matrix(); c=W[b['name']]
+            A=R; t=c-R@c
+        if b['parent']>=0:
+            pA,pt=delta(b['parent']); A,t=pA@A,pA@t+pt
+        D[i]=(A,t); return D[i]
+    S=skin(j,o); out=np.zeros_like(P); idx={n:i for i,n in enumerate(names)}
+    for v,inf in enumerate(S):
+        tw=sum(w for _,w in inf) or 1.0
+        for n,w in inf: A,t=delta(idx[n]); out[v]+=(w/tw)*(A@P[v]+t)
+    return out
