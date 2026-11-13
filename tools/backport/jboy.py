@@ -18,10 +18,11 @@ class JBOY:
         for k in range(nobj):
             f=struct.unpack_from('>46I',b,o+k*184)
             vc=f[0]; ninf=f[23]; pos,skin,uv,uv2=f[26:30]; shader=b[o+k*184+124:o+k*184+140].split(b'\0')[0].decode()
-            P=np.frombuffer(b,'>f4',vc*7,pos+B).reshape(vc,7)
+            nset=max(f[25],1); vptr=struct.unpack_from('>%dI'%nset,b,pos+B)
+            P=np.frombuffer(b,'>f4',vc*7,vptr[0]+B).reshape(vc,7)
             sk=np.frombuffer(b,np.dtype([('i','>u2'),('pad','>u2'),('w','>f4')]),vc*ninf,skin+B).reshape(vc,ninf) if skin else None
             UV=np.frombuffer(b,'>f4',vc*2,uv+B).reshape(vc,2) if uv else None
-            s.objs.append(dict(vc=vc,ninf=ninf,shader=shader,pos=P[:,1:4].astype('f4'),nrm=P[:,4:7].astype('f4'),
+            s.objs.append(dict(vc=vc,ninf=ninf,shader=shader,pos=P[:,0:3].astype('f4'),nrm=P[:,3:6].astype('f4'),vptr=vptr,
                  bi=None if sk is None else s.remap(s.fix_order(sk['i'].astype(int),sk['w'])),bw=None if sk is None else sk['w'].astype('f4'),uv=UV,
                  f=f,palette=f[3:23],idx_ptr=f[39],mat=f[36]))
             if verbose: print(k,vc,ninf,shader,f[1],f[2],f[24],f[25],hex(f[29]),f[30],f[35:42])
@@ -62,5 +63,4 @@ def morphs(j,o):
     """Return (n_morph, vc, 3) positions of the morph targets stored after the base vertices (objects with f[25]>1)."""
     f=o['f']; nm=f[25]-1
     if nm<=0: return None
-    vc=f[0]; a=np.frombuffer(j.b,'>f4',vc*7*nm,f[26]+8+vc*28).reshape(nm,vc,7)
-    return a[:,:,1:4].astype('f4')
+    vc=f[0]; return np.stack([np.frombuffer(j.b,'>f4',vc*7,p+8).reshape(vc,7)[:,0:3] for p in o['vptr'][1:]]).astype('f4')

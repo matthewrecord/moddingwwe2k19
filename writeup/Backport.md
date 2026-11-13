@@ -177,7 +177,7 @@ position, different index), so they don't indicate a decoding error.
   parts that animate and fitted them inside the new head. **This is the "neck/head" step of the pipeline, and it's
   the part most likely to need a human touch-up.** Next check: whether the stock head part is visible or hidden
   (material/shader flags), and how the morph targets attach.
-- **Exactly 17 vertices collapsed to the origin** in the head, eye-overlay, mouth and trans objects of every port
+- **[RETRACTED 2026-11-13, see section 13: reader bug, not his tool]** ~~Exactly 17 vertices collapsed to the origin~~ in the head, eye-overlay, mouth and trans objects of every port
   (male and female; 5-15 degenerate triangles each). The count never varies, so it's an artifact of his JBOY-writing
   tool (or a deliberate hide), not hand work. The pipeline should reproduce it until we know why.
 
@@ -318,3 +318,26 @@ after resizing (mean absolute error, 0-255 scale):
   mouth*, wrinkles_n). There is no JBOY reader for this yet. Decoding the `shape` node would test whether his face
   morphs come from the CAW head. That's not on the critical path, because the tool can transfer shapes from any
   2K19 head.
+
+## 13. Correction + pointer table (2026-11-13 ~02:15)
+
+- **Reader bug fixed.** Object field [26] points to a **table of pointers to vertex sets**: 1 entry (4 bytes) for plain
+  objects, 120 entries (480 bytes; base + 119 morphs) for face objects. Each set is vc x 28 bytes = **pos f32x3,
+  normal f32x3, colour u8x4** (colour is last, not first). My first reader skipped 4 bytes instead of reading the table.
+  That was harmless for plain objects but shifted face objects by 480 bytes (= 17 vertices + 4). So:
+  - **Retracted:** "17 vertices collapsed to the origin in every port". That was the pointer table read as vertices.
+  - Re-run with the fixed reader: male template ch68702 -> Fletcher **91.1%** dominant (median L1 0.010); female
+    ch75602 -> Willow **88.7%** (0.007). As good as his ports match each other, so the templates are
+    confirmed. Head composition is unchanged (3,411 verts from 2K24 M_Head, 83% of the rest within 1 cm of the
+    ch687 head). The face-morph conclusion stands: nearest-vertex copy from stock heads gives relative error
+    0.53-0.69 and at most 6% exact. (The PC-side 333-head scan ran with the old reader; it was consistent on both
+    sides but should be re-run before relying on its ranking.)
+- **POF0 pointer table.** After the last region of every JBOY sits `POF0`, u32 byte count, then the encoded offsets
+  of **every pointer in the file** (relative to +8). Each byte's top bits give the width: 0x40 = 6-bit, 0x80 = 14-bit,
+  0xC0 = 30-bit step in 4-byte units (`pof0.py` decode/encode). Fletcher: 1,002 pointers. The header size words ([1]
+  and [3]) count up to the start of POF0. **The writer must regenerate POF0**; the game probably relocates pointers
+  with it at load time.
+- **Writer status (`jwrite.py`):** region-split relocating writer. A rebuild with a region grown by 64 bytes parses
+  back identically (all vertices, weights, UVs, strips, parameters, bones and palette). Remaining: use POF0 as the
+  pointer list (it also covers the per-morph pointers), regenerate POF0 and the size words, then byte-identical
+  identity rebuild.
