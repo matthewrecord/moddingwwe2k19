@@ -126,3 +126,30 @@ body. It needs: (a) readers (both done), (b) a male and a female 2K19 skin templ
 transfer from them (reproduces his weights at about 90% dominant agreement), (c) a name map for the rest, trimmed to 7 influences,
 (d) a writer (JBOY index buffers, materials and textures not yet decoded). The small learned model is optional:
 use it only if the template residual (about 10%) turns out to matter in stress poses.
+
+## 6. Where his weight template comes from (2026-11-12, late)
+
+- **The stock character pacs use a different container from his ports:** HSPC -> blocks compressed with Oodle Kraken
+  (`OODL`, u32 0, u32 flags, `KRKN`, u32 raw size + 0x14, u32 stream size, stream). They decompress with the pip
+  package `pyooz` (`tools/backport/oodl.py`). Inside is the same JBOY format: stock ch10002 has 421 bones, 23
+  objects and 19,648 skin vertices. His ports use EPK8 + zlib.
+- Fingerprinted all **525 stock character models** in `pac/ch` on Matthew's PC (weight mass per bone over skin
+  objects; `sig.py`, results in the game folder at `_moddingwwe2k19_builds\backport\stock_sigs.jsonl`). The two closest
+  were `ch38402` (slot 384) and `ch73304`, both 0.99 cosine. Every other stock model scored at most 0.91.
+- Exact test (`tmpl.py`: nearest stock skin vertex -> compare to his weights):
+
+| Donor | Gabe | Fletcher | O-Khan | Willow |
+|---|---|---|---|---|
+| stock ch73304 | 72.3% (L1 0.283) | 72.7% (0.274) | 69.5% (0.313) | 49.6% |
+| stock ch38402 | 60.6% | 58.9% | 59.9% | 45.1% |
+| stock ch10002 | 57.1% | 60.5% | 56.6% | 35.8% |
+| **another of his male ports** | **90.2%** | **91.0%** | **87.6%** | 59% |
+
+  **None of the stock bodies is his template.** Stock ch73304 is the nearest, but it's well below his ports
+  reproducing each other. His donor was his own master body (probably a re-weighted stock body he kept and reused),
+  and it isn't in the game folder.
+- **Decision: use his ports as the template.** A male donor built from his three male ports (where they agree) and
+  Willow as the female donor. This reproduces his body weighting at about 90% dominant-bone agreement without
+  learning anything. More of the ~60 pairs will tighten the template, especially the female one (only 1 so far).
+- Side note: stock `ch13604` gives 2-4% agreement (bone indices don't line up). Some stock models must use per-object
+  palettes or a different palette layout. Check this before using any stock model as a donor.
