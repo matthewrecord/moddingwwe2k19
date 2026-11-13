@@ -22,7 +22,7 @@ def fit(data, tgt_rel, new_rel):
         t = open(G + tgt_rel, 'rb').read()
         if t[:4] != b'HSPC': return tgt_rel, rewrap(t, payload(data))
         if data[:4] == b'HSPC': return tgt_rel, restamp(data, t)
-        print('SKIP (EPK into HSPC target)', tgt_rel); return None, None
+        new_rel = tgt_rel   # EPK over a stock HSPC path: worked for the AEW transitions (118/119)
     if data[:4] == b'HSPC': print('SKIP (HSPC, no target)', new_rel); return None, None
     nn = [re.sub(rb'0*%d(\s*)$' % S, lambda m: (b'%d' % T).rjust(len(m.group(0)) - len(m.group(1)), b'0') + m.group(1), n) for n in names(data)]
     return new_rel, rename(data, nn)
