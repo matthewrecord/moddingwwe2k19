@@ -12,3 +12,12 @@ Still his: head + face morphs, eye overlay, mouth bag, teeth, tongue, eyes (face
 (3,056 B block, yM_*, M_Body table, block 5).
 Fletcher isn't installed anywhere, so a test needs a slot (Matthew's choice); the internal name is rewritten to
 match the chosen slot.
+
+## Result v1 (2026-11-13 00:45 local, Matthew + 3 screenshots)
+"Mostly worked well": body, hair, attire, textures OK. **Spikes:** a couple of skin points around the shoulders /
+upper chest jut out (shards near the neck/collarbone, visible with the head turned).
+Cause: 2 body vertices (mirrored pair at x = +/-14.1, y -159.2, z -6.9) got **100% J_Head**. Their nearest donor vertex
+belonged to Andrade's head/neck object, so they followed the head. His port uses shoulder helper m025_0203 there.
+Fix (v2, `fletcher_full_v2_ch50602.pac`, same folder): the weight donor now uses **only the stock body skin objects**
+(no head, morph, mouth, teeth, tongue or eye objects), plus a neighbour-outlier smoothing pass (found 0 more). After the
+fix, 0 body vertices are dominated by head/jaw.
