@@ -554,3 +554,11 @@ Flash Morgan Webster (2K25) v4: Matthew says it "looks fantastic". The pipeline 
 - Bench gates (preview / unweighted / alignment / source-vs-build face / morph grid / jaw test) are documented in
   `tools/backport/README.md`, which is the full workflow.
 - Reproducibility: a fresh clone builds a pac byte-identical to the delivered Briscoe v3.
+
+## 26. Female template, eye workflow, big bodies, attire split (2026-11-13)
+- **Toni Storm (2K25, first female)** validated in game. Female template: ch75602 donor, Willow port container, lashes object 0x4e22 carrying the head's morphs.
+- **Eyes.** "Dead eyes" came from flat source eye masks. The container's `eye_n` alpha (iris mask) and `eye_mr` (gloss) are now kept, and only the colour comes from the source; Matthew confirmed the fix in game. Eyeballs more than 2° off straight ahead are straightened. J_Eye pivots move to the eyeball sphere centres; true bone positions come from chaining local t/r, because the +64 record field is a bounding sphere. A new gate, `eyegaze.py`, checks drift, vergence and poke under game-like gaze.
+- **Keith Lee (2K24, very large body).** The donor nearest-point weights left shoulder "wings", so the builder now uses `weights='source'` (the mod's own weights, remapped by bone name to the nearest ancestor). Proportions come from `prop_from` (ch23802). New gate: `bodypose.py` (hierarchical FK).
+- **Pinholes** come from tiny holes in the source mesh; `cap_small_holes` closes them.
+- **Ring and entrance attire** are two configs; `emd` writes the slot name (attire 02 and 04).
+- **`eyepatch.py`** fixes the eyes of an already-built pac (old 2K20-port Keith: 4.4° wall-eyed → 0°).

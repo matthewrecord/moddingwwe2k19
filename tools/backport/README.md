@@ -77,7 +77,9 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
    `base`, `attire_model`, `tex_base`, `tex_attire`, `hpl`, `cover` (attire meshes that hide skin), `hair`, `tint`, and
    `attire` slot assignments.
    - Use 'atlas' when there are more pieces than slots.
-   - A female character needs the female template (ch75602 / Willow port). Not built yet; see "Open items".
+   - A female character: `template='female'` (ch75602 donor / Willow port container; see TONI).
+   - Big or unusual bodies: `weights='source'` (the mod's own skin weights, remapped by bone name) and `prop_from='<stock pac>'` for body proportions (see KEITH). Recommended for every new character.
+   - Separate ring and entrance attires: two configs on the same base, each with `emd='000506NN'` (slot name written into the header); the ring config drops the jacket from `attire` and `cover` (see KEITH_RING / KEITH_ENT). Install as attire 02 and 04.
 4. Build: `python3 -I tools/backport/build_port.py <config> /home/claude/out/<name>_v1_ch50602.pac`. This takes about
    20 s, plus a few minutes once for the head fit.
 5. **Bench gates (all must pass before handing a build to Matthew):**
@@ -131,15 +133,28 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
 | `facecheck` | textured source-vs-build faces |
 | `pose` | offline skinning/morph posing |
 | `morphgrid` | mouth morph comparison |
+| `eyemorphs` | eye/brow morph comparison (gate) |
+| `eyegaze` | eye gaze stress test (gate) |
+| `lidcheck` | lid closure % per eye-closing morph |
+| `bodypose` | body pose stress test (gate) |
+| `eyepatch` | straighten eyes + move eye pivots on an EXISTING pac (any port) |
+| `hidetable` | block 0xCE hide table read/build |
+| `jcheck` | compare a written object against port conventions |
+| `jwrite` | relocating JBOY writer (v2, superseded by jbuild) |
+| `texrule`, `texcmp`, `texpack` | texture rule derivation / comparison / pack parse (research) |
+| `sig`, `tmpl`, `check2`, `bonemap`, `pairs` | weight-template and bone-map research (how the donor-weight approach was chosen) |
+| `mdl`, `mdl1`, `mdl2`, `mdlpeek`, `face_scan` | early MDL format reverse-engineering (superseded by `mdlfmt`) |
+| `build_fletcher`, `build_fmw`, `build_fmw_v2`, `fmw_hairfix`, `regen`, `regen_full`, `build_port_pre_templates` | earlier builders kept for history; `build_fmw` still supplies shared helpers |
+
+## Patching an existing pac (no rebuild)
+`python3 -I eyepatch.py IN.pac OUT.pac` turns each eyeball about its own centre until it faces straight ahead and moves J_Eye_L/R to the eyeball centres in every JBOY. Use it on older ports with wall-eyed/cross-eyed or "dead" stares, then run `eyegaze.py` (vergence and drift must be ≈ 0) and `preview.py`. Works on pacs with uncompressed blocks (older ports store some raw).
+
+## Builder rules added per character (each one permanent)
+Flash: alignment mod 16, per-channel texture resize. Briscoe: topological lip split, head-nearest attire weights, unweighted-vertex fix. Toni: female template, eye straightening, eye pivots, keep container eye masks, undereye lighten. Keith: source weights, proportions block, `cap_small_holes` (pinholes of light), `emd` ring/entrance split. Old Keith: `eyepatch.py`.
 
 ## Open items
-- Eye-pivot move (Toni v2) is awaiting in-game confirmation; `toni_v2b_nopivot` is the control. Briscoe v3 drifts 0.31 cm (would benefit). Flash's eyes diverge about 5° at rest (as in the source).
 - Beards are rigid (stock behaviour). An extreme open mouth shows the chin moving behind the beard.
 - The atlas halves resolution for the pieces it packs.
-- Hands possibly hover slightly (unconfirmed).
+- Older builds (Flash, Briscoe) use donor weights; a rebuild with `weights='source'` may improve them (untested in game).
+- Keith v3 and the old-Keith eye patch await in-game confirmation.
 - Next: a simple app for Matthew (preview, flagged problems, simple fixes, export).
-
-- `cap_small_holes`: closes source holes of ≤8 edges (pinholes of light).
-- `cfg emd`: 8-digit slot name for a second attire (e.g. ring 00050602 / entrance 00050604).
-
-- `eyepatch.py IN.pac OUT.pac`: straighten the eyes of an existing pac (any port) and move the J_Eye pivots to the eyeball centres. Check with `eyegaze.py`.
