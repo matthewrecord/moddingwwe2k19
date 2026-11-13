@@ -26,3 +26,8 @@ Suggested order when Matthew is up for it: A, then B, then C (stop at the first 
 - Files A/B/C in test2 are obsolete (built with the bug). Replacements in `test3_willow_fixed\`:
   `B2_ch86502.pac` (his geometry, our weights on shoes + kneepads) and `C2_ch86502.pac` (our shoes + kneepads).
   Not installed.
+
+## RESULT test3 (2026-11-13 00:31 local, Matthew): **B2 and C2 both work in game.**
+First in-game validation of the backport pipeline: our JBOY writer, pac writer (with footer), template weights (ch756)
+and objects regenerated from the 2K24 files (shoes + kneepads: geometry, negated normals, UVs, strips) all load and
+run. Whatever is installed in slot 865 now is Matthew's choice; the original backup is in test1_willow.
