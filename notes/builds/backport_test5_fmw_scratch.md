@@ -37,3 +37,15 @@ Builder: `tools/backport/build_fmw.py` (about 5 s end to end once the head fit i
   Everything else (mouth, swtbm, lobbycube, vessel/flush) is Fletcher's.
 - Render check: no holes or spikes on the head front, back or side; body and attire are clean (`renders/fmw1_*.png`).
 - File: `_moddingwwe2k19_builds\backport\test5_fmw\fmw_v1_ch50602.pac` (slot 50602, not installed).
+
+## v1 result: crashed (2026-11-13)
+Offline checks found nothing wrong:
+- Every index and palette slot is in range.
+- The texture pack has the same 48 names as his.
+- The hide table is 8.7 KB, smaller than Fletcher v7's 9.9 KB, which loaded.
+
+Four test files, each putting one group back to Fletcher v2/v7 data that is known to load:
+- **A:** Fletcher's hair and beard.
+- **B:** Fletcher's attire (which also tests the collapsed 3-vertex objects).
+- **C:** Fletcher's texture pack.
+- **D:** all of A, B and C, so only Flash's head and body are new.
