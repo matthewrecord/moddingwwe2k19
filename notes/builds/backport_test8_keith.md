@@ -23,3 +23,6 @@
 - Ring vs entrance split: configs `keith_ring` (no sweatshirt, EMD 00050602) and `keith_entrance` (sweatshirt, EMD 00050604); new `cfg emd` writes the slot name at header 0x80C.
 - Gates: misaligned none, unweighted none, eye masks ok, bodypose clean. Render: renders/keith_v3_check.png
 - Install like the old 2K20 Keith (ch92502/ch92504): ring = attire 02, entrance = attire 04.
+
+## Old 2K20-port Keith eye patch (ch92502/ch92504)
+`eyepatch.py`: eyes turned +1.2° / -3.2°, pivots moved 0.2-0.3 cm. eyegaze before: vergence -4.4° (wall-eyed), drift 0.11 cm; after: vergence 0.0°, drift 0.00. Preview gates clean. Nothing else in the files changed. Also: eyegaze/preview now read uncompressed pac blocks (older ports store some raw).

@@ -141,3 +141,5 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
 
 - `cap_small_holes`: closes source holes of ≤8 edges (pinholes of light).
 - `cfg emd`: 8-digit slot name for a second attire (e.g. ring 00050602 / entrance 00050604).
+
+- `eyepatch.py IN.pac OUT.pac`: straighten the eyes of an existing pac (any port) and move the J_Eye pivots to the eyeball centres. Check with `eyegaze.py`.

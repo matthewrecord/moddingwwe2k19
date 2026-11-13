@@ -10,7 +10,7 @@ from scipy.spatial import cKDTree
 from PIL import Image
 GAZES=[('rest',None,0),('left 25',[0,1,0],25),('right 25',[0,1,0],-25),('up 15',[1,0,0],15),('down 15',[1,0,0],-15)]
 def run(pac,out):
-    B={f:zlib.decompress(b[16:]) for f,b in epkwrite.raw_blocks(pac)[1]}; j=jboy.JBOY(B[0])
+    B={f:(zlib.decompress(b[16:]) if b[:4]==b'ZLIB' else b) for f,b in epkwrite.raw_blocks(pac)[1]}; j=jboy.JBOY(B[0])
     eyes=[k for k,o in enumerate(j.objs) if o['shader']=='yCS_eye']; side={('L' if j.objs[k]['pos'][:,0].mean()>0 else 'R'):k for k in eyes}
     Wb=bp.bone_world(j); H=j.objs[0]; th=cKDTree(H['pos'])
     base=[x for x in preview.tris(pac) if x[0][:,1].min()<-170 and x[0][:,2].min()<-7]

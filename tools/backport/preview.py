@@ -1,6 +1,6 @@
 """Textured preview of a built pac using its own texture pack (what the game will sample), hide table applied.
 Optional morph/bone pose for the head. Usage: preview.py PAC OUTPREFIX"""
-import sys,io,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
+import sys,io,zlib,numpy as np;sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import jboy,epkwrite,hidetable,texconv,render,pose,jlayout
 from PIL import Image
 def textures(B):
@@ -10,7 +10,7 @@ def textures(B):
         except Exception: pass
     return out
 def tris(pac,morph=None):
-    hdr,bl=epkwrite.raw_blocks(pac); B={f:zlib.decompress(b[16:]) for f,b in bl}; TX=textures(B); out=[]
+    hdr,bl=epkwrite.raw_blocks(pac); B={f:(zlib.decompress(b[16:]) if b[:4]==b'ZLIB' else b) for f,b in bl}; TX=textures(B); out=[]
     import struct
     w=struct.unpack('<%dI'%(len(B[0xce])//4),B[0xce]); i=22; hide={}
     for _ in range(w[21]):
@@ -38,7 +38,7 @@ def unweighted(pac):
     import jcheck
     hdr,bl=epkwrite.raw_blocks(pac); bad={}
     for f,b in bl:
-        d=zlib.decompress(b[16:])
+        d=(zlib.decompress(b[16:]) if b[:4]==b'ZLIB' else b)
         if d[:4]!=b'JBOY': continue
         j=jboy.JBOY(d)
         for k,o in enumerate(j.objs):
@@ -47,13 +47,13 @@ def unweighted(pac):
     return bad
 def eye_masks(pac):
     """the 2K19 eye shader needs structured eye_n alpha (iris mask) and eye_mr; flat maps = dead eyes"""
-    hdr,bl=epkwrite.raw_blocks(pac); B={f:zlib.decompress(b[16:]) for f,b in bl}; TX=textures(B)
+    hdr,bl=epkwrite.raw_blocks(pac); B={f:(zlib.decompress(b[16:]) if b[:4]==b'ZLIB' else b) for f,b in bl}; TX=textures(B)
     a=TX['eye_n'][...,3].astype(float); m=TX['eye_mr'].astype(float)
     return 'ok' if a.std()>20 and m[...,1:3].std()>20 else f'FLAT (eye_n alpha std {a.std():.0f}, eye_mr std {m[...,1:3].std():.0f})'
 def aligned(pac):
     hdr,bl=epkwrite.raw_blocks(pac); bad={}
     for f,b in bl:
-        d=zlib.decompress(b[16:])
+        d=(zlib.decompress(b[16:]) if b[:4]==b'ZLIB' else b)
         if d[:4]==b'JBOY':
             x=[n for n,a,_ in jlayout.regions(jboy.JBOY(d)) if n in('bones','texnames','palhdr','objtable') and (a-8)%16]
             if x: bad[hex(f)]=x
