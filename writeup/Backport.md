@@ -183,3 +183,34 @@ position, different index), so they don't indicate a decoding error.
 Implication for the tool: the deterministic pipeline gains a fixed step, "graft the stock 2K19 face parts (eye
 overlay, mouth interior, 341-vertex part, head base) and fit them to the new head". This is a repeatable fit to the
 2K24 head, which always has the same topology (base meshes have 42,275-42,598 triangles on all 4 characters).
+
+## 8. Texture conversion: his recipe recovered (2026-11-12, late; Fletcher, `texrule.py`)
+
+**Port texture pack** (block 1 of the pac): `u32 count`, then 32-byte entries `name[16], "dds\0", u32 size, u32 offset,
+u32 0` (the first entry's name starts at +0x10), then plain DDS files (`texpack.py`). Fletcher: 48 textures, 129 MB.
+Every texture in it is **DXT5, one mip level (mips stripped)**.
+
+**Per material, 2K19 wants 3 maps: `<mat>` (color), `<mat>_mr`, `<mat>_n`.** 2K24 ships `_color` (DXT1) and `_nrm`
+(BC7: RG = normal XY, B = roughness-like, A = metal-like). His conversion, checked pixel by pixel against his output
+after resizing (mean absolute error, 0-255 scale):
+
+| 2K19 map | Rule | Error vs his file |
+|---|---|---|
+| `<mat>` | = `_color` | 0.0-2.3 |
+| `<mat>_n` | R = 255 - nrm.R, G = 255 - nrm.G (**both normal channels inverted**), B = A = 255 | 1.0-2.9 |
+| `<mat>_mr` | R = nrm.A, G = nrm.B, B = 255 - nrm.B, A = 255 | 0.4-2.9 |
+| skin `_mr` (head, body) | same, but **R = 0** | G/B r = 0.98-0.997 |
+
+- Sizes: 4096 maps are halved to 2048. There are exceptions: the body stays 4096x2048, and Fletcher's `shoes_mr`
+  stays 4096, which looks like an oversight. 512 and smaller are kept.
+- Renames: `body` -> `all` (`all_color`, `all_color_mr`, `all_n`), `tights` -> `bottoms`. Other attire names are
+  kept. The 2K19 material names expected by the shader/object table will settle the rename list.
+- **Hair is a separate recipe:** `hair` = a **hand-picked flat tint** (Fletcher about RGB 210/173/119, small
+  variation) with **alpha = rai.G** (opacity, r = 0.95). `hair_n` = flat normal (123, 0, 140) + the same alpha.
+  `hair_mr` = constant (0, 174, 0). `_a_hairl0_n` / `_a_hairl1_n` are 128x128 2K19 hair lookups, not derived
+  from the original: copy them from a stock model. **The hair tint is a human choice.** The app should offer a
+  colour picker that defaults to the average of the 2K24 hair's colour.
+- Eyes and eyelashes (`eye`, `eye_mr`, `eye_n`, `eye_ov`, `eyelash*`) still need checking against stock 2K19.
+
+**Implication:** texture conversion is fully deterministic apart from the hair tint. Encoding needs a DXT5 encoder
+(Python options: `texture2ddecoder` decodes only; for encoding, use `etcpak`/`quicktex` or a small numpy encoder).
