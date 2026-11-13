@@ -13,7 +13,7 @@ def source_meshes(o,meshes,tol=0.01):
     keys=list(meshes); P=np.concatenate([meshes[k][0]['POSITION'] for k in keys]); lab=np.concatenate([[i]*len(meshes[k][0]['POSITION']) for i,k in enumerate(keys)])
     d,i=cKDTree(P).query(o['pos']); c=collections.Counter(lab[i[d<tol]])
     return [keys[x] for x,n in c.items() if n>=0.05*len(o['pos'])]
-def build_object(srcs,meshes,donor,palette_slot,hair=False):
+def build_object(srcs,meshes,donor,palette_slot,hair=False,white_col=(255,255,255,255)):
     Ps,Ns,Ws=donor; t=cKDTree(Ps)
     pos=[];nrm=[];uv=[];tris=[];off=0
     for k in srcs:
@@ -27,8 +27,10 @@ def build_object(srcs,meshes,donor,palette_slot,hair=False):
         for nm,ww in zip(Ns[si[v]],Ws[si[v]]):
             if ww>0 and nm in palette_slot: acc[nm]+=float(ww)
         it=sorted(acc.items(),key=lambda x:-x[1])[:7]; s=sum(x for _,x in it) or 1
+        it=sorted(it,key=lambda x:palette_slot[x[0]])          # his order: ascending palette slot
+        slots[v,:]=0xFFFF                                       # his empty-slot marker
         for q,(nm,ww) in enumerate(it): slots[v,q]=palette_slot[nm]; w[v,q]=ww/s
-    col=np.full((vc,4),255,'u1')
+    col=np.tile(np.array(white_col if hair else (245,0,0,255),'u1'),(vc,1))
     tan=np.zeros((vc,3),'f4')
     if hair: tan[0::2]=(0,1,0); tan[1::2]=(1,0,1)
     return dict(pos=pos,nrm=nrm,col=col,uv=uv,tan=tan,slots=slots,w=w,tris=tris,nn=d)
