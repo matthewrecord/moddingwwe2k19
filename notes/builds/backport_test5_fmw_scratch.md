@@ -49,3 +49,13 @@ Four test files, each putting one group back to Fletcher v2/v7 data that is know
 - **B:** Fletcher's attire (which also tests the collapsed 3-vertex objects).
 - **C:** Fletcher's texture pack.
 - **D:** all of A, B and C, so only Flash's head and body are new.
+
+## Results for A-D: A and D load; B and C crash
+**The cause is Flash's hair (0x2715 M_Hair, 11,441 vertices).** Its layout matches his hair (1 vertex set, 4 influences, yCS_hair), so size is the only difference.
+The largest hair known to load has 5,853 vertices, so there seems to be a vertex limit on a hair object somewhere between 5,853 and 11,441.
+
+Next tests (built with `tools/backport/fmw_hairfix.py`):
+- **E:** the hair split at the median x into 2 objects (5,755 + 5,995) in 0x2715, using `clone_object`. This is the first in-game use of `clone_object`.
+  Its `nobj` lookup was fixed for 8-byte hair headers.
+- **F:** half the hair in 0x2715 and half in 0x2716, with no beard. Only known-safe layouts.
+- **G:** Fletcher's hair with Flash's beard, to confirm the beard is fine on its own.

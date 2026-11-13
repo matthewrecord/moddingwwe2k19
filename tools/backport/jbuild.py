@@ -20,7 +20,9 @@ class Model:
         s.next_id=10**9
     def obj_chunks(s,k):
         return [c for c in s.order if s.name[c].startswith(f'o{k}.')]
-    def nobj(s): return struct.unpack_from('>I',s.data[0],0x18)[0]
+    def _hdrword(s,off=0x18):
+        c=max(c for c in s.order if c<10**9 and c<=off); return c,off-c
+    def nobj(s): c,o=s._hdrword(); return struct.unpack_from('>I',s.data[c],o)[0]
     def clone_object(s,k):
         """Append a copy of object k (new index = old count). Returns new index."""
         new=s.nobj(); mp={}
@@ -42,7 +44,7 @@ class Model:
             if lc in mp: add.append([mp[lc],lo,mp.get(t,t)])
             elif lc==s.objtab and 184*k<=lo<184*k+184: add.append([s.objtab,tabend+(lo-184*k),mp.get(t,t)])
         s.ptr+=add
-        struct.pack_into('>I',s.data[0],0x18,new+1)
+        c,o=s._hdrword(); struct.pack_into('>I',s.data[c],o,new+1)
         return new
     def chunk(s,k,part):
         return [c for c in s.order if s.name[c]==f'o{k}.{part}'][0]
