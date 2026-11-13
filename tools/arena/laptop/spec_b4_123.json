@@ -1,0 +1,17 @@
+{
+ "slot": 123,
+ "S": 142,
+ "src": "../in/src_allin",
+ "stage": "../in/b4_123",
+ "remap": {},
+ "row_from": 142,
+ "m01_from_mod": 142,
+ "initpos": [
+  8,
+  8,
+  1
+ ],
+ "light_from_mod": 142,
+ "name": "ALL IN",
+ "card": "../b4c/card123.pac"
+}

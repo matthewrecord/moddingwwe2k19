@@ -1,0 +1,23 @@
+{
+ "slot": 5,
+ "S": 316,
+ "src": "~/mnt/A - Resources/Back - Arenas and Arena GFX/Tokyo Dome",
+ "stage": "../in/b4_5",
+ "remap": {
+  "stadium/41": 54,
+  "stadium/40": 56,
+  "apron/35": 200,
+  "cornerpost/3": 41,
+  "ringmat/6": 19,
+  "turnbuckle/4": 22
+ },
+ "row_from": 316,
+ "m01_from_mod": 316,
+ "initpos": [
+  7,
+  7,
+  7
+ ],
+ "light_from_mod": 316,
+ "name": "TOKYO DOME"
+}

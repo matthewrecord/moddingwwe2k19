@@ -1,0 +1,35 @@
+{
+ "slot": 128,
+ "S": 2,
+ "src": "../in/src_wg",
+ "stage": "../in/b4_128",
+ "remap": {
+  "apron/195": 196,
+  "cornerpost/35": 40,
+  "commentaryst/82": 83
+ },
+ "row_from": 164,
+ "m04_set": {
+  "Rope": 0
+ },
+ "m01_from_mod": 164,
+ "initpos": [
+  2,
+  1,
+  1
+ ],
+ "light": [
+  "FF9300FF",
+  "FBFF00FF",
+  "FF9300FF",
+  "FBFF00FF",
+  "FF9300FF",
+  "FFFFFFFF",
+  "FBFF00FF",
+  "FF9300FF",
+  "FBFF00FF",
+  "FF9300FF"
+ ],
+ "name": "NXT WHITE & GOLD",
+ "card": "../b4c/card128.pac"
+}

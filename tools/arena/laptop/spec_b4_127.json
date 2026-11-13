@@ -1,0 +1,17 @@
+{
+ "slot": 127,
+ "S": 164,
+ "src": "~/mnt/A - Resources/Back - Arenas and Arena GFX/NXT 2.0 - Switched to Slot 164",
+ "stage": "../in/b4_127",
+ "remap": {},
+ "row_from": 164,
+ "m01_from_mod": 164,
+ "initpos": [
+  2,
+  1,
+  1
+ ],
+ "light_from_mod": 164,
+ "name": "NXT 2.0",
+ "card": "../b4c/card127.pac"
+}
