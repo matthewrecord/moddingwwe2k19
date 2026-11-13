@@ -99,6 +99,9 @@ def move_bones(jb,targets):
         struct.pack_into('>3f',b,r+16,*newt); sph=np.array(struct.unpack_from('>3f',b,r+64))+(np.asarray(tgt)-old); struct.pack_into('>3f',b,r+64,*sph)
         done[nm]=np.round(np.asarray(tgt)-old,2).tolist()
     return bytes(b),done
+def eye_forward(P,c):
+    """forward axis of an eyeball: centre -> centroid of the cornea cap (vertices within 0.3 cm of the front)"""
+    cap=P[P[:,2]<P[:,2].min()+0.3].mean(0); v=cap-c; return v/np.linalg.norm(v)
 def sphere_ctr(P):
     A=np.c_[2*P,np.ones(len(P))]; c=np.linalg.lstsq(A,(P**2).sum(1),rcond=None)[0]; return c[:3]
 def lighten_undereye(C,MB,strength):
@@ -115,6 +118,25 @@ def lighten_undereye(C,MB,strength):
     m=np.asarray(mask.filter(ImageFilter.GaussianBlur(w/256)),float)[...,None]/255*strength
     out=C.copy().astype(float); tgt=np.median(np.array(cheek),0); out[...,:3]=out[...,:3]*(1-m)+tgt*m
     return out.clip(0,255).astype('u1')
+def opening_class(P,T,loop,band,thr,topo=True):
+    """generic upper/lower classes around a face opening (eye or mouth) given its boundary loop. +1 upper (smaller y),
+    -1 lower. topo=True: clear seeds (|dy| > thr from the opening's mid-line) propagated by surface distance; False: by height."""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import dijkstra
+    Q=P[loop]; x0=Q[:,0].mean(); hw=np.abs(Q[:,0]-x0).max(); xs=np.linspace(Q[:,0].min(),Q[:,0].max(),25)
+    ly=np.array([Q[np.abs(Q[:,0]-x)<=max(0.25,xs[1]-xs[0]),1].mean() for x in xs]); line=np.interp(P[:,0],xs,ly)
+    zone=(np.abs(P[:,0]-x0)<hw*1.3)&(np.abs(P[:,1]-line)<band)&(P[:,2]<Q[:,2].max()+2)
+    c=np.zeros(len(P),int)
+    if not topo: c[zone&(P[:,1]<line)]=1; c[zone&(P[:,1]>=line)]=-1; return c,x0,hw
+    up=np.where(zone&(P[:,1]<line-thr))[0]; lo=np.where(zone&(P[:,1]>line+thr))[0]
+    E=np.concatenate([T[:,[0,1]],T[:,[1,2]],T[:,[2,0]]]); w=np.linalg.norm(P[E[:,0]]-P[E[:,1]],axis=1)
+    G=coo_matrix((np.r_[w,w],(np.r_[E[:,0],E[:,1]],np.r_[E[:,1],E[:,0]])),shape=(len(P),len(P))).tocsr()
+    du=dijkstra(G,indices=up,min_only=True,limit=band*2); dl=dijkstra(G,indices=lo,min_only=True,limit=band*2)
+    c[zone&(du<=dl)&np.isfinite(du)]=1; c[zone&(dl<du)&np.isfinite(dl)]=-1; return c,x0,hw
+def eye_loops(P,T):
+    import loops
+    L=[l for l in loops.boundary_loops(T,P) if 20<=len(l)<=60 and abs(P[l,1].mean()+181)<4 and 2<abs(P[l,0].mean())<6]
+    return sorted(L,key=lambda l:-P[l,0].mean())   # [left (+x), right]
 def build(cfg,outpath,PROP=None):
     W_=cfg['work']; os.makedirs(W_,exist_ok=True)
     BM=open_model(cfg['base'],W_+'/base.mdl'); AM=open_model(cfg['attire_model'],W_+'/attire.mdl'); MB=meshes(BM); MA=meshes(AM)
@@ -145,6 +167,19 @@ def build(cfg,outpath,PROP=None):
         vs=np.where(cF==side)[0]; ts=ST[~(tc==-side).any(1)]
         if len(vs) and len(ts): a,b_,c_,_=xfer(PT[vs],W,ts,asl,aw,MDa); HS[vs]=a; HW[vs]=b_; HM[:,vs]=c_
     info['lip']=(int((cF==1).sum()),int((cF==-1).sum()))
+    # eyelids: same split-transfer as the lips, per eye opening (source: topological; donor: by height at its lid hole)
+    opid=np.where(cF!=0,1,0); eyeinfo=[]; eyecent=np.zeros(len(PT),bool)
+    if cfg.get('lid_split',False):
+        LF=eye_loops(PT,TT); LA=eye_loops(np.asarray(W,float),ST)
+        for e_,(lf,la) in enumerate(zip(LF,LA)):
+            cE,x0e,hwe=opening_class(PT,TT,lf,1.6,0.35); cD,_,_=opening_class(np.asarray(W,float),ST,la,1.6,0,topo=False)
+            cE[cF!=0]=0; tcD=cD[ST]
+            for side in (1,-1):
+                vs=np.where(cE==side)[0]; ts=ST[~(tcD==-side).any(1)]
+                if len(vs) and len(ts): a,b_,c_,_=xfer(PT[vs],W,ts,asl,aw,MDa); HS[vs]=a; HW[vs]=b_; HM[:,vs]=c_
+            cF=np.where(cE!=0,cE,cF); opid[cE!=0]=2+e_; eyecent|=(cE!=0)&(np.abs(PT[:,0]-x0e)<0.75*hwe)
+            eyeinfo.append((int((cE==1).sum()),int((cE==-1).sum())))
+    info['lids']=eyeinfo
     z=HW.sum(1)<1e-6; info['head_unweighted_fixed']=int(z.sum())
     if z.any():
         ok=np.where(~z)[0]; _,nn=cKDTree(PT[ok]).query(PT[z]); HS[z]=HS[ok[nn]]; HW[z]=HW[ok[nn]]
@@ -157,7 +192,9 @@ def build(cfg,outpath,PROP=None):
     Lm=[l for l in loops.boundary_loops(TT,PT) if 30<=len(l)<=80]; mq=PT[min(Lm,key=lambda l:abs(PT[l,1].mean()+174)+abs(PT[l,0].mean())*3)]
     xc=0.75*np.abs(mq[:,0]-mq[:,0].mean()).max(); x0=mq[:,0].mean(); info['corner_x']=round(float(xc/0.75),2)
     Pg=PT[g]; mid=np.abs((Pg[E[:,0],0]+Pg[E[:,1],0])/2-x0)<xc
-    E=E[~((cg[E[:,0]]*cg[E[:,1]]==-1)&mid)]
+    ecg=np.zeros(ng,bool); np.logical_or.at(ecg,inv,eyecent); eop=np.zeros(ng,int); np.maximum.at(eop,inv,opid)
+    eyeblk=ecg[E[:,0]]&ecg[E[:,1]]&(eop[E[:,0]]==eop[E[:,1]])&(eop[E[:,0]]>=2)
+    E=E[~((cg[E[:,0]]*cg[E[:,1]]==-1)&(mid&(eop[E[:,0]]<2)|eyeblk))]
     A=coo_matrix((np.ones(len(E)),(E[:,0],E[:,1])),shape=(ng,ng)).tocsr(); A.data[:]=1; A=A+diags(np.ones(ng)); A=diags(1/np.asarray(A.sum(1)).ravel())@A
     zone=cg!=0
     for k in range(HM.shape[0]):
@@ -167,7 +204,7 @@ def build(cfg,outpath,PROP=None):
     Sb,Tb=MB['M_Body']; bsl,bw=welded_weights(Sb['POSITION'],Tb,donor,slot)
     dd,ii=cKDTree(Sb['POSITION']).query(PT); seam=dd<1e-3; HS[seam]=bsl[ii[seam]]; HW[seam]=bw[ii[seam]]; info['neck_seam']=int(seam.sum())
     headW=(PT.copy(),HS.copy(),HW.copy())
-    ct=cF[TT]; keep=~((ct==1).any(1)&(ct==-1).any(1)&(np.abs(PT[TT][:,:,0].mean(1)-x0)<xc)); info['mouth_bridge_tris_removed']=int((~keep).sum())
+    ct=np.where(opid==1,cF,0)[TT]; keep=~((ct==1).any(1)&(ct==-1).any(1)&(np.abs(PT[TT][:,:,0].mean(1)-x0)<xc)); info['mouth_bridge_tris_removed']=int((~keep).sum())
     used=np.unique(TT[keep]); G=mesh_obj(St,TT,keep); vc=len(used); HS,HW,HM=HS[used],HW[used],HM[:,used]
     jbuild.set_object(m,0,G['pos'],G['nrm'].astype('f4'),np.tile(np.array(RED,'u1'),(vc,1)),G['uv'].astype('f4'),np.zeros((vc,3),'f4'),HS,HW,jbuild.tris_to_strip(G['tris']))
     for n in range(1,120):
@@ -191,6 +228,17 @@ def build(cfg,outpath,PROP=None):
     hisE=[j.objs[eL]['pos'].mean(0),j.objs[eR]['pos'].mean(0)]
     for k_,msk,bone in ((eL,cx>0,'J_Eye_L'),(eR,cx<=0,'J_Eye_R')):
         Ge=mesh_obj(S,T,msk); n_=len(Ge['pos']); esl=np.full((n_,7),0xFFFF); esl[:,0]=slot[bone]; ew=np.zeros((n_,7),'f4'); ew[:,0]=1
+        # straighten a splayed/crossed eyeball: turn it about its centre so its forward axis points straight ahead (-z)
+        Pe=Ge['pos'].astype(float); c_=sphere_ctr(Pe); f_=eye_forward(Pe,c_); ang0=np.arctan2(f_[0],-f_[2])
+        if abs(np.degrees(ang0))>cfg.get('eye_straighten_deg',2.0):
+            Nn=Ge['nrm'].astype(float)
+            for it in range(8):                     # iterate: the cornea cap is re-selected after each turn
+                f_=eye_forward(Pe,c_); ang=np.arctan2(f_[0],-f_[2])
+                if abs(np.degrees(ang))<0.3: break
+                ca,sa=np.cos(ang),np.sin(ang); R_=np.array([[ca,0,sa],[0,1,0],[-sa,0,ca]])   # rotate about y by -ang
+                Pe=(Pe-c_)@R_.T+c_; Nn=Nn@R_.T
+            Ge['pos']=Pe.astype('f4'); Ge['nrm']=Nn.astype('f4')
+            info.setdefault('eye_straightened_deg',[]).append(round(float(np.degrees(ang0)),1))
         put(m,k_,j,Ge,donor,weights=(esl,ew))
     KM=meshes(mdlfmt.MDL(TP['ref']+'/baseModel.mdl'))
     ctr=lambda D,n:D[n][0]['POSITION'].mean(0)
@@ -287,7 +335,8 @@ def build(cfg,outpath,PROP=None):
     if cfg.get('undereye_lighten'): c=lighten_undereye(c,MB,cfg['undereye_lighten']); info['undereye_lighten']=cfg['undereye_lighten']
     setm('head',c,n,True,None,ci(TP['ref']+'/Textures/head_nrm.dds'))
     c=texconv.load(ci(TB+'/eye_color.dds')); w,h=texconv.target_size(c.shape[1],c.shape[0]); col=texconv.resize(c,w,h).copy(); col[...,3]=255; E['eye']=texconv.dds_dxt5(col)
-    if ci(TB+'/eye_nrm.dds'): c,n=load_pair(TB,'eye'); setm('eye',c,n)
+    # eye_n / eye_mr are NOT converted: the 2K19 eye shader needs the container's masks (eye_n alpha = iris mask for
+    # g_fEyePa iris depth; eye_mr = cornea/sclera gloss mask). Source eye maps are flat -> 'dead' eyes. Colour only.
     for name,(C,N) in tex.items(): setm(name,C,N)
     for base,stems in hairtex.items():
         if len(stems)==1: r=texconv.hair(None,ci(f"{TA}/{stems[0]}_rai.dds"),cfg.get('tint',(45,35,30)))

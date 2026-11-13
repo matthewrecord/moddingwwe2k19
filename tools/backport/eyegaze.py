@@ -21,7 +21,7 @@ def run(pac,out):
         for s,k in side.items():
             o=j.objs[k]; p=pose.pose(j,k,bones={'J_Eye_'+s:(ax,deg)}) if ax else o['pos'].astype(float)
             P[k]=p; c0=bp.sphere_ctr(o['pos'].astype(float)); c=bp.sphere_ctr(p); ctr[s]=np.linalg.norm(c-c0)
-            front=o['pos'][:,2].argmin(); gaze[s]=(p[front]-c)/np.linalg.norm(p[front]-c)
+            cap=o['pos'][:,2]<o['pos'][:,2].min()+0.3; v=p[cap].mean(0)-c; gaze[s]=v/np.linalg.norm(v)
         verg=np.degrees(np.arctan2(gaze['L'][0],-gaze['L'][2])-np.arctan2(gaze['R'][0],-gaze['R'][2]))
         poke=0
         for k in eyes:

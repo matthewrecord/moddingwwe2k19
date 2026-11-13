@@ -53,9 +53,16 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
 9. **Eye pivots (default on, `eye_pivots`):** J_Eye_L/R are moved to the eyeball sphere centres in every model that
    carries them. Bone position = chained local t/r from the root (extrinsic xyz Euler; `bone_world`). The record field at
    +64 is a bounding sphere, not the bone position. The +64 centre is moved by the same delta.
-10. **Optional `undereye_lighten`:** blends the band below the eyes in the head texture toward the cheek colour (2K25/24
+10. **Eyes (lessons from Toni):**
+    - Only the eye *colour* comes from the source. `eye_n` and `eye_mr` stay the container's: the 2K19 eye shader uses
+      the `eye_n` alpha as an iris mask (iris depth, `g_fEyePa`) and `eye_mr` as a cornea/sclera gloss mask. 2K24/25 eye
+      maps are flat there, which gives "dead", unfocused eyes.
+    - Eyeballs whose forward axis is more than 2° off straight ahead are turned forward about their centre (iterated;
+      Flash was 5.4° wall-eyed). The forward axis runs from the eyeball centre to the cornea-cap centroid.
+    - The eyelid split transfer exists (`lid_split`) but is off by default: the plain transfer already matches the donor's lid motion within 0.01 cm.
+11. **Optional `undereye_lighten`:** blends the band below the eyes in the head texture toward the cheek colour (2K25/24
     makeup reads heavier under 2K19 lighting).
-11. **Writing:** `jbuild` keeps every chunk at its original address mod 16 (the hair crash). `epkwrite` writes EPK8 + ZLIB +
+12. **Writing:** `jbuild` keeps every chunk at its original address mod 16 (the hair crash). `epkwrite` writes EPK8 + ZLIB +
    the EOP5 footer.
 
 ## Porting a new character
@@ -74,6 +81,9 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
    - Source vs build textured face (see `facecheck.py`, or the snippet in the Briscoe notes): at rest they must match.
    - `python3 -I tools/backport/morphgrid.py <pac> <out.png>`: the 12 mouth morphs, stock Andrade vs ours. There must be
      no curtains, tears or spikes.
+   - `preview.py` also prints **`eye masks: ok`**. FLAT means dead eyes (see "Eyes" below).
+   - **Eye/brow morphs**: `eyemorphs.py <pac> <out.png> <donor>` (add `--lashes` to draw lashes). The lids must close
+     like the donor's. Never judge lid closure with the lashes drawn: opaque lashes in the flat renderer look like half-closed lids.
    - **Eye gaze test**: `python3 -I tools/backport/eyegaze.py <pac> <out.png>` aims both eyes together (left/right
      25°, up/down 15°, as the game does) and renders each. Gates: **drift ≈ 0** (the eyeball turns in place: J_Eye pivot
      on the eyeball centre), **vergence ≈ 0** (the lines of sight stay parallel), **poke ≤ ~0** (no eyeball pushed through

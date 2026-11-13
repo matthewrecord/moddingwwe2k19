@@ -45,6 +45,11 @@ def unweighted(pac):
             n=int((jcheck.raw_skin(j,o)['w'].sum(1)<1e-6).sum())
             if n: bad[f'{hex(f)}/{k}']=n
     return bad
+def eye_masks(pac):
+    """the 2K19 eye shader needs structured eye_n alpha (iris mask) and eye_mr; flat maps = dead eyes"""
+    hdr,bl=epkwrite.raw_blocks(pac); B={f:zlib.decompress(b[16:]) for f,b in bl}; TX=textures(B)
+    a=TX['eye_n'][...,3].astype(float); m=TX['eye_mr'].astype(float)
+    return 'ok' if a.std()>20 and m[...,1:3].std()>20 else f'FLAT (eye_n alpha std {a.std():.0f}, eye_mr std {m[...,1:3].std():.0f})'
 def aligned(pac):
     hdr,bl=epkwrite.raw_blocks(pac); bad={}
     for f,b in bl:
@@ -54,7 +59,7 @@ def aligned(pac):
             if x: bad[hex(f)]=x
     return bad
 if __name__=='__main__':
-    pac,pre=sys.argv[1],sys.argv[2]; print('misaligned:',aligned(pac) or 'none'); print('unweighted vertices:',unweighted(pac) or 'none')
+    pac,pre=sys.argv[1],sys.argv[2]; print('misaligned:',aligned(pac) or 'none'); print('unweighted vertices:',unweighted(pac) or 'none'); print('eye masks:',eye_masks(pac))
     t=tris(pac)
     for v in ('front','back','left'): render.render(t,v,f'{pre}_{v}.png',size=(6,9),title=v)
     hd=[x for x in t if x[0][:,1].min()<-150]

@@ -43,3 +43,22 @@ byte-identical with the template builder.
   same texture is used in both containers). It is the source's own smoky makeup. `undereye_lighten=0.45` blends the
   under-eye band toward the cheek colour (`renders/ts_undereye.png`).
 - `pose.py` now rotates about true bone positions (it previously used the +64 bounding-sphere field).
+
+## v2 in game: eyes "look dead, staring at nothing" (vs Charlotte with the same entrance and expression). v3
+Ruled out, with numbers:
+- **Lid motion:** per-morph upper-lid travel equals the donor's within 0.01 cm. My earlier "half-closed lids" came from
+  opaque lashes in my renderer.
+- **Skin and head gloss, lash opacity:** within his ports' ranges.
+- **Gaze:** the v2 pivots are fine.
+
+**Cause:** the 2K19 eye material needs mask textures.
+- Willow port: `eye_n` alpha is a soft iris disc (iris depth via `g_fEyePa`); `eye_mr` is a gloss mask (`renders/eye_maps.png`).
+- Toni v2: both flat (converted from her 2K25 eye_nrm), so the irises render as painted discs with no depth and no wet highlight.
+- Mark had no eye_nrm, so he kept his maps by accident (ok). Flash v3 was flat too.
+
+**Fix:** eye colour from the source; `eye_n`/`eye_mr` always from the container. New gate: `preview.py` "eye masks".
+
+**Also:** an eyeball-straightening pass. Flash's eyes were 5.4° divergent and are now 0.5°; Toni's are 0.4°.
+Flash v4 is rebuilt with both fixes.
+
+The lid-split experiment (`renders/toni_lids_v2v3.png`) is left off.
