@@ -527,3 +527,16 @@ strip positions); a stale table hides random skin (the "hole in the back of the 
 - The whole character is generated in about 5 s by `tools/backport/build_fmw.py`. The render check is clean.
   Details: `notes/builds/backport_test5_fmw_scratch.md`.
 - Still borrowed from his Fletcher port: the eye, eye-overlay and mouth objects (shifted to fit Flash), the 0x50/0xCA/0x2580 blocks and the container. Awaiting an in-game test.
+
+## 24. First from-scratch port validated in game (2026-11-13)
+Flash Morgan Webster (2K25) v4: Matthew says it "looks fantastic". The pipeline as it now stands:
+- **Head:** the source's own head mesh, with the donor's (Andrade's) 119 morphs and skin carried over. The carrier is a
+  fitted copy of the donor head, and the transfer splits the lips (upper borrows only from upper).
+- **Eyes, body, hair and attire:** the source's own eyes, body, hair and attire.
+- **Mouth parts:** the porter's teeth/tongue/mouth objects, shifted by source-minus-reference part centroids.
+- **Skin material:** the 2K25 `_nrm` blue channel is matched to the 2K24 distribution.
+- **Container:** hide table from `.hpl`. Writer bug fixed (chunks keep their address mod 16).
+- **Open:** hands hover about 2.5 cm above surfaces. Mesh placement, finger weights and proportions are all ruled out;
+  waiting to hear whether scorpion's ports do the same.
+- **Next:** generalize `build_fmw.py` into a per-character builder (pick the donor by sex, map meshes by name, split
+  oversized objects), then work toward the simple app.

@@ -58,3 +58,7 @@
 - **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe), `handoff/015_backport_feasibility_2026-11-12.md` (backport).
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
+
+
+## 2026-11-13 backport
+First from-scratch port works: Flash Morgan Webster (2K25), `_moddingwwe2k19_builds/backport/test5_fmw/` (v4 delivered via chat), slot ch50602. Branch `claude/backport-tool`. Tools: `tools/backport/build_fmw.py`, `pose.py`, `facecheck.py`. Open: hovering hands. Next: generalize the builder. Details: writeup/Backport.md §23-24.
