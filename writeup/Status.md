@@ -37,6 +37,8 @@ Not yet surveyed in depth: which mods are applied to the modded copy, what diffe
    read and written on the laptop through the agent shell. No laptop clone for now.
 7. Add new rules here as Matthew states them, with the date.
 
+- 2026-11-12: thread **model backport tool** (newer 2K -> 2K19), feasibility passed; see `writeup/Backport.md`, handoff 015.
+
 ## 4. Files in this project
 
 See `writeup/README.md` (write-up), `handoff/` (session notes), `notes/` (references), `tools/` (scripts).

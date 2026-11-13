@@ -51,6 +51,7 @@
   Universe creation gives them 3 phantom CAW managers (show-1 glitches tracked to that). DLL test3b installed (memory
   reads + Universe probe).
 - **2026-11-12 (handoff 014): NEW THREAD: model backport tool** (newer 2K games -> 2K19, ~60 matched pairs by one porter). Feasibility test next: `handoff/014_backport_tool_2026-11-12.md`.
-- **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe).
+- **2026-11-12 night (handoff 015, branch claude/backport-tool): backport FEASIBILITY DONE.** Own readers for 2K22+ MDL and 2K19 JBOY (`tools/backport/`). The porter's body weights = a fixed 2K19 template (male ports predict each other at ~90% dominant-bone agreement vs 75-79% for a naive name copy); 2K19 takes 7 influences. Matthew: no new tools on his side; Python yes, Blender no. Next: find the template among stock 2K19 bodies, decode JBOY indices/materials/textures. `writeup/Backport.md`.
+- **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe), `handoff/015_backport_feasibility_2026-11-12.md` (backport).
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
