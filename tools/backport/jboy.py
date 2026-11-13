@@ -22,10 +22,17 @@ class JBOY:
             sk=np.frombuffer(b,np.dtype([('i','>u2'),('pad','>u2'),('w','>f4')]),vc*ninf,skin+B).reshape(vc,ninf) if skin else None
             UV=np.frombuffer(b,'>f4',vc*2,uv+B).reshape(vc,2) if uv else None
             s.objs.append(dict(vc=vc,ninf=ninf,shader=shader,pos=P[:,1:4].astype('f4'),nrm=P[:,4:7].astype('f4'),
-                 bi=None if sk is None else s.remap(sk['i'].astype(int)),bw=None if sk is None else sk['w'].astype('f4'),uv=UV,
+                 bi=None if sk is None else s.remap(s.fix_order(sk['i'].astype(int),sk['w'])),bw=None if sk is None else sk['w'].astype('f4'),uv=UV,
                  f=f,palette=f[3:23],idx_ptr=f[39],mat=f[36]))
             if verbose: print(k,vc,ninf,shader,f[1],f[2],f[24],f[25],hex(f[29]),f[30],f[35:42])
 
+    def fix_order(s,bi,w):
+        n=len(s.palette) if s.palette is not None else len(s.bones)
+        m=w>0
+        if m.any() and bi[m].max()>=n:
+            sw=((bi&0xff)<<8)|(bi>>8)
+            if sw[m].max()<n: return sw
+        return bi
     def remap(s,bi):
         if s.palette is None: return bi
         p=np.append(s.palette,[10**6]); return p[np.minimum(bi,len(s.palette))]

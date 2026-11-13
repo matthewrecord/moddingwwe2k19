@@ -145,6 +145,7 @@ use it only if the template residual (about 10%) turns out to matter in stress p
 | stock ch10002 | 57.1% | 60.5% | 56.6% | 35.8% |
 | **another of his male ports** | **90.2%** | **91.0%** | **87.6%** | 59% |
 
+  **[Superseded by section 11: this test was wrong for stock files, which store bone indices byte-swapped.]**
   **None of the stock bodies is his template.** Stock ch73304 is the nearest, but it's well below his ports
   reproducing each other. His donor was his own master body (probably a re-weighted stock body he kept and reused),
   and it isn't in the game folder.
@@ -249,3 +250,35 @@ after resizing (mean absolute error, 0-255 scale):
 | Unknown small tables in the pac (3,056 B; ~119 KB `yM_*`; M_Body mask; 2,072 B) | to identify |
 | **Writer** (JBOY + texture pack + EPK8) | **next big job**: patch-style writer that reuses one of his ports as the container |
 | App (preview, stress poses, fixes, export) | after a first in-game test |
+
+## 11. His templates found: stock ch687 (male) and ch756 (female) (2026-11-12, late; corrects section 6)
+
+- **Section 6 was wrong.** The **stock** JBOYs store each skin bone index **byte-swapped** (u16 512 = bone 2,
+  0xFF00 = 255), while his ports store it big-endian. Two different writer tools, so the stock comparison read
+  garbage bones. `jboy.fix_order` now detects this per object: if an index exceeds the palette and the swapped value
+  doesn't, it swaps.
+- I hashed every small Oodle block in all 525 stock pacs on Matthew's PC (`blk.py` -> `blocks.jsonl`) and matched
+  them against the port tables:
+  - **Male template = `ch68702` (slot 687, Andrade "Cien" Almas).** The ~119 KB `yM_*` muscle table and the 2,072-byte
+    block of all three male ports are byte-identical to ch68702's, and the port skin palette is identical to
+    ch68702's (432 entries, same order). **His male model files are built on Andrade's file.**
+  - **Female template = `ch75602` (slot 756).** Willow's `yM_*` table (118,848 B) and block 5 come from it.
+  - The 3,056-byte block (per-character, probably body proportions/collision) is taken from a stock wrestler of
+    similar build: Fletcher and O-Khan from ch68702, **Gabe from ch23802 (Big Boss Man), Willow from ch62902 (Nia Jax)**.
+- Weight test with the fix (nearest stock skin vertex, his weights as truth):
+
+| Donor | Gabe | Fletcher | O-Khan | Willow |
+|---|---|---|---|---|
+| **stock ch68702 (male)** | **87.0%**, median L1 0.027 | **88.1%**, 0.014 | **82.7%**, 0.035 | 58.6% |
+| **stock ch75602 (female)** | 67.7% | 67.9% | 67.2% | **84.7%**, 0.014 |
+| stock ch73304 (closest by fingerprint) | 76.6% | 77.2% | 73.8% | 53.7% |
+
+  The remaining 12-17% is where the 2K24 body is shaped differently from Andrade's (nearest-vertex distance is 0.4-0.5 cm
+  on average) plus any hand fixes. A smoother transfer (barycentric on the donor surface instead of nearest vertex)
+  should close part of the gap.
+- **Pipeline decision (final):** weight donors = stock ch68702 (men) and ch75602 (women), both already in Matthew's
+  game folder. Also copy from the same donor: its `yM_*` table, block 5, palette and skeleton, and (per character)
+  a 3,056-byte block from a stock wrestler of similar build. Writing a port = **start from the donor's own pac and
+  replace its geometry and textures**, which is exactly what he did.
+- Stock ch13604 still reads badly (24%), so there is a third index layout somewhere. It doesn't matter for the
+  pipeline, but don't use ch13604 as a donor.
