@@ -30,7 +30,7 @@ for a in plan['arenas']:
     for root, _, fs in (os.walk(src) if src else []):
         for f in fs:
             p = os.path.join(root, f); rel = os.path.relpath(p, src).replace(os.sep, '/')
-            if not rel.startswith('pac/') or not f.lower().endswith('.pac') or '/match_up/' in rel: continue
+            if not rel.startswith('pac/') or not f.lower().endswith('.pac') or '/match_up/' in rel or re.search(plan.get('exclude', '^$'), rel): continue
             data = open(p, 'rb').read(); tgt = target_for(rel, slot)
             if tgt != rel and os.path.exists(G + tgt) and data[:4] != b'HSPC' and open(G + tgt, 'rb').read(4) != b'HSPC':
                 tn = names(open(G + tgt, 'rb').read())
