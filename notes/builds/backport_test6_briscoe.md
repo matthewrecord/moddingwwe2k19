@@ -42,3 +42,13 @@ New bench step: `morphgrid.py` puts Andrade's stock head and our head side by si
 - **Eyes.** Rest positions equal the source's own. Mark's model is asymmetric: eyeballs at +3.76/-4.00 cm, while J_Eye
   pivots sit at ±3.5. Eye rotation around off-centre pivots can read as slightly wall-eyed. Not changed in v2 (candidate:
   move the J_Eye bones).
+
+## v2 in game: textures and headband fixed; a sliver juts from the mouth corner and grows as the mouth opens. v3
+- **Cause:** 92 head vertices on the mouth rim had NO skin weights. The game drags them toward the origin, making a thin spike.
+  Andrade's rim vertices are weighted to face bones absent from his container palette, and the lip-split transfer
+  could only borrow from those rim triangles.
+  Morphs alone never show it; rotating J_Jaw in `pose.py` does (`renders/jaw_hunt.png` v2, `jaw_hunt3.png` v3).
+- **Fix:** unweighted head vertices take the nearest weighted vertex's skin.
+- **New bench gate:** `preview.py` reports unweighted vertices per object. It must be "none".
+- **Flash v4 had the same defect** (140 vertices). Flash is rebuilt with the general builder as `flash_v3`
+  (config FLASH, 142 fixed). That also gives Flash the per-channel texture resize, welded lip smoothing and head-attached attire weights.

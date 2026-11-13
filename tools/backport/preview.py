@@ -28,6 +28,18 @@ def tris(pac,morph=None):
                     c=px[:3]/255
                 out.append((P[list(t)],c))
     return out
+def unweighted(pac):
+    """vertices with no skin weight (the game drags them to the origin: spikes)"""
+    import jcheck
+    hdr,bl=epkwrite.raw_blocks(pac); bad={}
+    for f,b in bl:
+        d=zlib.decompress(b[16:])
+        if d[:4]!=b'JBOY': continue
+        j=jboy.JBOY(d)
+        for k,o in enumerate(j.objs):
+            n=int((jcheck.raw_skin(j,o)['w'].sum(1)<1e-6).sum())
+            if n: bad[f'{hex(f)}/{k}']=n
+    return bad
 def aligned(pac):
     hdr,bl=epkwrite.raw_blocks(pac); bad={}
     for f,b in bl:
@@ -37,7 +49,7 @@ def aligned(pac):
             if x: bad[hex(f)]=x
     return bad
 if __name__=='__main__':
-    pac,pre=sys.argv[1],sys.argv[2]; print('misaligned:',aligned(pac) or 'none')
+    pac,pre=sys.argv[1],sys.argv[2]; print('misaligned:',aligned(pac) or 'none'); print('unweighted vertices:',unweighted(pac) or 'none')
     t=tris(pac)
     for v in ('front','back','left'): render.render(t,v,f'{pre}_{v}.png',size=(6,9),title=v)
     hd=[x for x in t if x[0][:,1].min()<-150]

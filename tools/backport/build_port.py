@@ -89,6 +89,9 @@ def build(cfg,outpath,PROP=None):
         vs=np.where(cF==side)[0]; ts=ST[~(tc==-side).any(1)]
         if len(vs) and len(ts): a,b_,c_,_=xfer(PT[vs],W,ts,asl,aw,MDa); HS[vs]=a; HW[vs]=b_; HM[:,vs]=c_
     info['lip']=(int((cF==1).sum()),int((cF==-1).sum()))
+    z=HW.sum(1)<1e-6; info['head_unweighted_fixed']=int(z.sum())
+    if z.any():
+        ok=np.where(~z)[0]; _,nn=cKDTree(PT[ok]).query(PT[z]); HS[z]=HS[ok[nn]]; HW[z]=HW[ok[nn]]
     # smooth morph offsets in the lip zone on the WELDED mesh; only upper<->lower edges are blocked
     from scipy.sparse import coo_matrix,diags
     _,g,inv=np.unique(np.round(PT,3),axis=0,return_index=True,return_inverse=True); inv=inv.ravel(); ng=len(g)
@@ -215,5 +218,14 @@ BRISCOE=dict(work='/home/claude/ext/mb',base=R+'BaseModel/baseModel.mdl',attire_
             (0x5601,3):('atlas',[('M_Jacket','jacket'),('M_Bottoms','bottoms'),('M_Leg','leg'),('M_Rpad','rpad')]),
             (0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Lelbow','lelbow'),(0x5602,1):('mesh','M_Lknee','lknee'),(0x5602,2):('mesh','M_Rknee','rknee')})
+
+F='/home/claude/pairs/FMW/'
+FLASH=dict(work='/home/claude/ext/fmw2',base=F+'BaseModel/baseModel.mcd',attire_model=F+'159_Default_Attire/159_Attire.mcd',
+    tex_base=F+'BaseModel/Textures',tex_attire=F+'159_Default_Attire/Textures',hpl=F+'159_Default_Attire/159_Attire.hpl',
+    cover=['M_Bottoms','M_Shoes','M_Wrist'],hair={0x2715:('M_Hair','hair'),0x2716:('M_Combinations','combinations')},tint=(45,35,30),
+    attire={(0x5601,1):('mesh','M_Wrist','wrist','L'),(0x5601,2):('mesh','M_Wrist','wrist','R'),
+            (0x5601,3):('mesh','M_Bottoms','bottoms'),(0x5601,4):('mesh','M_Shoes','shoes')})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH}
+
 if __name__=='__main__':
-    print(build(BRISCOE,sys.argv[1]))
+    print(build(CONFIGS[sys.argv[1]],sys.argv[2]))
