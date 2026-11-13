@@ -58,3 +58,9 @@ def obj_params(j,o):
         elif t==15: i,=struct.unpack_from('>I',r,20); out[nm]='tex:'+(TN[i] if i<len(TN) else str(i))
         else: out[nm]=f'type{t}'
     return out
+def morphs(j,o):
+    """Return (n_morph, vc, 3) positions of the morph targets stored after the base vertices (objects with f[25]>1)."""
+    f=o['f']; nm=f[25]-1
+    if nm<=0: return None
+    vc=f[0]; a=np.frombuffer(j.b,'>f4',vc*7*nm,f[26]+8+vc*28).reshape(nm,vc,7)
+    return a[:,:,1:4].astype('f4')

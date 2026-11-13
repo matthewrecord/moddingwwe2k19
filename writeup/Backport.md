@@ -282,3 +282,32 @@ after resizing (mean absolute error, 0-255 scale):
   replace its geometry and textures**, which is exactly what he did.
 - Stock ch13604 still reads badly (24%), so there is a third index layout somewhere. It doesn't matter for the
   pipeline, but don't use ch13604 as a donor.
+
+## 12. Facial animation = 119 morph targets (2026-11-13 ~01:30)
+
+- **JBOY layout per object** (fully mapped for Fletcher; every byte accounted for except alignment padding): vertices
+  (vc x 28) -> **morph targets** (if object [25] > 1: ([25]-1) x vc x 28, same vertex layout, positions are
+  **offsets** from the base) -> skin (vc x ninf x 8) -> UV (vc x 8) -> UV2 (vc x 8) -> an extra vc x 4 buffer
+  (zeros so far) -> strip header (12 B) -> strip indices -> parameter pointer list -> parameter records (24 B each).
+  Global tables (bones, texture names, mesh names, morph names, palette) sit at the end. Morph count comes from header
+  0x48 (= 119, names BrowInn_L_Dn ...). `jboy.morphs()` reads them.
+- **Objects with face morphs** ([25] = 120): head, eye overlay, mouth bag, plus stock objects 24/25. In the port, the
+  head's morphs are 28 MB (8,509 verts x 119). **Every head vertex has 119 morph offsets, including the 3,408
+  that came from 2K24** (2,465 of them move). So he **generated facial animation for the new head**. That's the
+  real reason ports take time, and why the head object merges a stock head with the 2K24 one.
+- Where his morphs come from (tests on Fletcher; relative error = mean |predicted - his| / mean |his| over moving
+  vertices; 0 would be a perfect source):
+  - No vertex in the port carries an **exact** copy of any stock vertex's 119 morph values (8 stock pacs checked
+    exactly). He regenerated them; nothing was copied.
+  - Nearest-vertex copy from each of the **333 stock heads** with 119 morphs (scan on Matthew's PC,
+    `face_scan.py`): best is relative error 0.48 (ch42502 for Fletcher, ch73002 for Gabe, ch62302 for Willow). Donor
+    ch687 gives 0.65.
+  - Smooth weighting (inverse distance over 6 neighbours) from the best local head: 0.49. **Even a best-fit linear map
+    per morph leaves 0.37.**
+  - Conclusion: his face shapes come from a source that is **not** any superstar head. Prime suspect: the **CAW
+    (create-a-wrestler) base head**, which is designed to be reshaped, or a head from a newer game with matching
+    shapes. Next test: CAW head assets (pac/caa, pac/edit, chcommon).
+- **Practical route for the tool, whatever his source:** transfer the 119 morph offsets from a 2K19 head onto the
+  2K24 head with a surface-based transfer (fit the stock head to the 2K24 face, then carry offsets across). That's
+  standard practice and it gives plausible expressions. Exact reproduction of his files isn't needed; reviewing the
+  expressions in the app's preview poses is. **This is the step most likely to be labelled "needs a human touch-up".**
