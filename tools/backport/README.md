@@ -138,3 +138,6 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
 - The atlas halves resolution for the pieces it packs.
 - Hands possibly hover slightly (unconfirmed).
 - Next: a simple app for Matthew (preview, flagged problems, simple fixes, export).
+
+- `cap_small_holes`: closes source holes of ≤8 edges (pinholes of light).
+- `cfg emd`: 8-digit slot name for a second attire (e.g. ring 00050602 / entrance 00050604).

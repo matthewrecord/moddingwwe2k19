@@ -17,3 +17,9 @@
 - **Gates:** all pass (alignment, weights, eye masks; gaze drift 0, vergence -1.1°; mouth morph grid `keith_morphs.png`;
   textured preview `kl2_check.png`).
 - **Note:** Mark rebuilt today would differ from v4 only by a 0.05 cm eyeball straightening (one eye just over 2°).
+
+## v3 (2026-11-13)
+- Pinholes: source head had 2 tiny 3-edge holes near the right ear. New permanent builder rule `cap_small_holes` (≤8-edge loops, head and body).
+- Ring vs entrance split: configs `keith_ring` (no sweatshirt, EMD 00050602) and `keith_entrance` (sweatshirt, EMD 00050604); new `cfg emd` writes the slot name at header 0x80C.
+- Gates: misaligned none, unweighted none, eye masks ok, bodypose clean. Render: renders/keith_v3_check.png
+- Install like the old 2K20 Keith (ch92502/ch92504): ring = attire 02, entrance = attire 04.

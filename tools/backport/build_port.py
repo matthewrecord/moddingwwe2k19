@@ -3,7 +3,7 @@ A character is described by a config dict (see configs at the bottom). Everythin
 own head mesh + Andrade morphs/skin via the fitted surface (lip split), own eyes, his mouth parts shifted by
 part centroids, welded body weights, 2K24/25 nrm blue matched to Kyle, hide table from .hpl.
 New: texture atlases (several source meshes in one 2K19 slot), hidden-first triangle order for body objects."""
-import sys,os,glob,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
+import sys,os,glob,zlib,numpy as np;sys.path.insert(0,'/home/claude/scripts')
 from build_fmw import (mesh_obj,template_weights,body_donor,welded_weights,hist_match,KYLE,xfer,lip_class,put,degenerate,
                        meshes,palette_slot,PORT,U,RED,WHITE)
 import jboy,jbuild,epkwrite,oodl,mdlfmt,facexfer as fx,facefit,jcheck,hidetable,hpl,texconv
@@ -155,6 +155,20 @@ def source_weights(S,bones,slot,idx=None):
         it=sorted(sorted(acc.items(),key=lambda t:-t[1])[:7]); t=sum(x for _,x in it) or 1
         for q,(a,x) in enumerate(it): sl[v,q]=a; w[v,q]=x/t
     return sl,w
+def cap_small_holes(T,P,maxlen=8):
+    """close tiny boundary holes (source modelling gaps -> pinholes of light in game). Real openings (neck, mouth,
+    eyes) are far longer than maxlen. Cap winding follows the neighbouring triangle."""
+    import loops
+    E={}
+    for t in T:
+        for a,b in ((t[0],t[1]),(t[1],t[2]),(t[2],t[0])): E[(a,b)]=1
+    add=[]
+    for l in loops.boundary_loops(T,P):
+        if len(l)>maxlen: continue
+        l=list(l); fwd=(l[0],l[1]) in E           # loop runs along existing edges -> cap must run the other way
+        for i in range(1,len(l)-1):
+            add.append((l[0],l[i+1],l[i]) if fwd else (l[0],l[i],l[i+1]))
+    return (np.concatenate([T,np.array(add,int)]) if add else T),len(add)
 def build(cfg,outpath,PROP=None):
     W_=cfg['work']; os.makedirs(W_,exist_ok=True)
     BM=open_model(cfg['base'],W_+'/base.mdl'); AM=open_model(cfg['attire_model'],W_+'/attire.mdl'); MB=meshes(BM); MA=meshes(AM)
@@ -168,7 +182,7 @@ def build(cfg,outpath,PROP=None):
     j=jboy.JBOY(B[0]); m=jbuild.Model(j); slot=palette_slot(j)
     # ---------------- head ----------------
     so=s.objs[0]; MDa=np.asarray(jboy.morphs(s,so)); ST=jboy.strip_to_tris(s.indices(so)[1])
-    St,TT=MB['M_Head']; PT=St['POSITION'].astype(float)
+    St,TT=MB['M_Head']; PT=St['POSITION'].astype(float); TT,nh=cap_small_holes(TT,PT); info['head_holes_capped']=nh
     fc=W_+'/fit_W.npy'
     if os.path.exists(fc): W=np.load(fc)
     else: W=facefit.fit_welded(so['pos'].astype(float),ST,PT,TT,init='similarity',free_radius=0.6)[0]; np.save(fc,W)
@@ -221,7 +235,7 @@ def build(cfg,outpath,PROP=None):
         Hg=np.zeros((ng,3)); np.add.at(Hg,inv,HM[k]); Hg/=np.bincount(inv,minlength=ng)[:,None]
         for it in range(15): Hg[zone]=(A@Hg)[zone]
         HM[k]=Hg[inv]
-    Sb,Tb=MB['M_Body']
+    Sb,Tb=MB['M_Body']; Tb,nb=cap_small_holes(Tb,Sb['POSITION']); info['body_holes_capped']=nb
     if cfg.get('weights')=='source': bsl,bw=source_weights(Sb,BM.bones,slot)
     else: bsl,bw=welded_weights(Sb['POSITION'],Tb,donor,slot)
     dd,ii=cKDTree(Sb['POSITION']).query(PT); seam=dd<1e-3; HS[seam]=bsl[ii[seam]]; HW[seam]=bw[ii[seam]]; info['neck_seam']=int(seam.sum())
@@ -384,6 +398,7 @@ def build(cfg,outpath,PROP=None):
             if d[:4]==b'JBOY':
                 J[fid],done=move_bones(d,tg)
                 if fid==0: info['eye_pivot_moved']=done
+    if cfg.get('emd'): hdr=hdr[:0x80C]+cfg['emd'].encode()+hdr[0x814:]
     pac=epkwrite.build_raw(hdr,[(fid,epkwrite.zblock(J[fid]) if fid in J else blk) for fid,blk in blocks]); open(outpath,'wb').write(pac)
     info['size']=len(pac); return info
 
@@ -418,7 +433,10 @@ KEITH=dict(template='male',weights='source',work='/home/claude/ext/kl',base=K_+'
     hair={0x2715:None,0x2716:[('M_Combinations','combinations')]},tint=(25,20,18),
     attire={(0x5601,0):('mesh','M_Jacket','jacket'),(0x5601,3):('mesh','M_Underwear','underwear'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_L_Elbowpad','l_elbowpad'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH}
+KEITH_RING=dict(KEITH,work='/home/claude/ext/kl',emd='00050602',cover=['M_Underwear','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Elbowpad'],
+    attire={k:v for k,v in KEITH['attire'].items() if v[1]!='M_Jacket'})
+KEITH_ENT=dict(KEITH,work='/home/claude/ext/kl',emd='00050604')
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))
