@@ -58,3 +58,18 @@ nape, present since v2 but not seen from behind) and only part of our lower body
 Fix v6 (`fletcher_v6_ch50602.pac`): `tools/backport/hidetable.py` maps his hidden triangles to ours by centroid
 (1,218 matched, median 0.00 cm) -> our strip start positions; object 2 range = our full strip (0..53,514). Size fields
 updated (identity rebuild of his table verified).
+
+## Result v6 (01:44): hole still there + two pinholes letting light through either side of the chest.
+Matthew asked for an offline renderer so we can see this without game runs -> `tools/backport/render.py` (renders every
+JBOY of a pac, hide table applied, from front/back/side; PNGs in notes/builds/renders/).
+What the renders showed (none of the earlier guesses):
+1. **The back of the fitted head was missing** (render: face visible from behind, `r_fit6_back.png`). Cause: the
+   thin-plate warp used as the fit's starting point pushed the back of the skull 2.7 cm inward (the neck-loop mismatch
+   extrapolated over the whole back of the head), leaving a groove whose walls face sideways. Fix: start from a
+   **similarity** transform (scale/rotate/move), not the thin-plate warp.
+2. Then a slit down the back midline: Andrade's head has 23 vertices duplicated along its texture seam; the fit moved
+   the copies apart. Fix: fit on the **welded** mesh (`facefit.fit_welded`) and copy the result to the duplicates.
+3. **Pinholes:** the head's neck opening was resampled by arc length, so its points sat between the body's edge
+   points, leaving gaps up to about 1 cm along the head/body seam. Fix: when loop sizes match (neck 58 = 58, mouth 48
+   = 48), map one-to-one onto the target vertices. The neck seam is now exactly 0.0000 cm.
+v7 = all three fixes + v6 hide table: `fletcher_v7_ch50602.pac`. Renders `r7b_back.png` / `r7b_front.png` look closed.

@@ -7,8 +7,9 @@ def arclen_resample(Q,n):
     Q=np.vstack([Q,Q[:1]]); d=np.r_[0,np.cumsum(np.linalg.norm(np.diff(Q,axis=0),axis=1))]; t=np.linspace(0,d[-1],n,endpoint=False)
     return np.stack([np.interp(t,d,Q[:,k]) for k in range(3)],1)
 def match_loop(A,B):
-    """A: stock loop points (ordered), B: target loop points (ordered). Returns target point for every A point (same order)."""
-    Bn=arclen_resample(B,len(A)); best=None
+    """A: stock loop points (ordered), B: target loop points (ordered). Returns target point for every A point (same order).
+    Equal counts: one-to-one onto the target VERTICES (watertight seam); otherwise arc-length resampling."""
+    Bn=B.copy() if len(B)==len(A) else arclen_resample(B,len(A)); best=None
     for rev in (False,True):
         Bc=Bn[::-1] if rev else Bn
         for s in range(len(A)):
@@ -42,22 +43,28 @@ def vnormals(P,T):
     n=np.cross(P[T[:,1]]-P[T[:,0]],P[T[:,2]]-P[T[:,0]]); N=np.zeros_like(P)
     for k in range(3): np.add.at(N,T[:,k],n)
     return N/np.maximum(np.linalg.norm(N,axis=1,keepdims=True),1e-12)
-def fit_reg(PS,TS,PT,TT,lams=(50,20,8,4,2),iters_per=2,tps_smooth=1.0,free_radius=0.0):
+def fit_reg(PS,TS,PT,TT,lams=(50,20,8,4,2),iters_per=2,tps_smooth=1.0,free_radius=0.0,init='tps'):
     import scipy.sparse as sp, scipy.sparse.linalg as spl
     LA=loops.boundary_loops(TS,PS); LB=loops.boundary_loops(TT,PT); src=[];dst=[]
     for la,lb,d in pair_loops(LA,PS,LB,PT):
         tgt,err=match_loop(PS[la],PT[lb]); src.append(PS[la]); dst.append(tgt)
     src=np.concatenate(src); dst=np.concatenate(dst)
-    W0=PS+RBFInterpolator(src,dst-src,kernel='thin_plate_spline',smoothing=tps_smooth)(PS)
+    if init=='tps': W0=PS+RBFInterpolator(src,dst-src,kernel='thin_plate_spline',smoothing=tps_smooth)(PS)
+    else:   # similarity (scale+rotation+translation) from the loop correspondences
+        ms,md=src.mean(0),dst.mean(0); A=src-ms; B=dst-md; U_,S_,Vt=np.linalg.svd(A.T@B); D=np.eye(3); D[2,2]=np.sign(np.linalg.det(U_@Vt))
+        Rm=(U_@D@Vt).T; sc=(S_*np.diag(D)).sum()/(A**2).sum(); W0=(PS-ms)@Rm.T*sc+md
     d,i=cKDTree(src).query(PS); pin=d<1e-4; W0[pin]=dst[i[pin]]
     near_loop=(d>=1e-4)&(d<free_radius)
     n=len(PS); E=np.concatenate([TS[:,[0,1]],TS[:,[1,2]],TS[:,[2,0]]]); E=np.unique(np.sort(E,1),axis=0)
     A=sp.coo_matrix((np.ones(2*len(E)),(np.r_[E[:,0],E[:,1]],np.r_[E[:,1],E[:,0]])),shape=(n,n)).tocsr()
     deg=np.asarray(A.sum(1)).ravel(); L=sp.diags(deg)-A
-    NT=vnormals(PT,TT); tT=cKDTree(PT); W=W0.copy()
+    NT=vnormals(PT,TT)
+    if ((PT-PT.mean(0))*NT).sum(1).mean()<0: NT=-NT          # make target normals point outward
+    flipS=((PS-PS.mean(0))*vnormals(PS,TS)).sum(1).mean()<0  # same convention for the source
+    tT=cKDTree(PT); W=W0.copy()
     for lam in lams:
         for _ in range(iters_per):
-            NW=vnormals(W,TS); TI,BC,dist=fx.closest_bary(W,PT,TT); C=np.einsum('pk,pkc->pc',BC,PT[TT[TI]])
+            NW=vnormals(W,TS); NW=-NW if flipS else NW; TI,BC,dist=fx.closest_bary(W,PT,TT); C=np.einsum('pk,pkc->pc',BC,PT[TT[TI]])
             Nc=np.einsum('pk,pkc->pc',BC,NT[TT[TI]]); ok=((NW*Nc).sum(1)>0.5)&(dist<2.0)&(~pin)&(~near_loop)
             w=ok.astype(float)
             M=(sp.diags(w)+lam*(L.T@L)).tolil()
@@ -114,3 +121,12 @@ def split_uv_seam(T,uv,extra_arrays,span=0.5):
     uv2=np.vstack([uv,np.array(add_uv).reshape(-1,2)]) if add_uv else uv
     ex=[np.concatenate([a,a[src]],axis=0) if len(src) else a for a in extra_arrays]
     return T,uv2,ex,len(src)
+
+def fit_welded(PS,TS,PT,TT,**kw):
+    """Run fit_reg on the position-welded mesh (UV-seam duplicates merged), then copy results back to every duplicate."""
+    key={};rep=np.zeros(len(PS),int)
+    for i,p in enumerate(np.round(PS,4)): rep[i]=key.setdefault(tuple(p),i)
+    uniq=np.unique(rep); idx=-np.ones(len(PS),int); idx[uniq]=np.arange(len(uniq))
+    Tw=idx[rep[TS]]; Pw=PS[uniq]
+    Ww,pin=fit_reg(Pw,Tw,PT,TT,**kw)
+    return Ww[idx[rep]],len(PS)-len(uniq)
