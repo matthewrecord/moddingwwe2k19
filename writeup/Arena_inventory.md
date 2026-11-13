@@ -393,3 +393,16 @@ Backups are in `_arena_work\backup_batch1b`. Plans: `plan_b1b.json`, `plan_raw96
 - Raw card names were too big and overlapped the logo (18:34). Set x 1182 (centre of the free area right of the logo) and all text scales to 0.6; the colour stays black. No line wrap was found in the ATB0 text nodes. Card md5 2e7e8280.
 - Raw card text scale lowered again to 0.45 (all text nodes). Card md5 ff2ba738.
 - The stock Raw card fits long names with a condensed font (its own FTPK, file 4) and Raw text settings. The 96 card now uses the Raw FTPK (file 4) + the Raw text settings (x 1174, scale 0.9, black). The scale-0.45 version is replaced. Card md5 cb529e4c. Lesson: **the card font is file 4 (FTPK); copy it together with the text settings.**
+
+## Batch 2 (2026-11-12): AEW re-slots
+Rampage 116→139, Road Rager 120→149, Grand Slam (New, made for slot 3, + ppv logo from the 163 version + Dynamite '22 locator/nameplate/result/copyright) →159, Revolution 10→112, Full Gear 14→133, Dynamite '20 3→107. Forbidden Door (→4) is **on hold**: its entrance needs the "2K15-2K18 Arena Port" + Titavius' "AEW Dynamite – LA Forum '22" entrance pieces, and neither is in Resources.
+- Tools:
+  - `reslot_stage.py` (S→T). Rewrap into T's container; re-stamp HSPC→HSPC. EPK over an HSPC path is allowed. HSPC videos with no T container become new EPK8s named `M%06d `, with tags per folder: ar_apron MVGA, ar_mini MVGM, ar_ramp MVGR, ar_wall MVGW, transition MOVT, transition_replay MVTS, bg_apron MVBA.
+  - `stage_b2.py` builds the staged folders `_arena_work\in\b2_T`. The device can't delete, so stale staged files are skipped with the plan's `exclude` regex. bg_* videos are excluded: the modded game's ones are stock videos of the source slot.
+- Sources: the modded game for slots 3/10/14 (entrance + mov; `_arena_work\in\src_mN`), plus each Resources folder (GFX). Parts at free ids, as shipped: BR25/TB16 (Rampage), BR29/TB20 (Road Rager), ST74 (Grand Slam), BR66/TB51 (Revolution), BR55/TB67 (Full Gear). Dynamite '20 barricade 22 (HSPC) → EPAC BR30; its turnbuckle 15 = TB16 payload. Stadium 29 = installed stadium 1.
+- misc04: the All Out row with the AEW standards (apron 137 + ring mat 18 from Double or Nothing, rope 7, crowd 3, floor mattress 15, ceiling light 73/91) plus own barricade/turnbuckle/floor (4/7/1/17/19/3). IBL: Grand Slam 88, Revolution/Full Gear 50, others 1. Grand Slam: stadium 74, stairs 1. misc01 from 158, initpos 9,9,9, light from 158. Names "AEW RAMPAGE", "AEW ROAD RAGER", "AEW GRAND SLAM", "AEW REVOLUTION", "AEW FULL GEAR", "AEW DYNAMITE '20".
+- Cards (`cards_b2.py`):
+  - Rampage/Road Rager: movie = own transition; foreground = the arena pack's Create-a-Show foreground. Road Rager's foreground is DDS #0, not #1: pick the DDS with alpha.
+  - Grand Slam/Revolution/Full Gear: Create-a-Show foregrounds from AEW Matchup Screens (steel02/hardcore02/80s02; ZLIB-wrapped DXT5 2048x1024). Movies: Dynamite GFX card movie, Revolution card movie, Full Gear card movie.
+  - These five have names hidden. Foreground fit `fit2`: crop from the alpha top (or the 6.7:1 bottom strip), pad to 6.7:1.
+  - Dynamite '20: Dynamite GFX card movie + foreground fitted, names kept (like Dynamite '22).
