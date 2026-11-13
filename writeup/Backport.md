@@ -311,3 +311,10 @@ after resizing (mean absolute error, 0-255 scale):
   2K24 head with a surface-based transfer (fit the stock head to the 2K24 face, then carry offsets across). That's
   standard practice and it gives plausible expressions. Exact reproduction of his files isn't needed; reviewing the
   expressions in the app's preview poses is. **This is the step most likely to be labelled "needs a human touch-up".**
+- **CAW head lead (2026-11-13 ~01:45):** `pac/edit/head/head_00000.pac` (male) and `head_10000.pac` (female) are
+  HSPC + Oodle like the other stock pacs, but the payload is a **different model format**: a big-endian tagged tree of
+  records `u32 size, u32 count, name[32]` (`model` -> 15 `subobj`, `tex_name`, `shape` (30 entries), `bones`,
+  `skin_bone_palette`, ...). `pac/edit/face_type/*` hold face texture sets (eye_ov, head_Mask, head_mr/_n,
+  mouth*, wrinkles_n). There is no JBOY reader for this yet. Decoding the `shape` node would test whether his face
+  morphs come from the CAW head. That's not on the critical path, because the tool can transfer shapes from any
+  2K19 head.
