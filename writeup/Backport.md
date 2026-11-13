@@ -402,3 +402,28 @@ everything else. Then the geometry/skin/morph generators.
 objects (attire, hair, body) from the 2K24 files with our rules (geometry, template weights, textures), and compare
 to his port object by object. That tests the generators against ground truth before the donor-based build (Andrade
 ch68702 + new objects).
+
+## 17. Per-vertex rules for regenerating objects (2026-11-13 ~03:45)
+
+Measured on Fletcher and Gabe (vertices matched by position + normal):
+- **Positions:** copied unchanged (same space, cm, -Y up).
+- **Normals: negated** (2K19 normal = -(2K24 snorm8 normal), dot product -0.999 on every object).
+- **UVs: copied unchanged** (no V flip): 94.5-100% exact; the rest are seam duplicates.
+- **Field-29 stream (12 bytes/vertex):** all zero on skin/gear/trans/eye objects. **On hair it encodes vertex-index
+  parity**: even vertices (0,1,0), odd (1,0,1), on every port (Fletcher, Gabe, Willow). Reproduce as is.
+- **Vertex colour:** white (255,255,255,255) on hair, even where the 2K24 hair has colour.
+- **Attire weights:** the ch687 template (nearest donor skin vertex) beats renamed 2K24 weights on almost every
+  piece:
+
+| Object | Renamed 2K24 weights (dominant / median L1) | ch687 template |
+|---|---|---|
+| Fletcher tights (trans, 3,978 v) | 66% / 0.307 | **85% / 0.136** |
+| Fletcher shoes (gear, 2,545 v) | 97% / 0.029 | 94% / **0.017** |
+| Fletcher elbow pads (gear, 575 v x2) | 43% / 0.670 | **85-87% / 0.111** |
+| Fletcher wrists (gear, 252 v x2) | **98% / 0.077** | 95% / 0.096 |
+| Gabe kneepads etc. (gear) | 46-54% | **85-90%** |
+| Gabe shoes / combinations | 93-100% | 94-100% |
+| Loose items >1 cm off the body (necklace, Gabe trans 3.8 cm) | 57-64% | 58-71% |
+
+  Rule: **template for everything, 7 influences**. Loose items (necklace, pads standing off the body) are where both
+  methods disagree with him, so the app should flag them for a check in stress poses.
