@@ -411,3 +411,10 @@ Rampage 116→139, Road Rager 120→149, Grand Slam (New, made for slot 3, + ppv
 - **Forbidden Door dropped** (Matthew). The LA Forum mod it needs is gone.
 - **SummerSlam '22 added**, now in the Resources arena folder. Planned slot: **160** (the spare slot). Batch 3 order: WM27 → 125, WM31 → 140, WM38 → 132, RR Retro → 124, RR2020 → 135, SummerSlam 09 → 143, SmackDown 21 → 53, ROH '05 → 134, SummerSlam '22 → 160. Batch 4 is unchanged.
 - Batch 2 (six arenas) is waiting on Matthew's in-game test. WM35/Raw/DBD still need saving back to Resources after the Raw card font fix is confirmed.
+
+## Batch 2 test (23:31): fixes to do once the laptop is linked again
+1. Matthew did not want the Double or Nothing *apron* everywhere. Go back to each arena's own apron: All Out 136, Dark 135, Dynamite '22 7, Rampage 134, Road Rager 138, Revolution 184, Full Gear 97, Dynamite '20 75 (HSPC → EPAC at a free id), Grand Slam = Dynamite apron. Keep ring mat 18 (AEW logo) until he says otherwise.
+2. The Rampage nameplate has a baked "AEW RAMPAGE" header that collides with the MITB-winner banner. Swap it for a header-less nameplate (stock or another AEW one).
+3. Hide the names on the Dynamite '20 card (layout_noname).
+4. The Rampage/Road Rager card background is the short transition, so it loops fast. Bink can't be re-encoded here, so use the longer ar_mini/ar_wall loop video as the card movie instead.
+5. **Grand Slam (159) does not load** (red bar, then nothing). Prime suspect: IBL 88, copied from the modded row and probably missing in the clean game. Then stadium ST74 (its readme needs Titavius' AEW apron/barricade/CM parts) and the slot-3 entrance rewrapped into 159. Check that the files exist, try IBL 50, then bisect.
