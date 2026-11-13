@@ -52,3 +52,23 @@ survives.
   Rumble Roses XX YOBJ (older variant, a possible reference).
 - Decision: write our own Python readers (`tools/backport/`). This needs no installs on Matthew's PC, and the app
   will need them anyway.
+
+## 3. 2K22+ MDL format: decoded, reader works (`tools/backport/mdl.py`, 2026-11-12)
+
+All 8 original `.mdl` files parse, and the index chunk is consumed byte-exactly. Layout (little-endian):
+- Header: `MDL!`, u32 0x28, u32 1, 6 floats bbox (min/max). Then chunks `tag, u32 size, data`: `TEXT`, `BONE`,
+  `AtPt` (attach points, optional), `MTL!`, `MBfD` (mesh buffers), `LODs` (index buffers), `END!`.
+- `TEXT`: u32 n, n u32 offsets, NUL strings. Every name in the file is a TEXT index.
+- `BONE`: 8 bytes, u32 count, then 33-byte records `u32 flag, i16 name index, i16 parent, 3f translation, 3f rotation
+  (Euler, radians, local), u8`. Bone 0 is a dummy (`vector`). Units are cm and **up is -Y** (hips at Y = -108.7).
+  **Skeletons differ per file:** Gabe 209 bones, Fletcher attire 337 (own hair chain), Fletcher base 199. The names
+  are shared (J_Root, J_Hips, ..., H_* helpers, *_Jig_* jiggle, *_RBF_* correctives) but the order is not.
+  O-Khan's and Willow's files have **0 bones**: their weights index the game's built-in rig.
+- `MBfD`: u32 mesh count; per mesh `u32 name, u32 flags, u16, u32, 6f bbox, u32 vertex count, u16 stream count, u16`,
+  then per stream `12-byte hash, u16 semantic, u16 format, u16 type, u16` with its packed array right after
+  (4-byte aligned; structure-of-arrays). Streams: POSITION f32x3, NORMAL/TANGENT snorm8x4, BINORMAL (sign) snorm8,
+  COLOR unorm8x4, TEXCOORD f32x2 (one or two sets). Then skin: `u16, u16 influences (= 8)`, 8 x u16 bone
+  indices per vertex, 8 x u8 weights per vertex (sum 255), then a u32 vertex-id list and a trailer ending `ENDM`.
+- `LODs`: u32 LOD count (2), u32 mesh count; per mesh `u16, u32 index count, u16 indices, trailer ... ENDM`.
+- Sizes: attires 18.9k-41.8k vertices, bases 23.5k-24.9k vertices / about 42k triangles. Up to **8 weights per
+  vertex**. 2K19's limit still has to be measured from the JBOY (the expectation is 4).
