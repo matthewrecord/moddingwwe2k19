@@ -18,3 +18,9 @@ Install (Genesis is the active loader): back up `mods\Genesis\characters\pac\ch\
 Check: game loads her; shoes and kneepads present, textured, not stretched; stress poses (crouch, kneeling, splits,
 running) move the kneepads with the knees and the shoes with the feet.
 Rollback: restore the backup.
+
+## Result (2026-11-13 00:04 local, Matthew)
+**CRASH** at the character select screen after selecting Willow (slot 865) and removing managers. No new CrashDump.
+Original restored immediately (md5 5ca9cc1d... verified). Likely cause, found offline: in unused influence slots his
+skin data has bone index **0xFFFF** (weight 0); ours wrote index 0 (weight 0). Unconfirmed; fix + verify offline.
+**Matthew 00:05: don't add or remove characters for now.** No more installs until he asks; work offline only.
