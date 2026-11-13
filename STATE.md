@@ -1,6 +1,6 @@
 # Current state (one screen; read this first, then writeup/Status.md)
 
-- **2026-11-13 (handoff 017, latest): batch 2 fixes + batch 3 installed (WM31 tried in 140/141/153, then reverted at Matthew's request), waiting on Matthew's test.** Read `handoff/017_batch2fix_batch3_2026-11-13.md`.
+- **2026-11-13 (handoff 017, latest): batch 2 fixes + 8 batch 3 arenas (125, 132, 135, 53, 134, 124, 143, 160) installed, waiting on Matthew's test. WM31 tried in 140/141/153 and reverted; original WM31 is slot 105.** Read `handoff/017_batch2fix_batch3_2026-11-13.md`; next-chat prompt in `handoff/PROMPT_next_chat.md`.
 - **2026-11-12 (handoff 016): Genesis clean rebuild + arena installs.** Read `handoff/016_genesis_arenas_2026-11-12.md` and
   `writeup/Arena_inventory.md`. 10 arenas confirmed; batch 2 has 5 fixes pending (Grand Slam won't load). Next: those fixes, then batch 3.
 
