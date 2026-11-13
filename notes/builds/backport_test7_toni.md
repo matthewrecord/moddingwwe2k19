@@ -62,3 +62,5 @@ Ruled out, with numbers:
 Flash v4 is rebuilt with both fixes.
 
 The lid-split experiment (`renders/toni_lids_v2v3.png`) is left off.
+
+## v3 in game: Matthew says "I think that made the difference". The eye fix (container eye masks) is validated.

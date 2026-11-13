@@ -65,3 +65,6 @@ First from-scratch port works: Flash Morgan Webster (2K25), `_moddingwwe2k19_bui
 
 ## 2026-11-13 (later) backport
 General builder works: `tools/backport/build_port.py` (configs BRISCOE, FLASH); both v3 builds look spectacular in game. Workflow + bench gates: `tools/backport/README.md`. Handoff: `handoff/016`. Next: female template, then the app.
+
+## 2026-11-13 (afternoon) backport
+Validated in game: Flash v4 (pending re-check), Briscoe v4, **Toni Storm v3 (first female; eyes fixed via container eye masks)**. Templates male/female in `tools/backport/build_port.py`; full gates in `tools/backport/README.md`. Next: Toni facepaint / B&W variants (same config, different source folder), then the app.
