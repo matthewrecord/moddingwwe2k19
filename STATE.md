@@ -50,6 +50,7 @@
   XOR key 37 36 35 36). Overflow wrestlers survive Universe save/reload and work in title/non-title matches; bug:
   Universe creation gives them 3 phantom CAW managers (show-1 glitches tracked to that). DLL test3b installed (memory
   reads + Universe probe).
+- **2026-11-12 (handoff 014): NEW THREAD: model backport tool** (newer 2K games -> 2K19, ~60 matched pairs by one porter). Feasibility test next: `handoff/014_backport_tool_2026-11-12.md`.
 - **Latest handoffs:** `handoff/012_test_wrestler_2026-11-10.md` (slots), `handoff/013_universe_qol_2026-11-10.md` (Universe).
 - **Where things are:** source and scripts `tools/`; write-up `writeup/*.md`; notes `notes/`; references `reference/`;
   binaries (if ever needed) on the `assets` branch.
