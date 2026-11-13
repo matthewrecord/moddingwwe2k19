@@ -72,3 +72,57 @@ All 8 original `.mdl` files parse, and the index chunk is consumed byte-exactly.
 - `LODs`: u32 LOD count (2), u32 mesh count; per mesh `u16, u32 index count, u16 indices, trailer ... ENDM`.
 - Sizes: attires 18.9k-41.8k vertices, bases 23.5k-24.9k vertices / about 42k triangles. Up to **8 weights per
   vertex**. 2K19's limit still has to be measured from the JBOY (the expectation is 4).
+
+## 4. 2K19 JBOY reader (`tools/backport/jboy.py`, 2026-11-12)
+
+Every JBOY in all 6 port pacs parses (`epk.py` unpacks the pac's zlib blocks). The format is big-endian and every
+offset is +8.
+- Header words: [6] object count, [8] bone count, [10] bone table, [11] texture-name table, [12] mesh-name table.
+  The words at 0x48 give 0x77 morph names (BrowInn_L_Dn, ...), and at 0x50 `count, ptr` gives the **skin palette**
+  (`n, ptr, n x u32 bone id`). **Skin indices go through this palette.** Without it the weights look like nonsense
+  (J_Head -> J_Chest).
+- Bones: 80-byte records `name[16], 3f translation, pad, 3f Euler rotation, pad, i32 parent, ..., 4f world bounding
+  sphere`. Main rig: 433 bones (548 for Willow). It uses the **same names, units (cm, -Y up) and rest values as the
+  2K24 rig** (J_Hips -108.703, J_Spine1 6.539). It adds 2K19 helper bones named `m0xx_yyyy`. Hair uses a separate
+  67-bone rig in its own JBOY (`yCS_hair`).
+- Objects: 184-byte records at 0x58: [0] vertex count, [3..22] -1, [23] influences, [26] vertex ptr (28 B:
+  u8x4 color, pos f32x3, normal f32x3), [27] skin ptr (per influence `u16 bone, u16 pad, f32 weight`), [28] UV f32x2,
+  [29] second 8-byte stream, shader name at +124 (`yCS_skin`, `yCS_gear`, `yCS_trans`, `yCS_hair`, `yCS_eye`,
+  `yCS_eyeOv`), [36] material, [39] index buffer (not yet decoded).
+- **2K19 allows 7 influences per vertex** (hair: 4). The 2K24 originals use up to 8, so we must trim to the top 7
+  and renormalise. This is not the 4 that the handoff expected.
+- Each port is split into several JBOYs: main (head/body/skin), hair, gear and trans(parent) objects.
+
+## 5. Feasibility results (2026-11-12): bone map and weight transfer
+
+Method (`tools/backport/bonemap.py`, `check2.py`): each port vertex is paired with the nearest original vertex.
+**There is no transform between the two**: the median distance is 0 for 3 pairs. Willow is the exception: 8% of
+her vertices moved more than 1 cm, so the porter edited her shape. A vertex pair counts if it is within 0.05 cm,
+giving 20k-42k pairs per character. Weight error = half the L1 distance between the two weight distributions
+(0 = identical, 1 = disjoint). "Dominant" = same top bone.
+
+| Pair | Naive copy (same bone names, top 7) | Best 1:1 bone rename (learned) | **His weights from another male port (template)** |
+|---|---|---|---|
+| Gabe Kidd | L1 0.223 (median 0.045), dominant 79.1% | 0.205 (0.030), 81.8% | 0.102 (0.000), 90.2% |
+| Kyle Fletcher | 0.273 (0.111), 74.8% | 0.277 (0.106), 77.2% | 0.094 (0.000), 91.0% |
+| Great O-Khan | n/a (original has no skeleton) | 0.210 (0.023), 83.9% | 0.137 (0.006), 87.6% |
+| Willow (female) | n/a | 0.254 (0.088), 78.1% | 0.404+ from male ports, 59% (needs a female template) |
+
+What this says about scorpionxxx's method:
+1. **He did not rename bones; he re-weighted the body from a fixed 2K19 template.** A learned 1:1 rename barely
+   beats the naive copy, and purities are low (0.2-0.3 for helper bones such as H_Hip_*_OS1 -> J_Leg_*). Meanwhile
+   one male port's weights predict another male port's at median error 0. The most likely method is "transfer
+   weights from a stock 2K19 male body (and a female one for women)". The template's source (stock 2K19 body vs. his
+   own master file) is not yet identified. Next check: the stock 2K19 bodies in Matthew's game folder.
+2. 12-16% of his weight mass is on 2K19-only `m0xx_*` helper bones that no 2K24 file has. A rename can never
+   produce these; a template can.
+3. The bone-name overlap is large: 57-59 of the bones the originals use carry the identical name in 2K19. So the
+   deterministic name map works as a fallback for parts the template does not cover (attire far from the body,
+   hair has its own rig).
+4. Recovered maps: `tools/backport/bonemap_recovered.csv`.
+
+**Feasibility verdict: yes, and simpler than planned.** The pipeline does not need a learned weight model for the
+body. It needs: (a) readers (both done), (b) a male and a female 2K19 skin template and a nearest-surface weight
+transfer from them (reproduces his weights at about 90% dominant agreement), (c) a name map for the rest, trimmed to 7 influences,
+(d) a writer (JBOY index buffers, materials and textures not yet decoded). The small learned model is optional:
+use it only if the template residual (about 10%) turns out to matter in stress poses.
