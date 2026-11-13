@@ -32,3 +32,14 @@ byte-identical with the template builder.
   - Textured body (`ts1_check.png`): pass.
 - Preview fixes: hide blocks are parsed generally (the female layout had hidden the hands in the preview), and trans
   objects use an alpha test.
+
+## v1 in game: "extremely impressive, almost perfect". Too-dark under the eyes; cross-eyed again. v2
+- **Cross-eyed.** The eyeballs sat 0.5 cm inside, 1.0 cm below and 0.5 cm behind the J_Eye pivots, so turning the eyes
+  slid them 0.3-0.35 cm in their sockets.
+  - Fix: J_Eye bones moved to the eyeball sphere centres (`move_bones`, true bone positions via `bone_world`).
+  - New gate `eyegaze.py` (requested by Matthew). v1: drift 0.35 cm. v2: drift 0.00 (`renders/toni_gaze_cmp.png`).
+  - Control build `toni_v2b_nopivot`, in case the game keeps a separate eye rest pose.
+- **Dark under the eyes.** It is not the eye overlay (`renders/ts_ov.png`: the overlay sits inside the openings, and the
+  same texture is used in both containers). It is the source's own smoky makeup. `undereye_lighten=0.45` blends the
+  under-eye band toward the cheek colour (`renders/ts_undereye.png`).
+- `pose.py` now rotates about true bone positions (it previously used the +64 bounding-sphere field).

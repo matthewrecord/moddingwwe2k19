@@ -77,6 +77,44 @@ TEMPLATES={
              body=[(1,'upper'),(2,'hands'),(3,'lower')],hands_x=66,eyes=(4,5),ov=6,mouth=(7,8,9),off=[10],
              hair={0x2715:'hair'},lash=0x4e22,hide_objs=[1,3]),
 }
+def bone_world(j):
+    """true bone transforms: chain local t/r from the root (extrinsic xyz Euler). Returns {name:(R,p)}"""
+    from scipy.spatial.transform import Rotation as Rot
+    bs=j.bones; Wm={}; Wp={}
+    def w(i):
+        if i in Wm: return
+        b=bs[i]; R=Rot.from_euler('xyz',b['r']).as_matrix()
+        if b['parent']<0: Wm[i]=R; Wp[i]=np.array(b['t'],float)
+        else: w(b['parent']); Wm[i]=Wm[b['parent']]@R; Wp[i]=Wp[b['parent']]+Wm[b['parent']]@np.array(b['t'],float)
+    for i in range(len(bs)): w(i)
+    return {b['name']:(Wm[i],Wp[i]) for i,b in enumerate(bs)}
+def move_bones(jb,targets):
+    """rewrite local t (and the +64 sphere centre, by the same world delta) so the named bones sit at target world positions"""
+    import struct
+    j=jboy.JBOY(jb); b=bytearray(jb); W=bone_world(j); off=j.h[10]+8; names=[x['name'] for x in j.bones]; done={}
+    for nm,tgt in targets.items():
+        if nm not in names: continue
+        i=names.index(nm); bb=j.bones[i]; Rp,pp=W[j.bones[bb['parent']]['name']]
+        old=W[nm][1]; newt=Rp.T@(np.asarray(tgt,float)-pp); r=off+i*80
+        struct.pack_into('>3f',b,r+16,*newt); sph=np.array(struct.unpack_from('>3f',b,r+64))+(np.asarray(tgt)-old); struct.pack_into('>3f',b,r+64,*sph)
+        done[nm]=np.round(np.asarray(tgt)-old,2).tolist()
+    return bytes(b),done
+def sphere_ctr(P):
+    A=np.c_[2*P,np.ones(len(P))]; c=np.linalg.lstsq(A,(P**2).sum(1),rcond=None)[0]; return c[:3]
+def lighten_undereye(C,MB,strength):
+    """blend the band just below each eye (head texture) toward the surrounding cheek colour"""
+    from PIL import ImageDraw,ImageFilter
+    S,T=MB['M_Head']; P=S['POSITION']; UV=S['TEXCOORD']; E=MB['M_EYE'][0]['POSITION']; h,w=C.shape[:2]
+    mask=Image.new('L',(w,h),0); dr=ImageDraw.Draw(mask); cheek=[]
+    for sg in (1,-1):
+        e=E[E[:,0]*sg>0]; cx,cy=e[:,0].mean(),e[:,1].max()     # lower edge of the eyeball (y down = larger)
+        band=(np.abs(P[:,0]-cx)<2.0)&(P[:,1]>cy-0.2)&(P[:,1]<cy+1.4)&(P[:,2]<-8)
+        ch_=(np.abs(P[:,0]-cx)<2.0)&(P[:,1]>cy+2.0)&(P[:,1]<cy+3.0)&(P[:,2]<-8)
+        for t in T[band[T].all(1)]: dr.polygon([(UV[v,0]*w,UV[v,1]*h) for v in t],fill=255)
+        cheek+=[C[min(h-1,int(UV[v,1]*h)),min(w-1,int(UV[v,0]*w)),:3] for v in np.where(ch_)[0]]
+    m=np.asarray(mask.filter(ImageFilter.GaussianBlur(w/256)),float)[...,None]/255*strength
+    out=C.copy().astype(float); tgt=np.median(np.array(cheek),0); out[...,:3]=out[...,:3]*(1-m)+tgt*m
+    return out.clip(0,255).astype('u1')
 def build(cfg,outpath,PROP=None):
     W_=cfg['work']; os.makedirs(W_,exist_ok=True)
     BM=open_model(cfg['base'],W_+'/base.mdl'); AM=open_model(cfg['attire_model'],W_+'/attire.mdl'); MB=meshes(BM); MA=meshes(AM)
@@ -245,7 +283,9 @@ def build(cfg,outpath,PROP=None):
     def setm(base,C,N,skin=False,nname=None,kyle=None):
         r=mats(C,N,skin,kyle); E[base]=r['']; E[base+'_mr']=r['_mr']; E[nname or base+'_n']=r['_n']
     c,n=load_pair(TB,'body'); setm('all_color',c,n,True,'all_n',ci(TP['ref']+'/Textures/body_nrm.dds'))
-    c,n=load_pair(TB,'head'); setm('head',c,n,True,None,ci(TP['ref']+'/Textures/head_nrm.dds'))
+    c,n=load_pair(TB,'head')
+    if cfg.get('undereye_lighten'): c=lighten_undereye(c,MB,cfg['undereye_lighten']); info['undereye_lighten']=cfg['undereye_lighten']
+    setm('head',c,n,True,None,ci(TP['ref']+'/Textures/head_nrm.dds'))
     c=texconv.load(ci(TB+'/eye_color.dds')); w,h=texconv.target_size(c.shape[1],c.shape[0]); col=texconv.resize(c,w,h).copy(); col[...,3]=255; E['eye']=texconv.dds_dxt5(col)
     if ci(TB+'/eye_nrm.dds'): c,n=load_pair(TB,'eye'); setm('eye',c,n)
     for name,(C,N) in tex.items(): setm(name,C,N)
@@ -259,6 +299,16 @@ def build(cfg,outpath,PROP=None):
     if TP.get('lash') and ci(TB+'/eyelash_color.dds'):
         c=texconv.load(ci(TB+'/eyelash_color.dds')); w,h=texconv.target_size(c.shape[1],c.shape[0]); E['eyelash']=texconv.dds_dxt5(texconv.resize(c,w,h))
     J[0xa]=texconv.write_pack(list(E.items()),hd)
+    # eye pivots -> eyeball sphere centres, in every model that carries the eye bones
+    if cfg.get('eye_pivots',True):
+        jj=jboy.JBOY(J[0]); tg={}
+        for k_ in TP['eyes']:
+            P=jj.objs[k_]['pos'].astype(float); tg['J_Eye_L' if P[:,0].mean()>0 else 'J_Eye_R']=sphere_ctr(P)
+        for fid,blk in blocks:
+            d=J.get(fid) or zlib.decompress(blk[16:])
+            if d[:4]==b'JBOY':
+                J[fid],done=move_bones(d,tg)
+                if fid==0: info['eye_pivot_moved']=done
     pac=epkwrite.build_raw(hdr,[(fid,epkwrite.zblock(J[fid]) if fid in J else blk) for fid,blk in blocks]); open(outpath,'wb').write(pac)
     info['size']=len(pac); return info
 
@@ -279,7 +329,7 @@ FLASH=dict(work='/home/claude/ext/fmw2',base=F+'BaseModel/baseModel.mcd',attire_
     attire={(0x5601,1):('mesh','M_Wrist','wrist','L'),(0x5601,2):('mesh','M_Wrist','wrist','R'),
             (0x5601,3):('mesh','M_Bottoms','bottoms'),(0x5601,4):('mesh','M_Shoes','shoes')})
 T_='/home/claude/pairs/TS/817_Toni_Storm_AEWRev25/'
-TONI=dict(template='female',work='/home/claude/ext/ts',base=T_+'BaseModel/basemodel.mcd',attire_model=T_+'817_Default_Attire/817_Attire.mcd',
+TONI=dict(template='female',undereye_lighten=0.45,work='/home/claude/ext/ts',base=T_+'BaseModel/basemodel.mcd',attire_model=T_+'817_Default_Attire/817_Attire.mcd',
     tex_base=T_+'BaseModel/Textures',tex_attire=T_+'817_Default_Attire/Textures',hpl=T_+'817_Default_Attire/817_Attire.hpl',
     cover=['M_Outfit','M_Outfit_Belt','M_Tights','M_Shoes','M_Tape'],
     hair={0x2715:[('M_Hair','hair'),('M_Hair2','hair2')]},tint=(232,214,178),

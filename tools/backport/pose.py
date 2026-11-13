@@ -16,7 +16,8 @@ def pose(j,k,bones={},morph={}):
     if morph:
         M=np.asarray(jboy.morphs(j,o))
         for n,a in morph.items(): P+=a*M[n-1]
-    W={b['name']:np.array(b['world']) for b in j.bones}; out=P.copy()
+    import build_port as _bp
+    W={n:p for n,(R,p) in _bp.bone_world(j).items()}; out=P.copy()   # true bone positions (the +64 field is a bounding sphere)
     if bones:
         S=skin(j,o); T={n:(rot(ax,d),W[n]) for n,(ax,d) in bones.items()}
         for v,inf in enumerate(S):

@@ -50,7 +50,12 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
    - 4096 maps are cut to 2048.
    - Skin `_nrm` blue is matched to Kyle's distribution.
    - **Resizing is per channel**: PIL premultiplies RGBA, which zeroes RGB where alpha = 0, and 2K24/25 normal maps have alpha 0.
-9. **Writing:** `jbuild` keeps every chunk at its original address mod 16 (the hair crash). `epkwrite` writes EPK8 + ZLIB +
+9. **Eye pivots (default on, `eye_pivots`):** J_Eye_L/R are moved to the eyeball sphere centres in every model that
+   carries them. Bone position = chained local t/r from the root (extrinsic xyz Euler; `bone_world`). The record field at
+   +64 is a bounding sphere, not the bone position. The +64 centre is moved by the same delta.
+10. **Optional `undereye_lighten`:** blends the band below the eyes in the head texture toward the cheek colour (2K25/24
+    makeup reads heavier under 2K19 lighting).
+11. **Writing:** `jbuild` keeps every chunk at its original address mod 16 (the hair crash). `epkwrite` writes EPK8 + ZLIB +
    the EOP5 footer.
 
 ## Porting a new character
@@ -69,6 +74,10 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
    - Source vs build textured face (see `facecheck.py`, or the snippet in the Briscoe notes): at rest they must match.
    - `python3 -I tools/backport/morphgrid.py <pac> <out.png>`: the 12 mouth morphs, stock Andrade vs ours. There must be
      no curtains, tears or spikes.
+   - **Eye gaze test**: `python3 -I tools/backport/eyegaze.py <pac> <out.png>` aims both eyes together (left/right
+     25°, up/down 15°, as the game does) and renders each. Gates: **drift ≈ 0** (the eyeball turns in place: J_Eye pivot
+     on the eyeball centre), **vergence ≈ 0** (the lines of sight stay parallel), **poke ≤ ~0** (no eyeball pushed through
+     the lids beyond rest).
    - Female: lash blink check (head + lash under the strongest eyelid morph; lashes must close with the lid).
    - Jaw test with `pose.py` (rotate J_Jaw 15° plus morph 114 at 0.6, front and side): no spikes.
 6. Commit the notes and renders, then deliver to
@@ -107,7 +116,7 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
 | `morphgrid` | mouth morph comparison |
 
 ## Open items
-- Eye pivots: J_Eye bones sit about 0.3-0.5 cm inward of some sources' eyeballs. Moving the bones is untested.
+- Eye-pivot move (Toni v2) is awaiting in-game confirmation; `toni_v2b_nopivot` is the control. Briscoe v3 drifts 0.31 cm (would benefit). Flash's eyes diverge about 5° at rest (as in the source).
 - Beards are rigid (stock behaviour). An extreme open mouth shows the chin moving behind the beard.
 - The atlas halves resolution for the pieces it packs.
 - Hands possibly hover slightly (unconfirmed).
