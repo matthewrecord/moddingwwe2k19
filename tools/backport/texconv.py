@@ -2,7 +2,11 @@
 import io,struct,numpy as np,etcpak
 from PIL import Image
 def load(path): return np.asarray(Image.open(path).convert('RGBA'))
-def resize(a,w,h): return np.asarray(Image.fromarray(a).resize((w,h),Image.LANCZOS)) if a.shape[1]!=w or a.shape[0]!=h else a
+def resize(a,w,h):
+    """per-channel resize: PIL resizes RGBA premultiplied, which zeroes RGB wherever alpha is 0 (2K24/25 _nrm maps!)"""
+    if a.shape[1]==w and a.shape[0]==h: return a
+    if a.ndim==2: return np.asarray(Image.fromarray(a).resize((w,h),Image.LANCZOS))
+    return np.dstack([np.asarray(Image.fromarray(np.ascontiguousarray(a[...,c])).resize((w,h),Image.LANCZOS)) for c in range(a.shape[2])])
 def dds_dxt5(rgba):
     h,w=rgba.shape[:2]; data=etcpak.compress_bc3(np.ascontiguousarray(rgba).tobytes(),w,h)
     hdr=bytearray(128); hdr[0:4]=b'DDS '

@@ -18,7 +18,7 @@ def tris(pac,morph=None):
         for k,o in enumerate(j.objs):
             if o['shader']=='yCS_eyeOv': continue
             img=TX.get(jboy.obj_params(j,o).get('g_mDiffusePrm','tex:?').split(':')[1])
-            P=pose.pose(j,k,morph=morph) if (morph and fid==0 and k==0) else o['pos']
+            P=pose.pose(j,k,morph=morph) if (morph and fid==0 and o['f'][25]>1) else o['pos']
             for st,t in hidetable.strip_tri_starts(j.indices(o)[1]):
                 if fid==0 and st in hide.get(k,()): continue
                 if img is None: c=np.array([1,0,1.]); 

@@ -40,13 +40,13 @@ def xfer(Pt,Ps,Ts,sl,w,MD=None):
         for q,(a,b) in enumerate(it): SL[v,q]=a; W[v,q]=b/t
     M=None if MD is None else np.einsum('vc,ncvd->nvd' if False else 'vc,nvcd->nvd',BC,MD[:,tri,:])
     return SL,W,M,dist
-def lip_class(P,T,band=3.5):
+def lip_class(P,T,band=3.5,xf=1.05):
     """+1 upper lip side, -1 lower lip side, 0 elsewhere, from the mouth boundary loop (lip line = mean of loop y at x)."""
     import loops
     L=[l for l in loops.boundary_loops(T,P)]; L=[l for l in L if 30<=len(l)<=80]
     mouth=min(L,key=lambda l:abs(P[l,1].mean()+174)+abs(P[l,0].mean())*3)
     Q=P[mouth]; xs=np.linspace(Q[:,0].min(),Q[:,0].max(),41); ly=np.array([Q[np.abs(Q[:,0]-x)<=max(0.5,(xs[1]-xs[0])),1].mean() for x in xs])
-    lip=np.interp(P[:,0],xs,ly); zc=Q[:,2].mean(); inside=(np.abs(P[:,0])<np.abs(Q[:,0]).max()*1.05)&(np.abs(P[:,1]-lip)<band)&(P[:,2]<zc+4)
+    lip=np.interp(P[:,0],xs,ly); zc=Q[:,2].mean(); inside=(np.abs(P[:,0])<np.abs(Q[:,0]).max()*xf)&(np.abs(P[:,1]-lip)<band)&(P[:,2]<zc+4)
     c=np.zeros(len(P),int); c[inside&(P[:,1]<lip)]=1; c[inside&(P[:,1]>=lip)]=-1; return c
 def put(m,k,j,G,donor,col=RED,hair=False,weights=None):
     vc=len(G['pos']); tan=np.zeros((vc,3),'f4')

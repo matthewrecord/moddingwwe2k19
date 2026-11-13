@@ -19,3 +19,26 @@ Built in about 20 s, plus a one-time head fit.
 - Renders: `renders/mb1_body.png`, `mb1_facemouth.png`, `mb1_talk.png`.
 - **Beard:** rigid to the head, as in stock (Andrade's beard object, main JBOY obj 17, has one rigid weight).
   It cannot follow an extreme mouth-open morph; at talking range (35%) it looks fine.
+
+## v1 in game: mouth off, headband broken, liquid skin, eyes maybe too far apart. v2
+My miss: the v1 open-mouth preview showed the mouth problem and I put it down to beard behaviour.
+New bench step: `morphgrid.py` puts Andrade's stock head and our head side by side for the 12 morphs that move the mouth most
+(`renders/morph_grid.png` is v1, `morph_grid2.png` is v2). Every build must pass it.
+
+- **Mouth (curtain + corner tears).** 2K24 heads continue the lips inward and bridge upper and lower behind the opening.
+  2K19 heads (Andrade) end at the lip rim. Fixes:
+  1. Lip classes by surface (graph) distance from clear upper/lower seeds, not by height.
+  2. Lip-split transfer may use any Andrade triangle not on the opposite lip (removes the zone-edge tears).
+  3. Morph offsets smoothed on the welded mesh in the lip zone, blocking only upper<->lower edges across the central 75%
+     of the mouth. The corners stay joined.
+  4. Upper/lower bridge triangles in the central 75% are dropped (1 for Briscoe).
+  Result: all 12 morphs track Andrade's shapes.
+- **Liquid skin (the real cause).** `texconv.resize` used PIL on RGBA, which resizes premultiplied, so RGB went to 0 wherever
+  alpha = 0. 2K24/25 `_nrm` maps have alpha 0, so every resized normal map lost R/G/B: skin `_mr` = (0,0,255), flat normals.
+  Flash v3's blue-channel "fix" only worked because it set alpha to 255 first.
+  Fix: per-channel resize. Skin `_mr` is now 117/127 (his: 123/130); head 151/97 (his: 154/100).
+- **Headband.** Attire weights came from the body-only donor, so the bandana got neck/shoulder weights.
+  Fix: attire points whose nearest skin is the head take the head's own weights. Bandana: 861/883 on J_Head.
+- **Eyes.** Rest positions equal the source's own. Mark's model is asymmetric: eyeballs at +3.76/-4.00 cm, while J_Eye
+  pivots sit at ±3.5. Eye rotation around off-centre pivots can read as slightly wall-eyed. Not changed in v2 (candidate:
+  move the J_Eye bones).
