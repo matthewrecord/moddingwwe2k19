@@ -214,3 +214,38 @@ after resizing (mean absolute error, 0-255 scale):
 
 **Implication:** texture conversion is fully deterministic apart from the hair tint. Encoding needs a DXT5 encoder
 (Python options: `texture2ddecoder` decodes only; for encoding, use `etcpak`/`quicktex` or a small numpy encoder).
+
+## 9. Materials (2026-11-12, late; `jboy.obj_params`)
+
+- Header [9]/[11]: a table of **texture names** (16 bytes each; Fletcher 97). It mixes stock 2K19 slot names
+  (`swtbm_*` sweat masks, `wrinkles_n`, `lobbycube`, `cmm_mouth`, `head_b/_f`, `cap`, `glasses`, `socks`, ...) with the
+  port's own names (`pad`, `band`, `metal`, `nets` are added freely).
+- Object [37] = parameter count, [38] = pointer list. Each parameter is 24 bytes: `name[16], u16 type, u16 size(24),
+  value`. Type 10 = float, type 15 = texture (u32 index into the name table).
+- **Shader per mesh (his rule, the same on all 4):** `yCS_skin` = head/body (+ stock mouth); `yCS_gear` = opaque
+  accessories (kneepads, wrist tape, shoes, pads); `yCS_trans` = alpha cloth (tights/bottoms, combinations, necklace,
+  elbow pads, eyelash, nets, brassiere, goatee); `yCS_hair` = hair (+ `_a_hairl*` lookups); `yCS_eye` /
+  `yCS_eyeOv` = stock eyes.
+- **Parameter values are a template.** yCS_skin has 98 parameters and only 11 vary between the four (skin specular
+  set; two value groups, presumably copied from two stock characters, plus one `g_fSpecLevel` 20.0 outlier).
+  yCS_trans has 3 that vary (spec on/off), yCS_eye has 1 (`g_fEyeRL` = -1/+1 left/right), and gear/hair/eyeOv have 0.
+  Bindings are fixed by shader: Diffuse = `<mat>`, TNmlMap = `<mat>_n`, MetRouMap = `<mat>_mr`. Skin also binds the
+  stock textures (sweat masks, wrinkles, vessels, flush, mouth cube), which come from the game's shared texture set,
+  not the port.
+- Writer implication: materials can be generated from per-shader templates copied from one of his ports. Only
+  the texture names and a handful of floats change per character.
+
+## 10. Where this leaves the pipeline (status 2026-11-12 late)
+
+| Step | Status |
+|---|---|
+| Read 2K22+ MDL (mesh, skeleton, 8 weights) | done |
+| Read 2K19 JBOY (bones + palette, vertices, 7 weights, UV, strips, materials) | done |
+| Read pacs (his EPK8/zlib, stock HSPC/Oodle) | done |
+| Bone/weight rule | done: transfer from his male/female ports as templates (about 90%), name map for the rest |
+| Texture rule | done: deterministic except a hand-picked hair tint |
+| Material rule | done: per-shader templates |
+| Face: graft and fit stock 2K19 eye overlay / mouth / head base | understood, not yet built (the hardest step) |
+| Unknown small tables in the pac (3,056 B; ~119 KB `yM_*`; M_Body mask; 2,072 B) | to identify |
+| **Writer** (JBOY + texture pack + EPK8) | **next big job**: patch-style writer that reuses one of his ports as the container |
+| App (preview, stress poses, fixes, export) | after a first in-game test |

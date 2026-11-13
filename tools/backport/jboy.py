@@ -41,3 +41,13 @@ def obj_indices(j,o):
     ix=np.frombuffer(b,'>u2',n,ptr+8).astype(np.int64)
     return prim,ix
 JBOY.indices=lambda s,o: obj_indices(s,o)
+def tex_names(j):
+    b=j.b; h=j.h; return [b[h[11]+8+16*i:h[11]+8+16*i+16].split(b'\0')[0].decode() for i in range(h[9])]
+def obj_params(j,o):
+    b=j.b; f=o['f']; n=f[37]; ptrs=struct.unpack_from('>%dI'%n,b,f[38]+8); TN=tex_names(j); out={}
+    for p in ptrs:
+        r=b[p+8:p+8+24]; nm=r[:16].split(b'\0')[0].decode(); t,sz=struct.unpack_from('>2H',r,16)
+        if t==10: out[nm]=round(struct.unpack_from('>f',r,20)[0],4)
+        elif t==15: i,=struct.unpack_from('>I',r,20); out[nm]='tex:'+(TN[i] if i<len(TN) else str(i))
+        else: out[nm]=f'type{t}'
+    return out
