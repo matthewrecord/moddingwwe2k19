@@ -17,13 +17,23 @@ Branch `claude/backport-tool` (not merged: no game-facing change, nothing instal
 - **No new tools for Matthew, ever.** He owns only 2K19 and won't learn newer formats: our own readers cover that.
 - The 2K19 game is at `D:\SteamLibrary\steamapps\common\WWE 2K19` (hundreds of stock chXXXX pacs).
 
+## Later the same night (after Matthew: "keep working, no hand-holding")
+- Stock pacs = HSPC + Oodle (pyooz). His ports = EPK8 + zlib. Stock skin indices are byte-swapped.
+- **Templates found:** men = stock ch68702 (Andrade "Cien" Almas): same palette, yM table, block 5, weights 83-88%.
+  Women = stock ch75602 (84.7%). The 3,056-byte block comes from a similar-build stock wrestler (Gabe <- ch23802 Big
+  Boss Man, Willow <- ch62902 Nia Jax).
+- Port composition: 2K24 body/attire/hair + grafted stock face parts (eye overlay 194, mouth 1,974, part 341, head
+  base merged into the head object) + 17 vertices at the origin.
+- Triangles = strips (decoded). Textures: recipe recovered (Backport.md section 8); hair tint is hand-picked.
+  Materials: per-shader templates (section 9).
+- Tools on Matthew's PC: `$HOME/bp` in the device shell holds sig.py/blk.py/jboy.py (session scratch; recreate from
+  tools/backport if gone). Results copy: game folder `_moddingwwe2k19_builds\backport\stock_sigs.jsonl`.
+
 ## Next (triage order)
-1. Find the template: compare port weights against stock 2K19 male and female bodies in the game folder (pick a few
-   ch pacs). If a stock body matches, the weight step is fully deterministic.
-2. Decode the remaining JBOY parts needed for writing: index buffers (object field [39]), materials/texture table,
-   morph names (header 0x48). Also the texture pack block (`*_a_hairl0_n` names) and the small tables (3,056 B,
-   about 119 KB `yM_*`, M_Body mask).
-3. Texture rule: diff his texture pack against the original PBR DDS set (color/nrm/flow/rai -> 2K19 maps).
-4. Then the prototype pipeline on one pair (Fletcher), round-tripping through our own writer, before any app work.
-Model files stay in the workspace (`/home/claude/pairs`, `/home/claude/ext`; re-stage from Matthew's
-Paired Ports folder if the environment was reset). Never commit them.
+1. **Writer**, starting from the donor pac (ch68702): first a byte-identical JBOY round trip (parse every section
+   and pointer, rebuild), then swap geometry, skin, UV, strips, materials and texture pack. Then EPK8/zlib packing like
+   his ports, or HSPC/Oodle like stock. Test by rebuilding one of his ports from its parsed parts.
+2. Face graft: fit the stock eye overlay / mouth / 341-vertex part / head base to the 2K24 head (study how he
+   moved them: 1-3 cm per vertex).
+3. Identify block 2 (3,056 B) and the M_Body table (block 4); check eyes/eyelash textures.
+4. First in-game test (needs Matthew): install a rebuilt Fletcher in a test slot.
