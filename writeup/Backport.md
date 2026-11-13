@@ -510,3 +510,11 @@ the goal; expressions that look right are. **Working method: barycentric transfe
   vertex index**; UVs and normals taken from the 2K24 surface at each vertex (3 UV islands; the high UV density at
   the eyes is genuine, not seams). Mouth bag, teeth, tongue, eyes and eye overlay are still his.
 - Test file: `test4_fletcher_full\fletcher_facefit_v4_ch50602.pac` (not installed).
+
+## 22. Block 0xCE = body hide table (2026-11-13 ~01:45 local; `tools/backport/hidetable.py`)
+`u32 0, u32 12, u32 1`, entry (`u32 0x4C, u32 size, name "M_Body"`), then per body object a list of
+`u32 n, n x (u32 start, u32 end)` = **ranges of triangle-strip start positions** whose triangles the game skips (skin
+under attire, so it can't poke through). Fletcher: upper body 223 ranges / 1,229 triangles (arms under armband and
+elbow pad, waistband); lower body one range covering the whole object (tights). It derives from the 2K24 `.hpl`
+hide lists. **Any rebuilt body object needs this table regenerated** (map hidden triangles by position, then write our
+strip positions); a stale table hides random skin (the "hole in the back of the head").

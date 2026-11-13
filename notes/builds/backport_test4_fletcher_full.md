@@ -46,3 +46,15 @@ brows, texture alignment on eyelids/lips, the seam where the fitted head meets t
   Geometry was fine (back of head 0.15 cm from the 2K24 scalp).
 - Fix v5 (`fletcher_facefit_v5_ch50602.pac`): `facefit.split_uv_seam` duplicates the low-side vertices of
   seam-straddling triangles (weights and 119 morphs copied): 7 vertices added, 0 seam triangles left.
+
+## Result v5 (01:35): hole still there, so the UV-seam diagnosis was wrong (7 triangles; harmless fix kept).
+Checked by vertex identity (not position): the fitted head is closed (4 openings) and its neck edge sits 0.36 cm from
+the body's neck edge. Head geometry is NOT the cause.
+**Real cause (most likely): block 0xCE = M_Body hide table.** Per body object it lists ranges of **triangle-strip
+start positions** to hide: object 1 (upper body) 223 ranges = 1,229 triangles (upper arms under armband/elbow pad,
+waistband); object 2 (lower body) one range 0..13,530 = the whole object (under the tights). These index HIS strip;
+our regenerated body (since v1) has a different strip, so the table hid random upper-body triangles (the hole at the
+nape, present since v2 but not seen from behind) and only part of our lower body.
+Fix v6 (`fletcher_v6_ch50602.pac`): `tools/backport/hidetable.py` maps his hidden triangles to ours by centroid
+(1,218 matched, median 0.00 cm) -> our strip start positions; object 2 range = our full strip (0..53,514). Size fields
+updated (identity rebuild of his table verified).
