@@ -518,3 +518,12 @@ under attire, so it can't poke through). Fletcher: upper body 223 ranges / 1,229
 elbow pad, waistband); lower body one range covering the whole object (tights). It derives from the 2K24 `.hpl`
 hide lists. **Any rebuilt body object needs this table regenerated** (map hidden triangles by position, then write our
 strip positions); a stale table hides random skin (the "hole in the back of the head").
+
+## 23. First from-scratch port: Flash Morgan Webster, 2K25 (2026-11-13)
+- 2K25 ships `.mcd` = `MCD!` wrapper + MDL v0x29. The reader needed only three changes: a 48-byte mesh header, a
+  `PackedTBN` stream, and resync over padding inside the bone table. The skeleton is the same as 2K24's, so 2K25 sources work with the existing pipeline.
+- `.hpl` is decoded (`tools/backport/hpl.py`). The hide table can now come from the source files instead of a
+  porter's table. Checked against Fletcher: this rule covers 1,006 of his 1,229 upper-body triangles, and the lower body matches exactly.
+- The whole character is generated in about 5 s by `tools/backport/build_fmw.py`. The render check is clean.
+  Details: `notes/builds/backport_test5_fmw_scratch.md`.
+- Still borrowed from his Fletcher port: the eye, eye-overlay and mouth objects (shifted to fit Flash), the 0x50/0xCA/0x2580 blocks and the container. Awaiting an in-game test.
