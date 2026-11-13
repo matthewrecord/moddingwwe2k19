@@ -1,0 +1,100 @@
+# Backport tool: newer WWE 2K mods (2K24 `.mdl` / 2K25 `.mcd`) into WWE 2K19
+
+Status (2026-11-13): validated in game on **Flash Morgan Webster (2K25)** and **Mark Briscoe (2K24)**. Both are
+from-scratch ports with no porter involved. Findings are in `writeup/Backport.md`; per-build notes are in
+`notes/builds/backport_test5_fmw_scratch.md` and `backport_test6_briscoe.md`.
+
+## What the builder does (`build_port.py`)
+1. **Container:** scorpionxxx's Kyle Fletcher port `ch50602.pac` (male, Andrade ch68702 palette; his 0x50/0xCA/0x2580
+   blocks; EMD 50602). Every model in it is rewritten.
+2. **Head:** the source's own `M_Head` mesh. Andrade's head (3,936 vertices, 119 morphs) is fitted onto it
+   (`facefit.fit_welded`, cached as `<work>/fit_W.npy`). Morphs and skin are then carried from the fitted surface to
+   each source vertex. Lip handling:
+   - lip classes by surface distance from clear upper/lower seeds (`lip_class_topo`);
+   - the transfer may not borrow from the opposite lip;
+   - morph offsets are smoothed on the welded mesh in the lip zone, blocking only upper/lower edges across the central
+     75% of the mouth (corners stay joined);
+   - bridge triangles behind the lips are dropped;
+   - vertices left unweighted take the nearest weighted vertex's skin;
+   - neck-seam vertices take the body's weights.
+3. **Body:** `M_Body` split upper/lower (triangle centroid y < -108 or |x| > 26 = upper). Weights come from the body-only
+   Andrade donor, welded by position and outlier-smoothed. Triangles are ordered hidden-first so each hide range is one span.
+4. **Eyes:** the source's own `M_EYE`, rigid on J_Eye_L/R. Eye overlay and mouth parts (teeth, tongue, mouth piece) are
+   his Fletcher objects, shifted by the source-minus-Kyle part centroids.
+5. **Hair:** slot 0x2715 = hair (or one hidden triangle if bald); 0x2716 = beard/second hair. Rigid to the head, as in
+   stock. Textures come from `<stem>_rai` with a tint.
+6. **Attire:** 8 slots (0x5601: 0 necklace, 1 l_wrist, 2 r_wrist, 3 bottoms, 4 shoes; 0x5602: 0 r_elbowpad,
+   1 l_kneepad, 2 r_kneepad).
+   - Each slot takes one mesh, one side of a mesh ('L'/'R'), or a **2x2 atlas** of up to 4 meshes (1024 px tiles,
+     UVs inset 8 px).
+   - Unused slots get one hidden triangle.
+   - Attire points nearest the head take head weights (hats, bandanas).
+7. **Hide table:** `.hpl` (`hpl.py`). A body triangle is hidden if any of its vertices is listed, or if all its vertices
+   are within 1 cm of the meshes listed in `cover`.
+8. **Textures:**
+   - The 2K24 rules: `<mat>` = colour; `_n` = (255-R, 255-G, 255, 255); `_mr` = (A or 0 for skin, B, 255-B, 255).
+   - 4096 maps are cut to 2048.
+   - Skin `_nrm` blue is matched to Kyle's distribution.
+   - **Resizing is per channel**: PIL premultiplies RGBA, which zeroes RGB where alpha = 0, and 2K24/25 normal maps have alpha 0.
+9. **Writing:** `jbuild` keeps every chunk at its original address mod 16 (the hair crash). `epkwrite` writes EPK8 + ZLIB +
+   the EOP5 footer.
+
+## Porting a new character
+1. Unzip the mod into `/home/claude/pairs/<NAME>/` (it should contain `BaseModel/` and `<n>_Default_Attire/`).
+2. Inventory its meshes and textures (snippet in `notes/builds/backport_test6_briscoe.md`, or `mdlfmt.MDL(path).meshes`).
+3. Add a config dict at the bottom of `build_port.py` (copy `BRISCOE` or `FLASH`) and register it in `CONFIGS`:
+   `base`, `attire_model`, `tex_base`, `tex_attire`, `hpl`, `cover` (attire meshes that hide skin), `hair`, `tint`, and
+   `attire` slot assignments.
+   - Use 'atlas' when there are more pieces than slots.
+   - A female character needs the female template (ch75602 / Willow port). Not built yet; see "Open items".
+4. Build: `python3 -I tools/backport/build_port.py <config> /home/claude/out/<name>_v1_ch50602.pac`. This takes about
+   20 s, plus a few minutes once for the head fit.
+5. **Bench gates (all must pass before handing a build to Matthew):**
+   - `python3 -I tools/backport/preview.py <pac> <outprefix>` prints `misaligned: none` and `unweighted vertices: none`,
+     and writes textured front/back/left/face/mouth renders. Look at every one.
+   - Source vs build textured face (see `facecheck.py`, or the snippet in the Briscoe notes): at rest they must match.
+   - `python3 -I tools/backport/morphgrid.py <pac> <out.png>`: the 12 mouth morphs, stock Andrade vs ours. There must be
+     no curtains, tears or spikes.
+   - Jaw test with `pose.py` (rotate J_Jaw 15° plus morph 114 at 0.6, front and side): no spikes.
+6. Commit the notes and renders, then deliver to
+   `D:\SteamLibrary\steamapps\common\WWE 2K19 - modded\_moddingwwe2k19_builds\backport\<testN_name>\`.
+   Matthew installs it in slot ch50602, backing up first.
+
+## Inputs the tools expect (not in git)
+- Stock 2K19 pacs staged from the game: `/mnt/user-data/uploads/WWE 2K19 - modded/pac/ch/ch68702.pac` (Andrade donor).
+- The Fletcher port pac and the Kyle Fletcher 2K24 original (texture and mouth-part reference) unpacked under
+  `/home/claude/pairs/` (from `D:\Pictures\WWE 2K19\A - Resources\Paired Ports`).
+- Python packages: numpy, scipy, pillow, matplotlib, etcpak, pyooz (`ooz`), libarchive-c.
+
+## Module map
+| Module | Purpose |
+|---|---|
+| `mdlfmt` | 2K22-2K25 MDL reader (v0x28 and v0x29) |
+| `hpl` | `.hpl` hide lists |
+| `jboy` | 2K19 JBOY reader |
+| `jbuild` | object-level JBOY writer |
+| `jlayout` | JBOY region layout |
+| `pof0` | pointer table |
+| `epkwrite` | pac container |
+| `oodl` | stock pac reader |
+| `epk` | pac container (read side) |
+| `texconv` | texture conversion and pack |
+| `facefit` | head fitting |
+| `facexfer` | closest-point / barycentric transfer |
+| `loops` | boundary loops |
+| `regen_full` | mesh/weight helpers |
+| `build_fmw` | shared helpers and the Flash v4 builder |
+| `build_port` | general builder + configs |
+| `render` | flat renderer |
+| `preview` | textured pac preview + gates |
+| `facecheck` | textured source-vs-build faces |
+| `pose` | offline skinning/morph posing |
+| `morphgrid` | mouth morph comparison |
+
+## Open items
+- Female template (ch75602 / Willow port container) for female characters.
+- Eye pivots: J_Eye bones sit about 0.3-0.5 cm inward of some sources' eyeballs. Moving the bones is untested.
+- Beards are rigid (stock behaviour). An extreme open mouth shows the chin moving behind the beard.
+- The atlas halves resolution for the pieces it packs.
+- Hands possibly hover slightly (unconfirmed).
+- Next: a simple app for Matthew (preview, flagged problems, simple fixes, export).

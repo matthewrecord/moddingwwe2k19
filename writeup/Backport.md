@@ -540,3 +540,17 @@ Flash Morgan Webster (2K25) v4: Matthew says it "looks fantastic". The pipeline 
   waiting to hear whether scorpion's ports do the same.
 - **Next:** generalize `build_fmw.py` into a per-character builder (pick the donor by sex, map meshes by name, split
   oversized objects), then work toward the simple app.
+
+## 25. General builder, validated twice (2026-11-13)
+- `tools/backport/build_port.py` builds any character from a config. Mark Briscoe (2K24) v3 and Flash Morgan Webster
+  (2K25) v3 both look "spectacular" in game.
+- Fixes added since §24:
+  - RGBA resize zeroed alpha-0 normal maps (the cause of the liquid skin).
+  - Topological lip split with welded smoothing; bridge triangles dropped.
+  - Unweighted mouth-rim vertices (the mouth spike).
+  - Head-attached attire weights.
+  - Texture atlases.
+  - Hidden-first hide spans.
+- Bench gates (preview / unweighted / alignment / source-vs-build face / morph grid / jaw test) are documented in
+  `tools/backport/README.md`, which is the full workflow.
+- Reproducibility: a fresh clone builds a pac byte-identical to the delivered Briscoe v3.

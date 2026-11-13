@@ -62,3 +62,6 @@
 
 ## 2026-11-13 backport
 First from-scratch port works: Flash Morgan Webster (2K25), `_moddingwwe2k19_builds/backport/test5_fmw/` (v4 delivered via chat), slot ch50602. Branch `claude/backport-tool`. Tools: `tools/backport/build_fmw.py`, `pose.py`, `facecheck.py`. Open: hovering hands. Next: generalize the builder. Details: writeup/Backport.md §23-24.
+
+## 2026-11-13 (later) backport
+General builder works: `tools/backport/build_port.py` (configs BRISCOE, FLASH); both v3 builds look spectacular in game. Workflow + bench gates: `tools/backport/README.md`. Handoff: `handoff/016`. Next: female template, then the app.
