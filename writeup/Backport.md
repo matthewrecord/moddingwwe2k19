@@ -341,3 +341,23 @@ after resizing (mean absolute error, 0-255 scale):
   back identically (all vertices, weights, UVs, strips, parameters, bones and palette). Remaining: use POF0 as the
   pointer list (it also covers the per-morph pointers), regenerate POF0 and the size words, then byte-identical
   identity rebuild.
+
+## 14. JBOY writer: byte-exact round trip (2026-11-13 ~02:45)
+
+`tools/backport/jwrite.py` (+ `jlayout.py` region map, `pof0.py`):
+- Split the file at every region start (header, object table, per object: vertex-set pointer table, each vertex set
+  (base + morphs), skin, UV, tangent, strip header, strips, parameter list, each parameter record; then bones, texture
+  names, mesh names, morph names, palette header, palette). A chunk runs from its start to the next region's start, so
+  trailing padding travels with its chunk.
+- **Every pointer in all 62 models points at a region start** (checked against POF0, which lists every pointer).
+  So any chunk can be replaced by bytes of a different length: the writer lays chunks out again (keeping 16- or
+  4-byte alignment), re-points all POF0 pointers, rewrites the header size words ([1] = [3] = POF0 offset - 8)
+  and regenerates POF0.
+- POF0 encoding detail: 1-byte steps below 63 (units of 4 bytes). **His tool switches to 4-byte steps from 0x3000;
+  the stock (Yuke's) tool from 0x4000.** `Writer(j, style='porter'|'stock')`.
+- **Result: all 26 of his JBOYs and all 36 stock JBOYs tested rebuild byte-identical.** A rebuild with a region
+  grown by 64 bytes parses back identically. The writer is therefore safe for any geometry/texture swap that keeps
+  the object structure.
+- Next: helpers that build each chunk from arrays (vertex sets incl. morph offsets, skin with palette + 7-weight trim,
+  UV, tangent, strips via a stripifier or "list as strip", parameter records), then the texture pack writer, then
+  pac packing (EPK8 + zlib as in his ports).
