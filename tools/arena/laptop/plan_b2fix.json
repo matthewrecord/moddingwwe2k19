@@ -1,0 +1,98 @@
+{
+ "backup": "_arena_work/backup_b2fix",
+ "arenas": [
+  {
+   "slot": 118,
+   "m04": {
+    "Apron": 136
+   },
+   "files": []
+  },
+  {
+   "slot": 117,
+   "m04": {
+    "Apron": 135
+   },
+   "files": []
+  },
+  {
+   "slot": 158,
+   "m04": {
+    "Apron": 7
+   },
+   "files": []
+  },
+  {
+   "slot": 139,
+   "m04": {
+    "Apron": 134
+   },
+   "files": [
+    [
+     "/sessions/rcw-01mffapod6vvgw8xyhnvib2z/mnt/WWE 2K19/A - Resources/Back - Arenas and Arena GFX/AEW Rampage '21/pac/arena/apron/arapron00134.pac",
+     "pac/arena/apron/arapron00134.pac"
+    ]
+   ]
+  },
+  {
+   "slot": 149,
+   "m04": {
+    "Apron": 138
+   },
+   "files": [
+    [
+     "/sessions/rcw-01mffapod6vvgw8xyhnvib2z/mnt/WWE 2K19/A - Resources/Back - Arenas and Arena GFX/AEW Road Rager '21/pac/arena/apron/arapron00138.pac",
+     "pac/arena/apron/arapron00138.pac"
+    ]
+   ]
+  },
+  {
+   "slot": 112,
+   "m04": {
+    "Apron": 184
+   },
+   "files": [
+    [
+     "/sessions/rcw-01mffapod6vvgw8xyhnvib2z/mnt/WWE 2K19/A - Resources/Back - Arenas and Arena GFX/AEW Revolution/pac/arena/apron/arapron00184.pac",
+     "pac/arena/apron/arapron00184.pac"
+    ]
+   ]
+  },
+  {
+   "slot": 133,
+   "m04": {
+    "Apron": 121
+   },
+   "files": [
+    [
+     "../b2fix/arapron00121.pac",
+     "pac/arena/apron/arapron00121.pac"
+    ]
+   ]
+  },
+  {
+   "slot": 107,
+   "m04": {
+    "Apron": 122
+   },
+   "files": [
+    [
+     "../b2fix/arapron00122.pac",
+     "pac/arena/apron/arapron00122.pac"
+    ]
+   ]
+  },
+  {
+   "slot": 159,
+   "m04": {
+    "Apron": 7
+   },
+   "files": [
+    [
+     "../../../WWE 2K19 - modded/pac/arena/ibl/aribl00088.pac",
+     "pac/arena/ibl/aribl00088.pac"
+    ]
+   ]
+  }
+ ]
+}
