@@ -418,3 +418,9 @@ Rampage 116→139, Road Rager 120→149, Grand Slam (New, made for slot 3, + ppv
 3. Hide the names on the Dynamite '20 card (layout_noname).
 4. The Rampage/Road Rager card background is the short transition, so it loops fast. Bink can't be re-encoded here, so use the longer ar_mini/ar_wall loop video as the card movie instead.
 5. **Grand Slam (159) does not load** (red bar, then nothing). Prime suspect: IBL 88, copied from the modded row and probably missing in the clean game. Then stadium ST74 (its readme needs Titavius' AEW apron/barricade/CM parts) and the slot-3 entrance rewrapped into 159. Check that the files exist, try IBL 50, then bisect.
+
+## Batch 2 fixes (2026-11-13, laptop session)
+Backups: `_arena_work\backup_b2fix`. Plan `plan_b2fix.json`. New checker `partcheck.py <slots>` (every part id a misc04 row names must exist in pac\arena).
+- **Grand Slam (159) load failure: cause found.** `partcheck` showed IBL 88 missing in the clean game (clean has IBL 0–75). The modded game's `aribl00088.pac` is a named EPAC (IA88), so it was copied as is (md5 e3c6948a) and added to chunk0.def. Stadium ST74 is identical to the modded game's (7535674f); every other part of row 159 exists. Waiting on Matthew's test.
+- **Own apron per AEW arena (ring mat 18 kept):** All Out 136, Dark 135, Dynamite '22 7, Rampage 134 (EPK8, as shipped), Road Rager 138 (EPK8), Revolution 184 (EPK8), Full Gear = mod HSPC 97 → EPK8 AP00121 at id 121, Dynamite '20 = mod HSPC 75 → EPK8 AP00122 at id 122, Grand Slam = Dynamite apron 7, Double or Nothing 137 (unchanged). misc04 b48ce50e. Note: the modded game's rows 116/117/120 point at ported stock aprons (38/12/20) and are not these AEW mods, so the mods' shipped aprons were used.
+- EPK8 header word 8 = data size in bytes, same as stock (checked on ar_wall EPK8s); build_single matches.
