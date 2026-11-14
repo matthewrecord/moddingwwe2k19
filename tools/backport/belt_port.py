@@ -34,6 +34,7 @@ def unpack_block(blk):
         r = oodl.blocks(blk); assert r and r[0][1] is not None; return r[0][1]
     if blk[:4] == b'ZLIB': return zlib.decompress(blk[16:16 + struct.unpack_from('<I', blk, 8)[0]])
     raise ValueError(blk[:4])
+CODEC = 'zlib'   # 'zlib' (small files; v1/v2 loaded every time) or 'stored' (Oodle wrapper, uncompressed: 2-3x stock size)
 def oodl_block(raw):
     """Stock-style Oodle block ('OODL', 0, 0x2e060030, 'KRKN', raw size, stream size) holding a Kraken stream made of
     stored (uncompressed) 256 KB chunks: chunk header 0xCC 0x06 = restart | uncompressed | 0xC magic, decoder 6 (Kraken).
@@ -51,7 +52,7 @@ def write_prop(P, replaced):
     out = bytearray(s[:first])
     for i, e in enumerate(E):
         out += b'\0' * ((-len(out)) % 16)
-        blk = oodl_block(replaced[i]) if i in replaced else e['blk']
+        blk = (zlib_block if CODEC == 'zlib' else oodl_block)(replaced[i]) if i in replaced else e['blk']
         struct.pack_into('<4I', out, t + 16 * i, e['id'], len(out), len(blk), 0); out += blk
     # SHDC word 15 = (end of last block - start of first block) rounded up to 4 (checked on 2001-2006, 2905 stock)
     span = len(out) - first; struct.pack_into('<I', out, 60, (span + 3) & ~3)

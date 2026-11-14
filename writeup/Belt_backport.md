@@ -88,3 +88,12 @@ original vertices so seams survive) cuts to <= 6000 vertices: 5,484 / 5,508 vert
 - SHDC word 15 rule found: (end of last block - first block offset) rounded up to 4; mine was 20 bytes over. Fixed.
 - v3 close-up: smooth cream-gold plate, black strap, no colour detail. Next diag `--matte`: real colour + normal maps,
   belt_p forced metal 0 / roughness 128, to separate "colour map" from "metal shading".
+
+## 11. Freeze trace (2026-11-14)
+Traced freeze with `diag_matte` (stored Oodle, 3.3 MB): the hang comes after `pac/root/audience.pac` and **before** the
+match opens any wrestler pac or `pac/prop/2905.pac` (in the loading run the order was audience -> ch* wrestlers -> ... -> prop/2905
+3 s later). The belt is only touched by the boot header scan (first 64 KB of every prop pac) by then. Working theory:
+the match loader budgets memory from the declared prop sizes, and the stored-Oodle pacs (3.3-5.6 MB vs 1.8 MB stock) tip it
+over depending on arena/wrestlers: intermittent, at ~1/5 of the bar, never with stock. Test: `diag_matte` rebuilt with
+**ZLIB** blocks (1.23 MB, smaller than stock; v1/v2 ZLIB builds always loaded). `belt_port.CODEC` = 'zlib' by default now.
+Tracer note: the 8 s idle sampler never fired because unlogged I/O kept resetting it; v2 should trigger on 'no pac opened'.
