@@ -20,7 +20,7 @@ from PIL import Image
 def shdc_files(s):
     """SHDC of a prop pac: 16-byte file entries (id, off, size, 0); table located by the first entry's offset."""
     n = struct.unpack_from('<I', s, 56)[0]
-    for t in range(0x40, 0x400, 4):
+    for t in range(0x40, 0x4000, 4):
         ok = True; E = []
         for i in range(n):
             fid, off, sz, z = struct.unpack_from('<4I', s, t + 16 * i)
@@ -80,15 +80,20 @@ def dds(rgba, kind):
     return bytes(hdr) + bytes(data)
 def load_dds(path):
     sys.path.insert(0, HERE); import ddsread; return ddsread.decode(open(path, 'rb').read())[1]
-def build_textures(tex_dir, size):
+def build_textures(tex_dir, size, strap=None, gloss=1.0):
     def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
     col = L('belt_color.DDS').copy(); col[..., 3] = 255
+    if strap is not None:
+        # strap front = the flat leather band at the top of the mod's colour map (v 0..0.234, mean RGB 73,25,19). Recolour it,
+        # keeping the leather grain as relative brightness variation.
+        band = col[:int(0.234 * size), :, :3].astype('f4'); lum = band.mean(-1, keepdims=True); rel = lum / max(lum.mean(), 1)
+        col[:int(0.234 * size), :, :3] = np.clip(np.array(strap, 'f4') * rel, 0, 255).astype('u1')
     N = L('belt_normal.DDS').astype(int); M = L('belt_metal.DDS')[..., 0].astype(float); R = L('belt_roughness.DDS')[..., 0].astype(float)
     # 2K19 belt_n: BC5, R = same sign as 2K23, G inverted (measured on stock 2003 vs mod metal edges, writeup/Belt_backport.md)
     n = np.zeros(N.shape, 'u1'); n[..., 0] = N[..., 0]; n[..., 1] = 255 - N[..., 1]; n[..., 3] = 255
     # 2K19 belt_p: R = metalness, G = roughness in the stock range (metal ~25, leather ~50), B = 255
-    g = 50 - 25 * (M / 255) + 0.15 * (R - R.mean())
-    p = np.stack([M, np.clip(g, 12, 90), np.full_like(M, 255), np.full_like(M, 255)], -1).astype('u1')
+    g = (50 - 25 * (M / 255) + 0.15 * (R - R.mean())) / gloss   # gloss > 1 = shinier (lower roughness)
+    p = np.stack([M, np.clip(g, 6, 90), np.full_like(M, 255), np.full_like(M, 255)], -1).astype('u1')
     return [('belt', dds(col, 'DXT1')), ('belt_n', dds(n, 'ATI2')), ('belt_p', dds(p, 'DXT1'))]
 
 # ---------------------------------------------------------------- mesh
@@ -214,10 +219,10 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000)
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0)
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
-    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size); man = {}
+    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts)

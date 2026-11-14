@@ -141,3 +141,16 @@ sign tuning. Tracer DLL removed from the plain install (moved with its logs to `
 3. `python3 -I tools/backport/belt_port.py --mod <mod> --stock <pac/prop> --main <main> --cut <cut> --out <dir>`
    (ZLIB, <= 6000 vertices, normals flipped to the 2K19 convention, 1024 px textures). Check both pacs are below stock size.
 4. Copy to `pac/prop/`, test an entrance and a title presentation.
+
+## 16. Customisation: white strap, gloss, menu picture, title name (2026-11-14)
+- `belt_port.py --strap R,G,B --gloss G`: recolours the strap front (mod colour map v 0..0.234, keeps the leather grain as
+  relative brightness) and divides roughness by G. v5 = `--strap 236,233,226 --gloss 2.0`. The strap back/edges (black band
+  v .234-.46) and the maroon leather visible around the plate photo are unchanged.
+- `beltshot.py`: per-pixel renderer with 2K19 back-face culling (control: stock 2905 renders the Brahma Bull plate correctly).
+- Menu picture: `pac/menu/win/Assets/wwe19_texture/belt/ltag_belt_all_win.pac` = SHDC, entry 0 layout with 91 names
+  (`000_wwe_heavy` ... `023_wwe_champ_bull` ...), entries 1-90 = 512x256 BC7 DDS (DX10, no mips) in name order; identity
+  rebuild with `belt_port.write_prop` is byte-exact. `belt_menu.py` renders the prop and replaces one picture
+  (Brahma Bull = entry 21), framed like stock (zoom 1.65, exposure 2.4).
+- Title name: live strings are `mods/SuperString/pac/string/win/string_win.pac` (pac/string/win has only .bak). Title 23 =
+  Brahma Bull; variants 2100NN/2101NN/2102NN/2103NN/2108NN/2109NN/2110NN/2111NN/2120NN + 602003. `tools/build/titlename.py`
+  renames all of them in all 7 language tables (exactly 10 strings per table changed, verified). Now 'AEW United States Championship'.
