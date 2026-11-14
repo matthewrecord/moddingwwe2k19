@@ -13,3 +13,4 @@ Branch `claude/belt-backport` (on top of `claude/backport-tool`). Write-up: `wri
 - **Correction (Matthew):** belt work targets the PLAIN install `D:\SteamLibrary\steamapps\common\WWE 2K19`. Modded install restored to stock 2905/5038. `iwgp_brahma_v1` installed in the plain game; originals in `WWE 2K19\_moddingwwe2k19_builds\belt\backup_originals\`.
 - v1 in game: geometry/weights OK, textures wrong (unaligned DDS in texture pack). v2 built and installed in plain (backups unchanged).
 - v2 in game: still stock-looking gold plate. v3 = Oodle-stored blocks instead of ZLIB, installed in plain.
+- v3 in game: still gold. Switched to diagnostics: `belt_diag.py` (magenta/green checker + coloured v-bands, metal 0, flat normal) installed in plain as `diag_textures`. Magenta -> our texture pack is used (problem = material/shading); gold -> textures come from elsewhere.
