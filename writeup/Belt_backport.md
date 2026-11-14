@@ -429,3 +429,11 @@ vertex colour (all 255 like stock), the stored-tangent convention (= +dP/du like
 normal-map statistics (tilt and high frequency within the stock range), and metal albedo/roughness (v12 matches stock).
 Next: an in-game **swap test** to separate mesh from textures (A: stock Brahma textures on our mesh; B: our v12 textures on the
 stock Brahma mesh), before any further look tuning.
+
+## 33. Closed (2026-11-14)
+Matthew ended the look work: no more in-game tests. v10 is restored as the installed belt (the last version he called better);
+v11/v12 are kept in their builds folders. The intro (Bink 1 with alpha, from the reference photo) works.
+Open and unexplained: why our prop renders darker in game than its textures predict. Documented in section 32, including the swap test
+that would split mesh from textures, if anyone picks this up again.
+Lesson (process): the cause should have been isolated with a stock-vs-mod emulator and a swap test early on, not tuned by eye
+over 12 in-game rounds. Matthew's time is the scarce resource.

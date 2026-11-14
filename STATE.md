@@ -63,6 +63,8 @@
 
 - 2026-11-14: belt intro video works (evt_data id 13 row 23 → 502300; see writeup/Belt_backport.md §25).
 
+- 2026-11-14: AEW US belt closed: v10 installed (2905 b6254fb0…, 5038 415300ad…), photo intro (Bink 1 + alpha) works; in-game darkness unexplained (Belt_backport §32-33).
+
 ## 2026-11-13 backport
 First from-scratch port works: Flash Morgan Webster (2K25), `_moddingwwe2k19_builds/backport/test5_fmw/` (v4 delivered via chat), slot ch50602. Branch `claude/backport-tool`. Tools: `tools/backport/build_fmw.py`, `pose.py`, `facecheck.py`. Open: hovering hands. Next: generalize the builder. Details: writeup/Backport.md §23-24.
 
