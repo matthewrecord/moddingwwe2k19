@@ -95,10 +95,40 @@ def gold_hue(rgb, target=35.0):
         sel = k == i; out[sel] = np.stack([p[sel], q[sel], t[sel]], -1)
     out += m0[..., None]
     return np.clip(np.where(w[..., None] > 0, out, a) * 255 + 0.5, 0, 255).astype('u1')
-def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0):
+def rgb2hsv(a):
+    mx = a.max(-1); mn = a.min(-1); d = mx - mn; s = np.where(mx > 0, d / np.maximum(mx, 1e-6), 0)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]; dd = np.maximum(d, 1e-6)
+    h = np.where(mx == r, ((g - b) / dd) % 6, np.where(mx == g, (b - r) / dd + 2, (r - g) / dd + 4)) * 60
+    return h, s, mx
+
+def hsv2rgb(h, s, v):
+    c = v * s; x = c * (1 - np.abs((h / 60) % 2 - 1)); m0 = v - c; k = (h // 60).astype(int) % 6
+    out = np.zeros(h.shape + (3,), 'f4'); z = np.zeros_like(c)
+    for i, (p, q, t) in enumerate(((c, x, z), (x, c, z), (z, c, x), (z, x, c), (x, z, c), (c, z, x))):
+        sel = k == i; out[sel] = np.stack([p[sel], q[sel], t[sel]], -1)
+    return out + m0[..., None]
+
+# Colour grade toward Matthew's reference photo of the real IWGP US belt (measured 2026-11-14): gold = rose/copper hue 29,
+# sat 0.66; stripes = magenta-red hue ~336, fully saturated; blue = hue 206, sat 0.8. Rules: (centre, half width, min sat,
+# target hue or None, saturation multiplier, value multiplier).
+GRADE_REF = [(35, 22, 0.18, 27, 1.55, 0.9), (350, 22, 0.30, 338, 1.35, 1.05), (215, 30, 0.25, 208, 1.3, 1.08)]
+
+def color_grade(rgb, rules=GRADE_REF, strength=1.0):
+    a = rgb.astype('f4') / 255; h, s, v = rgb2hsv(a); hn, sn, vn = h.copy(), s.copy(), v.copy()
+    for c, hw, smin, th, sm, vm in rules:
+        dh = (h - c + 180) % 360 - 180
+        w = np.clip(1 - np.maximum(0, np.abs(dh) - hw) / 10, 0, 1) * np.clip((s - smin) / 0.12, 0, 1) * strength
+        if th is not None: hn = hn + w * ((th - c + 180) % 360 - 180 + 0) * 0 + w * (((th - h + 180) % 360 - 180) * 0.85)
+        sn = sn * (1 + w * (sm - 1)); vn = vn * (1 + w * (vm - 1))
+    out = hsv2rgb(hn % 360, np.clip(sn, 0, 1), np.clip(vn, 0, 1))
+    return np.clip(out * 255 + 0.5, 0, 255).astype('u1')
+
+def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0, grade=0.0):
     def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
     col = L('belt_color.DDS').copy(); col[..., 3] = 255
     if hue is not None: col[..., :3] = gold_hue(col[..., :3], hue)
+    if grade:
+        pl = int(0.234 * size); col[pl:, :, :3] = color_grade(col[pl:, :, :3], strength=grade)   # plates/keepers only, not the strap
     if strap is not None:
         # strap front = the flat leather band at the top of the mod's colour map (v 0..0.234, mean RGB 73,25,19). Recolour it,
         # keeping the leather grain as relative brightness variation.
@@ -310,10 +340,10 @@ def quality(pac_bytes_path):
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
-    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth); man = {}
+    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts)

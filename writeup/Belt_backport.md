@@ -326,3 +326,23 @@ Matthew: the strap looks a little grainy and textured; he wants it smoother and 
   - Rendered from a `--strap-smooth 1.0` build, plus `belt_intro.py --strap-soft 0.9`. Strap texels (non-metal, unsaturated,
     bright) get a heavily blurred colour lifted to warm white, with even gloss.
   - Frames are in `_moddingwwe2k19_builds\belt\intro\frames_rgba_v3\`.
+
+## 28. Colour match to Matthew's reference photo of the real belt: v10 belt + intro v4 (2026-11-14)
+Reference: a studio photo of the real IWGP US belt. Measured from it:
+- Gold is rose/copper: hue 29, saturation 0.66, value 0.78.
+- Stripes are magenta-red (hue about 336, fully saturated). The blue field is hue 206, saturation 0.8. The banners are glossy neutral black.
+- The strap is a cool white (202,210,212). The key light comes from the top: the strap is bright at the top and darker toward the bottom.
+
+Belt textures (`belt_port.py`):
+- `--gold-hue 29` plus a new `--grade 1.0` (plates and keepers only): gold saturation ×1.55 and value ×0.9; reds pushed toward 338
+  with saturation ×1.35; blues toward 208 with saturation ×1.3.
+- `--strap 214,220,224`, a cool white instead of the warm 236,233,226.
+- Result: metal gold hue 29.1, saturation 0.64. Metal fraction 0.50, no warnings. The pac is 1.26 MB, below stock.
+- v10 = `--strap 214,220,224 --gloss 2.0 --gold-hue 29 --metalize --strap-smooth 0.75 --grade 1.0`.
+
+Intro renderer (`belt_intro.py`), video only:
+- Key-light falloff from the top-left, with cool lavender in the white's shadows.
+- Deeper gold shadows, and a soft highlight shoulder (1-exp) instead of hard clipping.
+- Extra saturation and warmth on metal.
+- Enamel pass: magenta-red stripes, bright blue, neutral black banners.
+- The dark strap outline is replaced with strap white, and the orange halo with a soft drop shadow.

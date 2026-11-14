@@ -35,12 +35,35 @@ def gbuffer(pac, W, H, margin=0.03):
         G['n'][win][m] = n; cov[win][m] = 1
     return G, cov
 
-def shade(G, L, gain=1.0):
+def shade(G, L, gain=1.0, key=None):
     L = np.asarray(L, 'f8'); L /= np.linalg.norm(L); V = np.array([0, -1.0, 0]); Hh = (L + V) / np.linalg.norm(L + V)
     n = G['n']; base = G['base']; metal = G['pm'][..., 0:1]; rough = np.clip(G['pm'][..., 1:2], 0.04, 1)
     lam = np.clip(-(n @ L), 0, 1)[..., None]; spec = np.clip(-(n @ Hh), 0, 1)[..., None] ** (2 / rough ** 2 * 0.25 + 4)
-    c = base * (1 - metal) * (0.5 + 0.75 * lam) + base * metal * (0.75 + 0.6 * lam) + (0.04 * (1 - metal) + base * metal) * spec * 3.2 * (1 - rough)
-    return np.clip(c * gain, 0, 1)
+    k = key[..., None] if key is not None else 1.0                     # key-light falloff across the belt (bright top-left)
+    leather = base * (1 - metal) * (0.42 + 0.7 * lam) * k
+    shadow_tint = np.array([0.90, 0.90, 1.0])                          # cool / lavender in the darker parts of the white
+    leather = leather * (shadow_tint + (1 - shadow_tint) * np.clip(k, 0, 1))
+    metalc = base * metal * (0.40 + 1.0 * lam) * k ** 1.8             # deep gold shadows, bright where the key hits
+    c = leather + metalc + (0.04 * (1 - metal) + base * metal) * spec * 3.6 * (1 - rough) * k
+    c = c * gain
+    out = 1 - np.exp(-c * 1.9)
+    # rich copper-gold like the reference photo: extra saturation and lift on metal only
+    g = out.mean(-1, keepdims=True); mm = np.clip(metal * 1.5, 0, 1) * 0.85
+    rich = np.clip(g + (out - g) * 1.6, 0, 1) * np.array([1.06, 1.0, 0.92])
+    out = np.clip(out * (1 - mm) + rich * mm * 1.12, 0, 1)
+    return enamel(out, metal[..., 0])
+
+def enamel(c, metal):
+    """Reference-photo enamel: magenta-red stripes, bright blue field, neutral glossy black banners (non-metal texels only)."""
+    import belt_port as bp
+    h, s, v = bp.rgb2hsv(c.astype('f4')); nm = np.clip(1 - metal * 2, 0, 1)
+    dr = (h - 345 + 180) % 360 - 180; red = np.clip(1 - np.maximum(0, np.abs(dr) - 25) / 10, 0, 1) * np.clip((s - 0.25) / 0.15, 0, 1) * nm
+    db = (h - 220 + 180) % 360 - 180; blu = np.clip(1 - np.maximum(0, np.abs(db) - 30) / 10, 0, 1) * np.clip((s - 0.25) / 0.15, 0, 1) * nm
+    dark = np.clip((0.35 - v) / 0.15, 0, 1) * nm * (1 - red) * (1 - blu)
+    h2 = h + red * (((336 - h + 180) % 360 - 180)) + blu * (((210 - h + 180) % 360 - 180)) * 0.7
+    s2 = np.clip(s * (1 + 0.45 * red + 0.3 * blu) * (1 - 0.8 * dark), 0, 1)
+    v2 = np.clip(v * (1 + 0.55 * red + 0.45 * blu), 0, 1)
+    return np.clip(bp.hsv2rgb(h2 % 360, s2, v2), 0, 1)                                         # soft shoulder: highlights roll off, no flat white
 
 def saturate(c, k):
     g = (c @ np.array([0.299, 0.587, 0.114]))[..., None]
@@ -70,6 +93,15 @@ def main():
         lum = bl.mean(-1, keepdims=True); smooth = np.clip(0.93 + (lum - lum[m].mean()) * 0.35, 0, 1) * np.array([1.0, 0.985, 0.955])
         G['base'] = b * (1 - mf * a.strap_soft) + smooth * mf * a.strap_soft
         G['pm'][..., 1] = G['pm'][..., 1] * (1 - mf[..., 0] * a.strap_soft) + 0.22 * mf[..., 0] * a.strap_soft
+    gy, gx = np.mgrid[0:BH, 0:BW]
+    ys = np.where(cov.any(1))[0]; y0b, y1b = ys.min(), ys.max()
+    KEY = (1.12 - 0.42 * np.clip((gy - y0b) / max(y1b - y0b, 1), 0, 1)) * (1.05 - 0.15 * gx / BW)   # top bright -> bottom darker
+    # remove the dark outline: dark, non-metal texels within ~8 px of the silhouette take the median strap colour
+    from PIL import ImageFilter as _F
+    inner = np.asarray(Image.fromarray((cov * 255).astype('u1')).filter(_F.MinFilter(17)), 'f4') / 255
+    lumb = G['base'].mean(-1); edge = (cov > 0) & (inner < 1) & (G['pm'][..., 0] < 0.3) & (lumb < 0.45)
+    wmask = (cov > 0) & (G['pm'][..., 0] < 0.3) & (lumb > 0.6)
+    if wmask.any(): G['base'][edge] = np.median(G['base'][wmask], 0); G['pm'][..., 1][edge] = np.median(G['pm'][..., 1][wmask])
     nf = int(a.seconds * a.fps)
     yy, xx = np.mgrid[0:H, 0:W]; r = np.hypot((xx - W / 2) / W, (yy - H * 0.45) / H)
     bgbase = np.clip(0.16 - 0.22 * r, 0, 1)[..., None] * np.array([1.0, 0.82, 0.55])   # warm spotlight falloff on black
@@ -85,7 +117,7 @@ def main():
         ang = -1.1 + 2.2 * ease(t / 0.62)                           # light sweep left -> right
         L = [np.sin(ang) * 0.9, -0.75, -0.35 - 0.15 * np.cos(ang)]
         fade_in = ease(t / 0.12); fade_out = 1 - ease((t - 0.94) / 0.06)
-        belt = saturate(shade(G, L, gain=1.45 + 0.3 * ease((t - 0.6) / 0.3)), a.sat)
+        belt = saturate(shade(G, L, gain=1.25 + 0.25 * ease((t - 0.6) / 0.3), key=KEY), a.sat)
         scale = 0.84 + 0.08 * ease(t)
         bw = int(W * scale); bh = int(bw * BH / BW); x0 = (W - bw) // 2; cy = int(H * 0.44 - bh / 2)
         pil = Image.fromarray((np.dstack([belt, cov]) * 255).astype('u1'), 'RGBA').resize((bw, bh), Image.LANCZOS)
@@ -94,7 +126,11 @@ def main():
             C[win] = C[win] * (1 - al[..., None]) + c * al[..., None]; A[win] = A[win] + al * (1 - A[win])
         win = (slice(cy, cy + bh), slice(x0, x0 + bw))
         glow = np.asarray(pil.split()[3].resize((bw // 8, bh // 8)).filter(ImageFilter.GaussianBlur(6)).resize((bw, bh)), 'f4') / 255
-        over(np.array([1.0, 0.62, 0.18], 'f4'), glow * 0.45 * fade_in, win)
+        sh = np.zeros((H, W), 'f4'); oy = int(bh * 0.06)
+        sm = np.asarray(pil.split()[3].resize((bw // 6, bh // 6)).filter(ImageFilter.GaussianBlur(5)).resize((bw, bh)), 'f4') / 255
+        y_a, y_b = cy + oy, min(H, cy + oy + bh); sh[y_a:y_b, x0:x0 + bw] = sm[:y_b - y_a]
+        over(np.zeros(3, 'f4'), sh * 0.5 * fade_in)                                    # soft drop shadow under the belt
+        over(np.array([1.0, 0.70, 0.40], 'f4'), glow * 0.18 * fade_in, win)           # faint warm glow
         bp = np.asarray(pil, 'f4') / 255; over(bp[..., :3], bp[..., 3] * fade_in, win)
         fx = W / 2 + np.sin(ang) * W * 0.32; fy = cy + bh * 0.5
         fl = np.exp(-(((xx - fx) / 260) ** 2 + ((yy - fy) / 26) ** 2)) * 0.55 + np.exp(-((xx - fx) ** 2 + (yy - fy) ** 2) / 70 ** 2) * 0.5
