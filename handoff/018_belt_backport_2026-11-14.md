@@ -49,3 +49,11 @@ White strap + gloss 2.0, menu picture replaced, title 23 renamed in all 7 langua
 | `pac\prop\5038.pac` | 69876b7d363a901c410ff66d9abbdcaa | baaf12b088ca8904930458e7d647e9f5 |
 | `pac\menu\win\Assets\wwe19_texture\belt\ltag_belt_all_win.pac` | e72280236c51e027692ef2f34a6d770b (`ltag_belt_all_win.pac`) | bb063e5ea08d60b9163fd80163a3da08 |
 | `mods\SuperString\string_win.pac` and `mods\SuperString\pac\string\win\string_win.pac` (game opens both, per trace) | efd9ef151e94382e6e8a90b7673354f9 (`SuperString_string_win.pac`) | 0d33081684460020a3e63755db46e007 |
+
+## v6 installed (gold hue 35), 2026-11-14
+| File | Installed MD5 (`aew_us_v6`) |
+|---|---|
+| `pac\prop\2905.pac` | e47a3f049943fb0c6cff21b09164382e |
+| `pac\prop\5038.pac` | 7e288e0ac8d3dc66e7db98b76fc508c2 |
+| `pac\menu\win\Assets\wwe19_texture\belt\ltag_belt_all_win.pac` | 28083e9b30b51a7a55c43586de761792 |
+Strings unchanged from v5. Originals (MD5s in the tables above) in `backup_originals\`.
