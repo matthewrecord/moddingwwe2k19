@@ -53,9 +53,8 @@ def write_prop(P, replaced):
         out += b'\0' * ((-len(out)) % 16)
         blk = oodl_block(replaced[i]) if i in replaced else e['blk']
         struct.pack_into('<4I', out, t + 16 * i, e['id'], len(out), len(blk), 0); out += blk
-    old_total = sum(len(e['blk']) for e in E)
-    new_total = sum(len(oodl_block(replaced[i])) if i in replaced else len(e['blk']) for i, e in enumerate(E))
-    struct.pack_into('<I', out, 60, (struct.unpack_from('<I', s, 60)[0] + new_total - old_total) & 0xffffffff)
+    # SHDC word 15 = (end of last block - start of first block) rounded up to 4 (checked on 2001-2006, 2905 stock)
+    span = len(out) - first; struct.pack_into('<I', out, 60, (span + 3) & ~3)
     H = P['H']; H.files[0]['data'] = bytes(out); return H.build()[0]
 
 # ---------------------------------------------------------------- textures

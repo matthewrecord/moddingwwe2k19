@@ -79,3 +79,12 @@ ZLIB blocks. v3 writes OODL/KRKN blocks with stored (uncompressed) Kraken chunks
 0.30 MB (2905) / 0.52 MB (5038) stock; whole pac 6.2 MB raw vs 3.7-4.1 MB. The earlier 29k builds loading once and this one freezing
 fits a memory budget, not bad data (all blocks decode; structure identical). `belt_port.decimate` (meshoptimizer simplify, keeps
 original vertices so seams survive) cuts to <= 6000 vertices: 5,484 / 5,508 vertices, model 0.52 MB. `diag_uvgrad_6k` installed.
+
+## 10. Traced run (filetrace DLL), 2026-11-14
+- With the tracer installed the 6k UV-gradient build **loaded** (freeze is intermittent). Log: at boot the game opens every
+  `pac/prop/*.pac` and reads the first 64 KB (header scan); at match load it reads 2905 then 5038 whole (off 6144, n = SHDC size).
+- UV-gradient screenshot matches the offline "as written" render (green plate, red strap, green side plates):
+  **UVs are read correctly**. The checker 'solid green' was the plate's real UV region.
+- SHDC word 15 rule found: (end of last block - first block offset) rounded up to 4; mine was 20 bytes over. Fixed.
+- v3 close-up: smooth cream-gold plate, black strap, no colour detail. Next diag `--matte`: real colour + normal maps,
+  belt_p forced metal 0 / roughness 128, to separate "colour map" from "metal shading".
