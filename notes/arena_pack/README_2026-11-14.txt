@@ -1,7 +1,7 @@
 ARENA PACK (moddingwwe2k19) - 2026-11-14
 =========================================
 Everything from the arena rebuild (Nov 2026) as one drag-and-drop folder:
-397 files (179 new, 218 replacements), 2.0 GB. MANIFEST.md5 lists every file with its MD5.
+403 files (181 new, 222 replacements), 2.0 GB. MANIFEST.md5 lists every file with its MD5.
 
 REQUIREMENTS (the base this was built and tested on)
 - Clean WWE 2K19 (Steam).
@@ -22,7 +22,7 @@ ARENAS (slot - arena - replaces; 104/115 keep their own arena, new stage)
   53  SMACKDOWN (SmackDown 21)    No Mercy '16
    5  TOKYO DOME                  Battleground '13
  107  AEW DYNAMITE '20            No Way Out '01
- 104  WRESTLEMANIA 29 (2K15-2K18 Arena Port stage; graphics/videos = 81-arena pack)
+ 104  WRESTLEMANIA 29 (2K15-2K18 Arena Port stage; graphics/videos = 81-arena pack + 6-digit mini-tron copy)
  112  AEW REVOLUTION              Backlash '03
  115  WRESTLEMANIA 32 (2K15-2K18 Arena Port stage + the "Wrestlemania 32 GFX" set: locator, match result,
       nameplate, copyright, replay, transition, replay transition, match-card banner)
@@ -54,11 +54,18 @@ WHOLE FILES (these replace the pack's copies; they are the pack's files plus our
   (the second is an identical copy on purpose: the game sometimes reads the stray one).
   The string files differ from the pack only in the 25 arena names above.
 
+MATCH CARDS: every arena above except RAW (96) and SMACKDOWN (53) shows no wrestler names.
+
 SHARED CHANGES WORTH KNOWING
 - Crowd 3 = AEW crowd shirts (crowd 3 was unused by any arena before).
 - Rope 7 = AEW rope. All AEW arenas use misc01 "Live" 7 (no WWE "W LIVE" bug).
 - Battleground '15's "ppv_logo" file (141 -Battleground '15.pac) carries the NJPW crest: the pack's
   file labels for slots 5 and 141 are swapped, and this is the one Tokyo Dome reads.
+
+NOTES
+- SummerSlam '22: the creator's crowd-seat values (-2) hang this game; the row uses -1 and adds barricade 16 /
+  fence 20 (the 2017-18 WWE set). Its "header" part is off.
+- WM29/WM32 port stages read the 6-digit video names (ar_mini\000104.pac etc.); both 6- and 7-digit copies are included.
 
 KNOWN GAPS
 - Tokyo Dome: no NJPW locator/nameplate/match result yet; its match card is the shared generic card (shows names).

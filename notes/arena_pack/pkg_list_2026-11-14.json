@@ -98,6 +98,7 @@
 "mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/149 - Armageddon '03.pac",
 "mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/158 - Over The Limit '11.pac",
 "mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/159 - Vengence '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/160 - Payback '14.pac",
 "mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/96 - Great Balls Of Fire.pac",
 "mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/107 - NO WAY OUT '01.pac",
 "mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/112 - BACKLASH '03.pac",
@@ -217,7 +218,6 @@
 "pac/arena/floor/arfloor00017.pac",
 "pac/arena/floor/arfloor00019.pac",
 "pac/arena/floormattress/arfloormattress00015.pac",
-"pac/arena/header/arheader00065.pac",
 "pac/arena/ibl/aribl00034.pac",
 "pac/arena/ibl/aribl00088.pac",
 "pac/arena/ibl/aribl00089.pac",
@@ -263,6 +263,7 @@
 "pac/arena/turnbuckle/arturnbucklecm00002.pac",
 "pac/evt/evt_light.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_096_gbof_2017_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_104_wm29_2013_win.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_107_nowayout_2001_win.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_112_back_2003_win.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_115_wm32_2016_win.pac",
@@ -277,6 +278,8 @@
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_130_rockbottom_1998_win.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_132_wm15_1999_win.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_133_back_2000_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_134_kotr_1999_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_135_fullyloaded_1999_win.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_138_back_2001_win.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_139_armageddon_1999_win.pac",
 "pac/menu/win/Assets/wwe19_anime/match_up/ltag_143_noc_2009_win.pac",
@@ -309,6 +312,8 @@
 "pac/mov/ar_mini/0000160.pac",
 "pac/mov/ar_mini/000053.pac",
 "pac/mov/ar_mini/000096.pac",
+"pac/mov/ar_mini/000104.pac",
+"pac/mov/ar_mini/000115.pac",
 "pac/mov/ar_mini/000117.pac",
 "pac/mov/ar_mini/000123.pac",
 "pac/mov/ar_mini/000124.pac",
@@ -323,6 +328,7 @@
 "pac/mov/ar_ramp/000096.pac",
 "pac/mov/ar_ramp/000107.pac",
 "pac/mov/ar_ramp/000112.pac",
+"pac/mov/ar_ramp/000115.pac",
 "pac/mov/ar_ramp/000127.pac",
 "pac/mov/ar_ramp/000128.pac",
 "pac/mov/ar_ramp/000130.pac",
@@ -517,6 +523,10 @@
 ],
 [
 "pac/arena/floor/arfloor00022.pac",
+"new part, unused"
+],
+[
+"pac/arena/header/arheader00065.pac",
 "new part, unused"
 ],
 [

@@ -11,7 +11,7 @@ for r,_,fs in os.walk(src):
         os.makedirs(os.path.dirname(G+rel),exist_ok=True); shutil.copyfile(os.path.join(r,f),G+rel)
         print(rel,hashlib.md5(open(G+rel,'rb').read()).hexdigest()[:8])
 if new:
-    d=open(G+'chunk0.def','rb').read(); b=BK+'/chunk0.def'
+    d=open(G+'chunk0.def','rb').read(); b=BK+'/chunk0.def'; os.makedirs(BK,exist_ok=True)
     if not os.path.exists(b): open(b,'wb').write(d)
     have=set(l.lower() for l in d.decode('latin1').split('\r\n'))
     add=[n for n in new if n.lower() not in have]
