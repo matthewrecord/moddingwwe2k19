@@ -154,3 +154,10 @@ sign tuning. Tracer DLL removed from the plain install (moved with its logs to `
 - Title name: live strings are `mods/SuperString/pac/string/win/string_win.pac` (pac/string/win has only .bak). Title 23 =
   Brahma Bull; variants 2100NN/2101NN/2102NN/2103NN/2108NN/2109NN/2110NN/2111NN/2120NN + 602003. `tools/build/titlename.py`
   renames all of them in all 7 language tables (exactly 10 strings per table changed, verified). Now 'AEW United States Championship'.
+
+## 17. Gold hue (2026-11-14)
+Matthew: the IWGP gold looked 'sickly yellow' next to the Stone Cold skull belt. Measured on gold pixels (hue 25-70, sat > 0.3):
+stock 2K19 gold (skull and Brahma Bull menu pictures) hue 35 deg, mean RGB 156,132,98; IWGP colour map hue 50, R/G 1.08.
+`belt_port.py --gold-hue 35` (`gold_hue()`) rotates only gold pixels (soft mask on hue/saturation) to the target hue; silver,
+enamel and leather untouched. Result on the menu render: hue 36.2, mean RGB 148,123,86. `writeup/img/belt_gold_hue.png`
+(top: skull, middle: before, bottom: after). Build `aew_us_v6` = v5 + `--gold-hue 35`.

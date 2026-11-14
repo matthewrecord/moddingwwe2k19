@@ -80,9 +80,25 @@ def dds(rgba, kind):
     return bytes(hdr) + bytes(data)
 def load_dds(path):
     sys.path.insert(0, HERE); import ddsread; return ddsread.decode(open(path, 'rb').read())[1]
-def build_textures(tex_dir, size, strap=None, gloss=1.0):
+def gold_hue(rgb, target=35.0):
+    """Shift gold pixels (hue 25-70 deg, saturation > 0.2) to `target` hue, with a soft mask so silver, enamel and dark leather are
+    untouched. Measured 2026-11-14: stock 2K19 gold (Stone Cold skull / Brahma Bull menu pictures) = hue 35, IWGP mod = hue 50."""
+    a = rgb.astype('f4') / 255; mx = a.max(-1); mn = a.min(-1); d = mx - mn; s = np.where(mx > 0, d / np.maximum(mx, 1e-6), 0)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]; dd = np.maximum(d, 1e-6)
+    h = np.where(mx == r, ((g - b) / dd) % 6, np.where(mx == g, (b - r) / dd + 2, (r - g) / dd + 4)) * 60
+    w = np.clip((s - 0.15) / 0.15, 0, 1) * np.clip(1 - np.maximum(0, np.abs(h - 47.5) - 17.5) / 10, 0, 1)
+    hn = np.where(w > 0, h + (target - 50.0) * w, h)
+    # HSV -> RGB with original s, v
+    c = mx * s; x = c * (1 - np.abs((hn / 60) % 2 - 1)); m0 = mx - c; k = (hn // 60).astype(int) % 6
+    out = np.zeros_like(a); z = np.zeros_like(c)
+    for i, (p, q, t) in enumerate(((c, x, z), (x, c, z), (z, c, x), (z, x, c), (x, z, c), (c, z, x))):
+        sel = k == i; out[sel] = np.stack([p[sel], q[sel], t[sel]], -1)
+    out += m0[..., None]
+    return np.clip(np.where(w[..., None] > 0, out, a) * 255 + 0.5, 0, 255).astype('u1')
+def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None):
     def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
     col = L('belt_color.DDS').copy(); col[..., 3] = 255
+    if hue is not None: col[..., :3] = gold_hue(col[..., :3], hue)
     if strap is not None:
         # strap front = the flat leather band at the top of the mod's colour map (v 0..0.234, mean RGB 73,25,19). Recolour it,
         # keeping the leather grain as relative brightness variation.
@@ -219,10 +235,10 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0)
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None)
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
-    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss); man = {}
+    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts)
