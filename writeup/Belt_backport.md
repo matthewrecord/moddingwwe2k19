@@ -346,3 +346,15 @@ Intro renderer (`belt_intro.py`), video only:
 - Extra saturation and warmth on metal.
 - Enamel pass: magenta-red stripes, bright blue, neutral black banners.
 - The dark strap outline is replaced with strap white, and the orange halo with a soft drop shadow.
+
+## 29. Intro from the reference photo instead of a render (2026-11-14)
+Matthew asked for a video made from the actual photo, with the background isolated, the stand removed, and the belt not held in shadow.
+- Cut-out (`assets/belt/aew_us_reference_cutout.png`):
+  - rembg (isnet and u2net) keeps the plate and keepers but drops the white strap, because it blends into the pale backdrop.
+  - Fix: union of the isnet mask and two hand-drawn strap polygons, refined with OpenCV GrabCut, then keep the largest component.
+  - The photo's edited background patch at the right strap end is excluded (x ≥ 1424 above y 400).
+  - The acrylic stand's two posts (in front of the plate's lower white border) are cut from the mask. The belt edge across them is
+    interpolated from the neighbouring columns, and the hidden pixels are filled with `cv2.inpaint` (Telea).
+- `tools/backport/photo_intro.py`: the photo stays fully lit, never shadowed, with slight richness and lift. Animation: a specular
+  sweep across metal pixels (copper, detected by hue/saturation, and silver), a flare with orange and purple streaks riding the
+  sweep, a soft drop shadow, a push-in, and copper title text. Output is RGBA, 1920x1080, 30 fps, 300 frames.
