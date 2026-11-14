@@ -158,6 +158,15 @@ def auto_shift(j, mdl_path):
     m = mdl.MDL(mdl_path); st = m.meshes[0]['streams']; BI = st['BI'].astype(int); d = BI[np.arange(len(BI)), st['BW'].argmax(1)]
     D = [C[m.S[x]] - st['POSITION'][d == x].mean(0) for x in np.unique(d) if m.S[x] in C and m.S[x] != 'root']
     sh = np.median(np.array(D), 0); sh[0] = 0; return sh
+def write_pack16(entries, head):
+    """Texture pack like the stock props: every DDS starts on a 16-byte boundary (texconv.write_pack does not align)."""
+    n = len(entries); out = bytearray(head[:0x10]); recs = bytearray(); data = bytearray(); base = 0x10 + 32 * n
+    base += (-base) % 16
+    for nm, d in entries:
+        data += b'\0' * ((-len(data)) % 16)
+        recs += nm.encode()[:15].ljust(16, b'\0') + b'dds\0' + struct.pack('<3I', len(d), base + len(data), 0); data += d
+    data += b'\0' * ((-(base + len(data))) % 16)
+    return bytes(out + recs + b'\0' * (base - 0x10 - 32 * n) + data)
 def port(stock_path, mdl_path, shift, textures, keep_nameplate=False):
     P = read_prop(stock_path); rep = {}; info = {}
     jb = [(i, e) for i, e in enumerate(P['entries']) if e['raw'][:4] == b'JBOY']
@@ -175,12 +184,12 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False):
         if e['raw'][:4] == b'\x03\x00\x00\x00':
             names = [t['name'] for t in texpack.parse(e['raw'])[0]]
             assert names == ['belt', 'belt_n', 'belt_p'], names
-            head, _ = texconv.read_pack(e['raw']); rep[i] = texconv.write_pack(textures, head)
+            head, _ = texconv.read_pack(e['raw']); rep[i] = write_pack16(textures, head)
     return write_prop(P, rep), rep, info
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=2048); a.add_argument('--keep-nameplate', action='store_true')
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true')
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
     tex = build_textures(os.path.join(a.mod, 'Textures'), a.size); man = {}
