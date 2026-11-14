@@ -149,12 +149,22 @@ def collapse(raw):
             b[p + 8:p + 8 + V.nbytes] = V.astype('>f4').tobytes()
     return bytes(b)
 
+def auto_shift(j, mdl_path):
+    """Translation (x kept 0) that best aligns the mod's per-bone vertex clusters with the stock object's."""
+    o = j.objs[0]; vc, ni = o['vc'], o['ninf']
+    raw = np.frombuffer(j.b, np.dtype([('s', 'u1'), ('z', 'u1'), ('p', '>u2'), ('w', '>f4')]), vc * ni, o['f'][27] + 8).reshape(vc, ni)
+    dom = raw['s'][np.arange(vc), raw['w'].argmax(1)]
+    C = {j.bones[j.palette[s]]['name']: o['pos'][dom == s].mean(0) for s in np.unique(dom) if s != 255}
+    m = mdl.MDL(mdl_path); st = m.meshes[0]['streams']; BI = st['BI'].astype(int); d = BI[np.arange(len(BI)), st['BW'].argmax(1)]
+    D = [C[m.S[x]] - st['POSITION'][d == x].mean(0) for x in np.unique(d) if m.S[x] in C and m.S[x] != 'root']
+    sh = np.median(np.array(D), 0); sh[0] = 0; return sh
 def port(stock_path, mdl_path, shift, textures, keep_nameplate=False):
     P = read_prop(stock_path); rep = {}; info = {}
     jb = [(i, e) for i, e in enumerate(P['entries']) if e['raw'][:4] == b'JBOY']
     main_i, main_e = max(jb, key=lambda x: len(x[1]['raw']))
     j = jboy.JBOY(main_e['raw']); model = jbuild.Model(j)
     assert model.build() == main_e['raw'], 'round trip failed'
+    if shift is None: shift = auto_shift(j, mdl_path); info['shift'] = [round(float(x), 2) for x in shift]
     M = unwrap_uv(mod_mesh(mdl_path, shift))
     I, W, miss = skin(M, j, j.objs[0]['ninf'])
     info['winding_agree'] = round(float(put_object(model, j, M, I, W)), 3)
@@ -175,7 +185,7 @@ def main():
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
     tex = build_textures(os.path.join(a.mod, 'Textures'), a.size); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
-    for pid, key, shift in ((a.main, 'default', (0, 0.6, 0)), (a.cut, 'cutscene', (0, -3.0, 1.0))):
+    for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate)
         open(os.path.join(a.out, pid + '.pac'), 'wb').write(out)
         for i, raw in rep.items(): open(os.path.join(a.out, f'{pid}_block{i}.bin'), 'wb').write(raw)

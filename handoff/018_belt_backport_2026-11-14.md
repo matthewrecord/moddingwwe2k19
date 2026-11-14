@@ -6,3 +6,5 @@ Branch `claude/belt-backport` (on top of `claude/backport-tool`). Write-up: `wri
 - Waiting on Matthew's in-game check: entrance (worn/shoulder), match, title presentation cutscene.
 - If the game rejects ZLIB blocks: try uncompressed blocks or Oodle (oo2core_6_win64.dll is in the game folder).
 - Rebuild: stage the mod to /tmp/mod (mdl files + Textures/), stage pac/prop/2003.pac + 5003.pac, run belt_port.py.
+
+- **Update:** Matthew asked for the Brahma Bull WWE Championship instead: build `iwgp_brahma_v1` (props 2905 + 5038) delivered; US build superseded.

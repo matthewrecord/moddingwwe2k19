@@ -12,6 +12,12 @@ Branch `claude/belt-backport` (built on `claude/backport-tool`). First case: IWG
   `name[32], u32 size, u32 count` nodes; `subobj` holds JBOY-style object records whose pointers are
   **self-relative**, i.e. target = pointer address + value). Decoded far enough to read a mesh; not needed for title ports.
 
+- **Legacy titles** use main props in the 26xx-29xx range (e.g. 2043 Attitude Era WWE, 2904 Winged Eagle,
+  **2905 Brahma Bull**, 2911 Cena US spinner, 2939 WWE 2013-14). Their cutscene partner is found by an identical
+  texture pack: **2905 <-> 5038** (`belt_port.py` pairs are passed explicitly).
+- Alignment offset is now computed per target (`auto_shift`: median per-bone cluster offset): 2003 (0,0.6,-0.4)-ish,
+  5003/5038 about (0,-3.6,1.0).
+
 ## 2. Title belt prop format
 - HSPC -> one SHDC -> 5-9 Oodle blocks, file table of 16-byte entries `(id, off, size, 0)`:
   id 0 main JBOY, 4 nameplate JBOY (US/IC/etc only), 10 texture pack (`belt`, `belt_n`, `belt_p`), 30 nameplate
@@ -43,7 +49,8 @@ HSPC/edit pacs). Gate: `beltview.py` renders flat + chain-bent pose next to stoc
 ## 5. Builds
 | Build | Slot | Files | Status |
 |---|---|---|---|
-| iwgp_us_v1 | US Championship (2003 + 5003) | `_moddingwwe2k19_builds\belt\iwgp_us_v1\` | delivered 2026-11-14, awaiting in-game check |
+| iwgp_us_v1 | US Championship (2003 + 5003) | `_moddingwwe2k19_builds\belt\iwgp_us_v1\` | superseded (Matthew wants the Brahma Bull slot) |
+| iwgp_brahma_v1 | WWE Championship "Brahma Bull" (2905 + 5038) | `_moddingwwe2k19_builds\belt\iwgp_brahma_v1\` | delivered 2026-11-14, awaiting in-game check |
 
 Open risks for v1: (1) ZLIB instead of Oodle blocks in a prop pac (expected fine); (2) 29k vertices vs ~3.5k stock;
 (3) roughness/metal look; (4) nameplate collapse.
