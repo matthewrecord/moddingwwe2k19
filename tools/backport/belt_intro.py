@@ -56,10 +56,20 @@ def font(sz):
 
 def main():
     a = argparse.ArgumentParser(); a.add_argument('pac'); a.add_argument('out'); a.add_argument('--name', required=True)
-    a.add_argument('--seconds', type=float, default=10); a.add_argument('--fps', type=int, default=30); a.add_argument('--sat', type=float, default=1.6); a.add_argument('--preview', type=int, nargs='*')
+    a.add_argument('--seconds', type=float, default=10); a.add_argument('--fps', type=int, default=30); a.add_argument('--sat', type=float, default=1.6); a.add_argument('--strap-soft', type=float, default=0.0); a.add_argument('--preview', type=int, nargs='*')
     a = a.parse_args()
     W, H = 1920, 1080; BW, BH = 2400, 1200                       # belt rendered larger than needed so the push-in stays sharp
     G, cov = gbuffer(a.pac, BW, BH)
+    if a.strap_soft:
+        # video only: smooth, clean white strap. Strap = non-metal, unsaturated, bright texels; replace their colour by a heavily
+        # blurred copy lifted toward white, and make them evenly glossy.
+        b = G['base']; mx = b.max(-1); mn = b.min(-1); sat = (mx - mn) / np.maximum(mx, 1e-6)
+        m = (G['pm'][..., 0] < 0.3) & (sat < 0.18) & (mx > 0.45) & (cov > 0)
+        mf = np.asarray(Image.fromarray((m * 255).astype('u1')).filter(ImageFilter.GaussianBlur(1.5)), 'f4')[..., None] / 255
+        bl = np.dstack([np.asarray(Image.fromarray((b[..., k] * 255).astype('u1')).filter(ImageFilter.GaussianBlur(10)), 'f4') / 255 for k in range(3)])
+        lum = bl.mean(-1, keepdims=True); smooth = np.clip(0.93 + (lum - lum[m].mean()) * 0.35, 0, 1) * np.array([1.0, 0.985, 0.955])
+        G['base'] = b * (1 - mf * a.strap_soft) + smooth * mf * a.strap_soft
+        G['pm'][..., 1] = G['pm'][..., 1] * (1 - mf[..., 0] * a.strap_soft) + 0.22 * mf[..., 0] * a.strap_soft
     nf = int(a.seconds * a.fps)
     yy, xx = np.mgrid[0:H, 0:W]; r = np.hypot((xx - W / 2) / W, (yy - H * 0.45) / H)
     bgbase = np.clip(0.16 - 0.22 * r, 0, 1)[..., None] * np.array([1.0, 0.82, 0.55])   # warm spotlight falloff on black

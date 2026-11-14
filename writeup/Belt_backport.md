@@ -322,3 +322,7 @@ Matthew: the strap looks a little grainy and textured; he wants it smoother and 
   - Roughness: the variation around its mean is scaled by 1-K, so the sheen is even instead of speckled.
 - v8 rebuilds byte-identically from `--strap 236,233,226 --gloss 2.0 --gold-hue 35 --metalize`, so v9 is v8 plus `--strap-smooth 0.75`.
   No quality warnings. The pacs are 1.27 MB, still below stock.
+- Intro v3 (video only, Matthew: exaggerate the smooth strap in the video):
+  - Rendered from a `--strap-smooth 1.0` build, plus `belt_intro.py --strap-soft 0.9`. Strap texels (non-metal, unsaturated,
+    bright) get a heavily blurred colour lifted to warm white, with even gloss.
+  - Frames are in `_moddingwwe2k19_builds\belt\intro\frames_rgba_v3\`.
