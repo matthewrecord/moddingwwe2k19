@@ -60,7 +60,9 @@ real cause in one run was a **control**. Rules:
 3. **Write the prediction down (commit it) before Matthew runs the test.** Compare against it, not against memory.
 4. **Measure, don't eyeball.** Use test textures with fine structure (grid lines) so 'matches' is checkable.
 5. **Say what is proven and what is inferred.** Don't present a theory as the cause until a test has separated it from the alternatives.
-6. **Your offline tools must model what the game does** (e.g. back-face culling). A renderer that draws both sides hid the bug.
+6. **Leave the diagnostics in place until the work is closed.** The tracer was removed after the first success, and the next
+   freeze (WWE '91 arena) went unrecorded. Remove instrumentation only when Matthew signs the work off.
+7. **Your offline tools must model what the game does** (e.g. back-face culling). A renderer that draws both sides hid the bug.
 
 ## Handoff (end of every session)
 
