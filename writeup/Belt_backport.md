@@ -104,3 +104,13 @@ Conclusion: the stored-Oodle pacs (2-3x stock size) caused the intermittent hang
 read. Rule for belt builds: keep the pac at or below the stock size; ZLIB is the default codec.
 Look: plate still reads as smooth tan/cream at the bottom edge of the entrance shots; the plate centre (flag, engraving) is out
 of frame, so the colour-map question is still open.
+
+## 13. Method reset: control experiment (2026-11-14)
+Mistakes so far: several variables changed per build, results judged by eye, no control. Re-read of all three textured runs
+(checker, UV gradient, real/matte): the flat face of the plate renders as ONE uniform colour in game, while the UVs written vary
+across it. So the game does not render our mesh the way `beltview.py` predicts, and `beltview.py` itself was never validated.
+Control: `belt_control.py` = STOCK 2905/5038 pacs with only the `belt` colour texture replaced by the UV gradient
+(mesh, belt_n, belt_p, mask, Havok byte-identical; ZLIB texture block; 1.77/1.87 MB). Prediction committed BEFORE the run:
+`writeup/img/belt_control_prediction.png` (row 1 = control, row 2 = our 6k mesh for comparison).
+- game matches prediction -> renderer model valid; fault is in how our mesh is written -> field-by-field diff vs stock.
+- game does not match -> the belt shader uses more than base UV x belt (suspect: stock `mask` block 4000), test that alone.
