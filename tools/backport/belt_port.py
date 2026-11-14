@@ -113,6 +113,20 @@ def unwrap_uv(M):
     src = np.array(src); v = src[:, 0].astype(int)
     out = {k: M[k][v] for k in ('P', 'N', 'T', 'UV', 'BI', 'BW')}; out['UV'] = out['UV'] - src[:, 1:3]
     out['tris'] = newT; out['names'] = M['names']; return out
+def decimate(M, max_verts):
+    """meshoptimizer simplify (keeps original vertices, so UV/normal/weight seams survive), then drop unused vertices.
+    2K19 title props are 0.3-0.5 MB JBOYs (~3-6k vertices); the full 29k-vertex mod mesh (2.8 MB) froze match loading."""
+    import meshoptimizer as mo
+    if len(M['P']) <= max_verts: return M
+    pos = np.ascontiguousarray(M['P'], 'f4'); idx = np.ascontiguousarray(M['tris'].ravel(), 'u4'); ratio = max_verts / len(M['P'])
+    for _ in range(12):
+        dst = np.zeros_like(idx); n = mo.simplify(dst, idx, pos, target_index_count=int(len(idx) * ratio) // 3 * 3, target_error=0.05)
+        T = dst[:n].reshape(-1, 3); used = np.unique(T)
+        if len(used) <= max_verts: break
+        ratio *= 0.85
+    remap = np.full(len(M['P']), -1); remap[used] = np.arange(len(used))
+    out = {k: M[k][used] for k in ('P', 'N', 'T', 'UV', 'BI', 'BW')}; out['tris'] = remap[T].astype(np.int64); out['names'] = M['names']
+    return out
 def skin(M, j, ninf):
     pal = list(j.palette); slot = {j.bones[b]['name']: s for s, b in enumerate(pal)}
     parent = {b['name']: (j.bones[b['parent']]['name'] if b['parent'] >= 0 else None) for b in j.bones}
@@ -173,14 +187,14 @@ def write_pack16(entries, head):
         recs += nm.encode()[:15].ljust(16, b'\0') + b'dds\0' + struct.pack('<3I', len(d), base + len(data), 0); data += d
     data += b'\0' * ((-(base + len(data))) % 16)
     return bytes(out + recs + b'\0' * (base - 0x10 - 32 * n) + data)
-def port(stock_path, mdl_path, shift, textures, keep_nameplate=False):
+def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=6000):
     P = read_prop(stock_path); rep = {}; info = {}
     jb = [(i, e) for i, e in enumerate(P['entries']) if e['raw'][:4] == b'JBOY']
     main_i, main_e = max(jb, key=lambda x: len(x[1]['raw']))
     j = jboy.JBOY(main_e['raw']); model = jbuild.Model(j)
     assert model.build() == main_e['raw'], 'round trip failed'
     if shift is None: shift = auto_shift(j, mdl_path); info['shift'] = [round(float(x), 2) for x in shift]
-    M = unwrap_uv(mod_mesh(mdl_path, shift))
+    M = decimate(unwrap_uv(mod_mesh(mdl_path, shift)), max_verts)
     I, W, miss = skin(M, j, j.objs[0]['ninf'])
     info['winding_agree'] = round(float(put_object(model, j, M, I, W)), 3)
     rep[main_i] = model.build(); info.update(vc=len(M['P']), tris=len(M['tris']), unmapped_bones=sorted(x for x in miss if x))
@@ -195,13 +209,13 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False):
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true')
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000)
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
     tex = build_textures(os.path.join(a.mod, 'Textures'), a.size); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
-        out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate)
+        out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts)
         open(os.path.join(a.out, pid + '.pac'), 'wb').write(out)
         for i, raw in rep.items(): open(os.path.join(a.out, f'{pid}_block{i}.bin'), 'wb').write(raw)
         man[pid] = dict(info, md5=hashlib.md5(out).hexdigest(), size=len(out), source=os.path.basename(mods[key]))

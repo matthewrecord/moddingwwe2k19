@@ -73,3 +73,9 @@ ZLIB blocks. v3 writes OODL/KRKN blocks with stored (uncompressed) Kraken chunks
   do not reproduce it (`/tmp` renders, not kept).
 - Next: `belt_diag.py --uvgrad` (R = u, G = v, grid every 1/16) installed; the colour read off a screenshot gives the
   sampled UV directly.
+
+## 9. Freeze = size (2026-11-14)
+`diag_uvgrad` (29k vertices) froze match loading (Matthew confirmed it is the belt; stock restored). Model block 2.82 MB raw vs
+0.30 MB (2905) / 0.52 MB (5038) stock; whole pac 6.2 MB raw vs 3.7-4.1 MB. The earlier 29k builds loading once and this one freezing
+fits a memory budget, not bad data (all blocks decode; structure identical). `belt_port.decimate` (meshoptimizer simplify, keeps
+original vertices so seams survive) cuts to <= 6000 vertices: 5,484 / 5,508 vertices, model 0.52 MB. `diag_uvgrad_6k` installed.
