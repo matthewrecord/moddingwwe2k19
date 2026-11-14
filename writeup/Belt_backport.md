@@ -387,3 +387,31 @@ Matthew asked for a video made from the actual photo, with the background isolat
   saturation ×1.35, value ×1.08 (was ×1.55 / ×0.9). Result: metal roughness 0.102 (about stock), metal lum 193, metal hue 34.5. No warnings.
 - Installed: 2905 = 2059222f559b8214688d2dcd67725b8b, 5038 = 3b5f6435c2f62765c464468a73edf31b. v10 is kept in `aew_us_v10_installed\`.
 - Lesson for the recipe: **don't push gloss above stock roughness on metal**. In a dark arena, low roughness reads as dark, not shiny.
+
+## 31. Stock-belt survey: how our plate differs from every stock belt (2026-11-14)
+Matthew: v11 is dramatically worse (plate near-black and dirty in game). He asked to compare against all the stock belts,
+including how the underlying elements look, not just settings.
+Measured on 12 stock title props (2001-2010, 2904, 2910, 2915, 2933, stock 2905), using only texels the mesh actually uses:
+
+| | stock (typical) | ours v8/v10/v11 |
+|---|---|---|
+| Metal albedo | **flat constant** (252,221,164), ±3 between the 5th and 95th percentile | the 2K23 *photo* of the plate |
+| Metal fine-detail contrast (lum − blur) | 1.6–8.7 | **44–48** (≈10×) |
+| Dark metal texels (lum < 0.35) | 0–2 % | 10–13 % |
+| Metal hue / saturation | 38.7 / 0.35–0.41 (identical across belts) | 29–37 / 0.20–0.27 |
+| Metal roughness | ~0.10 | 0.05 (v8/v10), 0.11 (v11) |
+| Leather roughness | 0.18–0.6 (mean ~0.4) | 0.08–0.17 (glossy) |
+| Engraving | normal map only (tilt 0.08–0.33) | normal map (0.165) **plus** baked into albedo |
+
+Conclusion: 2K19 belts put **all** detail in the normal map and give metal one flat gold colour. The game's lighting makes it
+read as gold. Our plate carried the 2K23 photo's baked lighting, grime and dark crevices into a metal albedo. Under 2K19's
+metal shading every dark texel becomes a dark reflection, so the plate looks black and dirty. `--metalize` (brighten ×2.2) made
+grime brighter but kept it. Hue grading and gloss were treating the symptom.
+
+v12 = `--strap 214,220,224 --metalize --stock-metal 252,221,164 --leather-rough 0.4 --strap-smooth 0.75` (no grade, gloss 1):
+- Metal texels get the flat stock gold (unsaturated metal gets flat silver 225,225,230), with only ±6% very low-frequency shading.
+- Leather roughness is 0.4, like stock.
+- Result: metal lum 209 (stock 211) and hue 38.7 (stock 38.7). Dark metal is 2%. HF is 30, from the plate edges and silver/gold
+  boundaries. No warnings. Pacs are 1.23/1.25 MB.
+- Installed: 2905 = bb9dcdcca4671d33ce4e80927073b800, 5038 = 90a18f744332cb28c0226c729c5bbcb7.
+- Caveat: the preview renderer shows flat cream (it has no normal map or environment), so only the game shows the real result.

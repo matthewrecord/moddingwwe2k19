@@ -123,7 +123,7 @@ def color_grade(rgb, rules=GRADE_REF, strength=1.0):
     out = hsv2rgb(hn % 360, np.clip(sn, 0, 1), np.clip(vn, 0, 1))
     return np.clip(out * 255 + 0.5, 0, 255).astype('u1')
 
-def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0, grade=0.0):
+def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0, grade=0.0, stock_metal=None, leather_rough=None):
     def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
     col = L('belt_color.DDS').copy(); col[..., 3] = 255
     if hue is not None: col[..., :3] = gold_hue(col[..., :3], hue)
@@ -160,11 +160,27 @@ def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=Fals
         lum = a.mean(-1); cur = lum[metal & (lum > 0.08)].mean() if metal.any() else 1
         gain = np.clip(0.80 / max(cur, 1e-3), 1, 2.2)                                          # target mean lum 0.80 (stock 204/255)
         col[..., :3] = np.where(metal[..., None], np.clip(a * gain, 0, 1) * 255, col[..., :3]).astype('u1')
+    if stock_metal is not None and metalize:
+        # Stock 2K19 belts use a FLAT metal albedo: 2003/2010/2915 metal texels are (252,221,164) +-3 (5th-95th pct), all
+        # engraving lives in the normal map. The 2K23 photo albedo has lighting/grime baked in (high-frequency contrast 45 vs
+        # stock 2-8, 10% dark metal texels vs 0-2%), which read as black, dirty metal in game (v10/v11, 2026-11-14).
+        # Metal texels -> flat stock colour, only very low-frequency shading (+-6%) kept; unsaturated metal -> flat silver.
+        from PIL import Image, ImageFilter
+        a = col[..., :3].astype('f4') / 255; mx = a.max(-1); mn = a.min(-1); sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
+        met = M > 127; lum = a.mean(-1)
+        lo = np.asarray(Image.fromarray((np.clip(lum, 0, 1) * 255).astype('u1')).filter(ImageFilter.GaussianBlur(size / 64)), 'f4') / 255
+        ref = lo[met].mean() if met.any() else 1
+        shade = np.clip(1 + 0.06 * (lo / max(ref, 1e-3) - 1) / 0.25, 0.94, 1.06)[..., None]
+        goldc = np.array(stock_metal, 'f4') / 255; silv = np.array([0.88, 0.88, 0.90], 'f4')
+        tgt = np.where((sat < 0.18)[..., None], silv, goldc) * shade
+        col[..., :3] = np.where(met[..., None], np.clip(tgt, 0, 1) * 255, col[..., :3]).astype('u1')
     # 2K19 belt_n: BC5, R = same sign as 2K23, G inverted (measured on stock 2003 vs mod metal edges, writeup/Belt_backport.md)
     n = np.zeros(N.shape, 'u1'); n[..., 0] = N[..., 0]; n[..., 1] = 255 - N[..., 1]; n[..., 3] = 255
     # 2K19 belt_p: R = metalness, G = roughness in the stock range (metal ~25, leather ~50), B = 255
     g = (50 - 25 * (M / 255) + 0.15 * (R - R.mean())) / gloss   # gloss > 1 = shinier (lower roughness)
-    p = np.stack([M, np.clip(g, 6, 90), np.full_like(M, 255), np.full_like(M, 255)], -1).astype('u1')
+    if leather_rough is not None:   # stock leather roughness 0.18-0.6 (mean ~0.4); stock metal ~0.10 (byte 25)
+        g = np.where(M > 127, 25 + 0.1 * (R - R.mean()), leather_rough * 255 + 0.15 * (R - R.mean()))
+    p = np.stack([M, np.clip(g, 6, 160), np.full_like(M, 255), np.full_like(M, 255)], -1).astype('u1')
     return [('belt', dds(col, 'DXT1')), ('belt_n', dds(n, 'ATI2')), ('belt_p', dds(p, 'DXT1'))]
 
 # ---------------------------------------------------------------- mesh
@@ -340,10 +356,10 @@ def quality(pac_bytes_path):
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
-    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade); man = {}
+    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade, tuple(int(x) for x in a.stock_metal.split(',')) if a.stock_metal else None, a.leather_rough); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts)
