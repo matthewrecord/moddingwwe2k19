@@ -57,3 +57,6 @@ White strap + gloss 2.0, menu picture replaced, title 23 renamed in all 7 langua
 | `pac\prop\5038.pac` | 7e288e0ac8d3dc66e7db98b76fc508c2 |
 | `pac\menu\win\Assets\wwe19_texture\belt\ltag_belt_all_win.pac` | 28083e9b30b51a7a55c43586de761792 |
 Strings unchanged from v5. Originals (MD5s in the tables above) in `backup_originals\`.
+
+## Merged to main (2026-11-14, Matthew approved)
+Fast-forward of `claude/belt-backport` (includes all of `claude/backport-tool`) into `main`.

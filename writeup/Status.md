@@ -43,7 +43,7 @@ Not yet surveyed in depth: which mods are applied to the modded copy, what diffe
   `WWE 2K19` install (Matthew: belt work uses the plain game). Builder `tools/backport/belt_port.py`. Solved: belt prop
   format, stock-size ZLIB pacs (stored-Oodle pacs froze match loading), facing convention (2K19 props point normals/winding
   into the belt; unflipped, the plate's back faces were drawn = flat gold). `iwgp_brahma_v4` WORKS in game (2026-11-14).
-  Not merged to main until Matthew confirms in game. Tracer DLL `tools/telemetry/dinput8_filetrace.c` is installed in plain
+  Merged to main 2026-11-14 (Matthew), together with `claude/backport-tool`. Tracer DLL `tools/telemetry/dinput8_filetrace.c` is installed in plain
   as `dinput8.dll` (remove after the belt is done).
 
 ## 4. Files in this project
