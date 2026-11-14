@@ -111,7 +111,7 @@ def hsv2rgb(h, s, v):
 # Colour grade toward Matthew's reference photo of the real IWGP US belt (measured 2026-11-14): gold = rose/copper hue 29,
 # sat 0.66; stripes = magenta-red hue ~336, fully saturated; blue = hue 206, sat 0.8. Rules: (centre, half width, min sat,
 # target hue or None, saturation multiplier, value multiplier).
-GRADE_REF = [(35, 22, 0.18, 27, 1.55, 0.9), (350, 22, 0.30, 338, 1.35, 1.05), (215, 30, 0.25, 208, 1.3, 1.08)]
+GRADE_REF = [(35, 22, 0.18, 28, 1.35, 1.08), (350, 22, 0.30, 338, 1.35, 1.05), (215, 30, 0.25, 208, 1.3, 1.08)]
 
 def color_grade(rgb, rules=GRADE_REF, strength=1.0):
     a = rgb.astype('f4') / 255; h, s, v = rgb2hsv(a); hn, sn, vn = h.copy(), s.copy(), v.copy()

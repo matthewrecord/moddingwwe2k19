@@ -376,3 +376,14 @@ Matthew asked for a video made from the actual photo, with the background isolat
   renamed to `.bk2`. Matthew's Bink 1 encode of photo2 (old RAD tools, alpha on, forced 30 fps, no audio) is `BIKi`, 1920x1080,
   300 frames, 30/1, flags 0x100000 (alpha). It is installed as `bel_0023_0_0.bk2` (MD5 e3a445af1b555fbe19725e76b9308a16), pending an in-game test.
   Untested: Bink 1 *with alpha* (the existing Bink 1 titantrons have none).
+
+## 30. v11: brighter plate (2026-11-14)
+- The Bink 1 intro (`BIKi`, alpha) **plays correctly in game**.
+- Matthew: v10 is "a notch too red" and much too dark in game (screenshot: the plate reads near-black under arena light).
+- Measured: v10's metal albedo is not darker than stock (lum 188 vs 203). The difference is **roughness**. `--gloss 2.0` put
+  metal texels at 0.047 vs stock 0.089, a near-mirror that reflects the dark arena, so it reads as black. Gloss raised
+  brightness on the flat preview and darkened the belt in game; the preview renderer has no environment reflections.
+- v11 = `--strap 214,220,224 --gloss 1.0 --gold-hue 30 --metalize --strap-smooth 0.75 --grade 1.0`. The gold grade is now hue 28,
+  saturation ×1.35, value ×1.08 (was ×1.55 / ×0.9). Result: metal roughness 0.102 (about stock), metal lum 193, metal hue 34.5. No warnings.
+- Installed: 2905 = 2059222f559b8214688d2dcd67725b8b, 5038 = 3b5f6435c2f62765c464468a73edf31b. v10 is kept in `aew_us_v10_installed\`.
+- Lesson for the recipe: **don't push gloss above stock roughness on metal**. In a dark arena, low roughness reads as dark, not shiny.
