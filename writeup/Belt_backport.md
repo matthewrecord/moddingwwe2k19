@@ -312,3 +312,13 @@ G-buffer, then relights it every frame: light sweep, slow push-in, flare, glow, 
   - Saturation is ×1.6 plus slight contrast, the strap diffuse is brighter, and the sweep finishes at 62% of the clip instead of 75%.
   - Deliverables are in `_moddingwwe2k19_builds\belt\intro\`: `aew_us_title_intro_alpha.mov` (PNG codec, RGBA),
     `..._frames_rgba.zip` (300 PNGs) and `..._preview_on_gray.mp4` (viewing only). Enable alpha when converting to Bink2.
+
+## 27. Smoother white strap: v9 (2026-11-14)
+Matthew: the strap looks a little grainy and textured; he wants it smoother and whiter without looking cartoony.
+- `belt_port.py --strap-smooth K` (0..1), applied to the strap-front band only (mod colour map v 0..0.234):
+  - Colour: the leather grain (relative brightness minus a blurred copy) is scaled by 1-K. The broad shading is kept, and its
+    contrast is halved at K=1.
+  - Normal map: the bump vectors are pulled toward neutral by K.
+  - Roughness: the variation around its mean is scaled by 1-K, so the sheen is even instead of speckled.
+- v8 rebuilds byte-identically from `--strap 236,233,226 --gloss 2.0 --gold-hue 35 --metalize`, so v9 is v8 plus `--strap-smooth 0.75`.
+  No quality warnings. The pacs are 1.27 MB, still below stock.
