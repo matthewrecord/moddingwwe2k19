@@ -18,3 +18,14 @@ Branch `claude/belt-backport` (on top of `claude/backport-tool`). Write-up: `wri
 - 03:30 recheck after Matthew finished arena work: chunk0.def consistent (no dups; only stock debug entries missing on disk), belts were stock. diag_uvgrad re-verified (all replaced blocks decode, identical structure to working diag_textures) and reinstalled.
 - 6k uvgrad also froze (same place) -> NOT memory. Stock restored. Byte diff: checker build (loaded) vs uvgrad build (froze) differ ONLY in the `belt` colour DXT1 pixels (model, belt_n, belt_p, all other blocks byte-identical). No crash dump (hang). Open question for Matthew: same match setup for both tests? Next: rerun the checker build in the freezing setup to separate "build" from "setup"; telemetry DLL in plain install needs his OK.
 - Matthew: freeze is at the loading screen, bar ~1/5. Built tools/telemetry/dinput8_filetrace.c; installing in PLAIN with diag_uvgrad_6k (freezing build) for one traced run (Matthew approved).
+
+## Current state (end of 2026-11-14 session)
+- Freeze: fixed by ZLIB blocks / pac at or below stock size (stored-Oodle 3.3-5.6 MB pacs froze at ~1/5 of the bar).
+  Size vs stored-chunk format not separated (optional test: ZLIB pac padded to 3.3 MB).
+- Flat gold plate: ROOT CAUSE found via control experiment (stock mesh + UV gradient, prediction committed first):
+  2K19 props point normals/winding into the belt; ours pointed out, so the plate's back faces were drawn. Fixed in
+  `belt_port.mod_mesh` (normals negated, winding follows). writeup sections 13-14.
+- Installed in PLAIN `WWE 2K19`: `pac/prop/2905.pac`, `5038.pac` = `iwgp_brahma_v4`; `dinput8.dll` = filetrace tracer.
+  Originals: `WWE 2K19\_moddingwwe2k19_builds\belt\backup_originals\`.
+- Next: Matthew's v4 screenshot. If the plate shows the flag/banner: tune belt_p (metal/roughness) and check normal-map
+  green sign against stock; add back-face culling (2K19 convention) to `beltview.py`; remove dinput8.dll; merge to main.
