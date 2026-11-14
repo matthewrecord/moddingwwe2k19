@@ -217,3 +217,14 @@ Not attributed to the belt: the belt was loaded and displayed earlier in the ses
 Plan (control, per WORKFLOW): tracer v2 + STOCK belts, several back-to-back matches including WWE '91. If stock never
 freezes in the same sequence, bisect v8 vs stock (model block only / texture block only).
 Session tools: `$HOME/dmp/hang.py` (per-thread wait sites), `obj.py`, `wwedisasm.py` (note: never name a script dis.py).
+
+## 23. Title-match intro video (2026-11-14)
+Matthew: the AEW/IWGP title has no title-match intro animation. Findings:
+- `pac/menu/win/Assets/wwe19_anime/ltag_cutscene_belt_win.pac` + `Projects/ltpj_cutscene_belt*_win.pac` are the
+  Create-a-Championship name-card styles (basic/classic/dark/default/hardcore fonts), not per-belt.
+- Per-title intro videos are `movies/titantron/bel_NNNN_0_0.bk2` (Bink 2 'KB2j', 1920x1080, 300 frames, 29.97/30 fps, 10 s,
+  ~20 MB). NNNN = the championship number used by the menu pictures (`005_united_states` -> bel_0005).
+  Present: 0-3,5-8,10-13,16,18,20,25,33-35,46,50,52-61. **23 (Brahma Bull) has none** -> no intro.
+- Test 1 (mechanism): `bel_0023_0_0.bk2` = copy of `bel_0005` (US title video, md5 ac71460b7f03bf39492c66052d485f57).
+  New file, nothing overwritten; delete it to undo.
+- For a real IWGP video: render 300 frames 1920x1080 (beltshot-style) and encode Bink 2 with RAD Video Tools (Windows).
