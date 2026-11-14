@@ -456,3 +456,17 @@ over 12 in-game rounds. Matthew's time is the scarce resource.
   Emulator comparison: `writeup/img/aew_v14_vs_stock.png`.
 - **Remaining, visible in the emulator:** the gold reads paler than stock, and the 2K23 normal map adds speckle. Both are tunable
   offline in `gamelook.py` before anything goes to the game.
+
+## 35. v15: stock-style enamel (2026-11-14)
+Matthew (v14 in game: big progress). The reds, whites and blues are much duller than on the WWE US title.
+Measured enamel albedo (texels used by the mesh):
+
+| | red | blue | white | metal | roughness |
+|---|---|---|---|---|---|
+| WWE US 2003 (stock) | (222,48,49) v .87 | (60,98,167) v .65 | (255,255,255) | 0 | 0.10–0.15 |
+| ours v14 | (82,36,33) v .32 | (16,24,46) v .18 | — | 0.15–0.25 | 0.34 |
+
+`belt_port.py --stock-enamel` classifies enamel on the ORIGINAL mod colours (plate area only): red/blue by hue, and white = bright,
+unsaturated texels within 6 px of red/blue. It sets flat stock enamel colours (±15% low-frequency shading), metal 0, roughness ~0.12.
+v15 = v14 + `--stock-enamel`. Result: red (227,48,49) v .89, blue (57,93,161) v .63, metal 0.02–0.04, roughness 0.13–0.14 (matches stock). No warnings.
+Installed: 2905 = see handoff; emulator crop: `writeup/img/aew_v15_enamel_vs_stock.png`.
