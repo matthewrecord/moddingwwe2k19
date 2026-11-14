@@ -231,3 +231,14 @@ Matthew: the AEW/IWGP title has no title-match intro animation. Findings:
 - Test 1 result: **no intro played** with `bel_0023_0_0.bk2` present. So the video file alone does not enable an intro for
   title 23; which titles get one is decided elsewhere (not found). Matthew: "it's fine", dropped. Placeholder moved out to
   `_moddingwwe2k19_builds\belt\removed\`. Lead if revisited: a per-title flag/table referencing the bel_ ids (not searched).
+- Deeper look (2026-11-14, after Matthew asked): the exe builds the name with `bel_%04d_%d_%d` at exe+0x49bd52 from a
+  **video id**: id // 100000 selects the category (5 = belt video), then NNNN = (id // 100) % 1000, a = (id // 10) % 10,
+  b = id % 10. So `bel_0023_0_0` = video id **502300**.
+- `pac/root/misc01_start.pac` (+ `_p10`, `_p20`, raw, uncompressed) hold sequential video-id lists (500000, 500100 ... 503900,
+  4 lists, with 1038xx/1071xx entries before them); 502300 is already in every list, so they are not what blocks title 23.
+- The per-championship setting (which video a title match intro plays) was NOT found: searching for the Brahma Bull prop
+  pair 2905/5038 (u16/u32, adjacent) in pac/root, misc, universe, match_make, ingame, edit.pac, menu found only coincidences.
+  Next step if resumed: find the championship table by the title-name string ids (2100NN) or by tracing callers of
+  exe+0x49bd52 back to where the video id comes from.
+- 22 of 62 numbered titles have no bel_ video in vanilla (e.g. 4, 9, 14, 15, 17, 19, 21-24, 26-32), so a missing intro is
+  normal for legacy titles in this game.
