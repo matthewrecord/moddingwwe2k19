@@ -65,3 +65,11 @@ Cause found: `texconv.write_pack` doesn't align DDS data; stock props put every 
 v2 (aligned pack) still showed a plain gold plate: the stock Brahma Bull base colour is pale gold + metal mask, i.e. exactly what the
 game draws, so the texture pack is not being taken from our pac while the model is. Theory: the texture path does not accept
 ZLIB blocks. v3 writes OODL/KRKN blocks with stored (uncompressed) Kraken chunks (`0xCC 0x06` chunk header, 256 KB), verified with ooz.
+
+## 8. Diagnostics instead of guesses (2026-11-14)
+- `belt_diag.py` (checker): **in game the checker shows -> the game uses our texture pack** (v1-v3 'gold' was our own maps).
+  But the plate is almost one solid green cell, while the offline render with the stored UVs shows ~7x7 cells: the game
+  samples a much smaller texture region than the UVs we wrote. Offline hypotheses (UV = tangent.xy/xz, UV read as f16)
+  do not reproduce it (`/tmp` renders, not kept).
+- Next: `belt_diag.py --uvgrad` (R = u, G = v, grid every 1/16) installed; the colour read off a screenshot gives the
+  sampled UV directly.
