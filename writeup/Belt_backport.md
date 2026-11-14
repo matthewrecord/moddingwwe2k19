@@ -298,3 +298,5 @@ that SHDC's BPE entry bytes against files on disk.
   entry is the same size as stock (1232 bytes), so both pacs keep their stock sizes.
 - Prediction (written before the test): with a .bk2 at `bel_0023_0_0.bk2`, the AEW title match shows the step-8 scene, the
   tracer logs `seq_step case=8` and a lookup with key=23, and the result is 502300.
+- **Result (2026-11-14): confirmed in game.** The intro played for the AEW US title. The tracer logged `seq_step case=8`,
+  lookup key=23 → found, video 502300, exactly as predicted.
