@@ -98,6 +98,11 @@ def mod_mesh(path, shift):
     Nn = st['NORMAL'][:, :3].astype('f8'); Nn /= np.maximum(np.linalg.norm(Nn, axis=1, keepdims=True), 1e-9)
     Tg = st['TANGENT'][:, :3].astype('f8'); Tg /= np.maximum(np.linalg.norm(Tg, axis=1, keepdims=True), 1e-9)
     UV = st['TEXCOORD'].astype('f8'); BI = st['BI'].astype(int); BW = st['BW'].astype('f8')
+    # 2K19 props store normals (and winding) pointing INTO the belt: stock 2905 front faces sit at y~-3 with normal +y,
+    # 5038 front at z<0 with normal +z. The 2K23 mesh is the geometric opposite; unflipped, the game culled the plate's
+    # front and showed its back faces (near-constant UVs = flat colour, v1-v3 and every diag). put_object derives the
+    # winding from these normals, so negating them flips both.
+    Nn = -Nn
     names = [m.S[i] if i < len(m.S) else None for i in range(BI.max() + 1)]
     return dict(P=P, N=Nn, T=Tg, UV=UV, BI=BI, BW=BW, tris=T, names=names)
 def unwrap_uv(M):

@@ -114,3 +114,15 @@ Control: `belt_control.py` = STOCK 2905/5038 pacs with only the `belt` colour te
 `writeup/img/belt_control_prediction.png` (row 1 = control, row 2 = our 6k mesh for comparison).
 - game matches prediction -> renderer model valid; fault is in how our mesh is written -> field-by-field diff vs stock.
 - game does not match -> the belt shader uses more than base UV x belt (suspect: stock `mask` block 4000), test that alone.
+
+## 14. ROOT CAUSE of the flat/gold plate: facing convention (2026-11-14)
+Control (stock mesh + UV gradient) matched the committed prediction: grid lines sharp on the bull plate -> per-pixel UV sampling works,
+`beltview` geometry/UV model is valid. Our mesh showed no grid lines on the plate -> near-constant UVs on the visible faces.
+Cause: 2K19 props store normals and winding pointing INTO the belt (2905 front faces at y~-3 with normal +y; 5038 front at
+z<0 with normal +z). The 2K23 mesh points outward. `put_object` derives the winding from the normals, so the game culled the plate
+front and drew its back faces, whose UVs are near-constant (u .39/.73, v .41-.83) -> flat colour in v1-v3 and every diag.
+`beltview` doesn't cull, so offline renders hid it.
+Fix: `mod_mesh` negates the normals (winding follows). Check: camera-facing front faces now sample u .09-.44 / v .19-.96 (photo
+region, like stock .05-.93 / .15-.99); before: u .39-.73.
+Build `iwgp_brahma_v4`: real textures, ZLIB, 5,484 / 5,508 vertices, 1.38 / 1.39 MB (stock 1.80 / 1.90). Installed in PLAIN.
+TODO: beltview should back-face cull with the 2K19 convention so this class of bug shows offline.
