@@ -50,6 +50,7 @@ HSPC/edit pacs). Gate: `beltview.py` renders flat + chain-bent pose next to stoc
 | Build | Slot | Files | Status |
 |---|---|---|---|
 | iwgp_us_v1 | US Championship (2003 + 5003) | `_moddingwwe2k19_builds\belt\iwgp_us_v1\` | superseded (Matthew wants the Brahma Bull slot) |
+| iwgp_brahma_v4 | WWE Championship "Brahma Bull" (2905 + 5038) | plain `WWE 2K19` | **WORKS in game (Matthew, 2026-11-14): flag, banner, gold/silver plates, red strap all correct; loads every time** |
 | iwgp_brahma_v1 | WWE Championship "Brahma Bull" (2905 + 5038) | plain `WWE 2K19` | **in game:** loads, wraps the waist correctly, but the plate shows as flat gold with no IWGP detail |
 | iwgp_brahma_v2 | same | plain `WWE 2K19` | fix: texture pack DDS offsets 16-byte aligned + pack end padded (v1 had belt_n/belt_p at offsets = 8 mod 16), textures 1024 px / 11 mips exactly like stock | **in game:** same flat gold (stock textures still shown) |
 | iwgp_brahma_v3 | same | plain `WWE 2K19` | replaced blocks written as stock-style Oodle blocks (stored Kraken chunks) instead of ZLIB; content identical to v2; awaiting check |
@@ -126,3 +127,17 @@ Fix: `mod_mesh` negates the normals (winding follows). Check: camera-facing fron
 region, like stock .05-.93 / .15-.99); before: u .39-.73.
 Build `iwgp_brahma_v4`: real textures, ZLIB, 5,484 / 5,508 vertices, 1.38 / 1.39 MB (stock 1.80 / 1.90). Installed in PLAIN.
 TODO: beltview should back-face cull with the 2K19 convention so this class of bug shows offline.
+
+## 15. Result (2026-11-14)
+`iwgp_brahma_v4` confirmed in game by Matthew: the IWGP US title renders correctly on Big Show's entrance (flag, "UNITED STATES"
+banner, engraved gold/silver plates, red strap), no freeze. The two fixes that mattered: ZLIB / stock-size pacs, and the 2K19 facing
+convention. Not yet checked in game: the cutscene belt (5038, title presentation) close up, and the metal/roughness and normal-map
+sign tuning. Tracer DLL removed from the plain install (moved with its logs to `_moddingwwe2k19_builds\telemetry\removed\`).
+
+### Recipe for the next belt
+1. Find the target pair: `pac/prop/20xx|26xx-29xx` main (Havok scene name gives the title), cutscene partner = the 50xx pac with
+   an identical texture pack.
+2. Stage both stock pacs + the mod (`*_Default.mdl`, `*_Cutscene.mdl`, `Textures/`), back up the originals.
+3. `python3 -I tools/backport/belt_port.py --mod <mod> --stock <pac/prop> --main <main> --cut <cut> --out <dir>`
+   (ZLIB, <= 6000 vertices, normals flipped to the 2K19 convention, 1024 px textures). Check both pacs are below stock size.
+4. Copy to `pac/prop/`, test an entrance and a title presentation.

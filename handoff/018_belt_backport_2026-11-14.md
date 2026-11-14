@@ -29,3 +29,14 @@ Branch `claude/belt-backport` (on top of `claude/backport-tool`). Write-up: `wri
   Originals: `WWE 2K19\_moddingwwe2k19_builds\belt\backup_originals\`.
 - Next: Matthew's v4 screenshot. If the plate shows the flag/banner: tune belt_p (metal/roughness) and check normal-map
   green sign against stock; add back-face culling (2K19 convention) to `beltview.py`; remove dinput8.dll; merge to main.
+
+## Result: v4 WORKS in game (Matthew, 2026-11-14)
+Game files changed (plain install `D:\SteamLibrary\steamapps\common\WWE 2K19`):
+| File | Original MD5 (backup in `_moddingwwe2k19_builds\belt\backup_originals\`) | Installed MD5 (iwgp_brahma_v4) |
+|---|---|---|
+| `pac\prop\2905.pac` | 95b0f2f1c20944cddf162e2e451b36bd | 412bdd0ebcaecf6bdfd94500ed0c2d02 |
+| `pac\prop\5038.pac` | 69876b7d363a901c410ff66d9abbdcaa | 8d35811f1199d5da17fd5c5492c454cb |
+`dinput8.dll` (tracer) removed from the game folder; moved with logs to `_moddingwwe2k19_builds\telemetry\removed\`.
+Modded install: 2905/5038 restored to stock earlier (same original MD5s).
+Open: cutscene close-up check; shine/normal tuning; beltview back-face culling; merge decision (branch sits on the unmerged
+`claude/backport-tool`, 58 commits ahead of main).
