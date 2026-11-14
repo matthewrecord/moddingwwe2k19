@@ -81,3 +81,10 @@ Tracer still installed. v7 run (trace 40618828) did not freeze.
 | `pac/evt/evt_data_p10.pac` | f32df2a491b19289abe42fd0ff48cdad | eb8e71bf9dc05183a35982d41965ec6f |
 | `movies/titantron/bel_0023_0_0.bk2` | ac71460b7f03bf39492c66052d485f57 (placeholder = copy of the US title's bel_0005) | (new file) |
 Matthew's own encode replaces the placeholder: same name, Bink2, 10 s. Tracer v3c is still installed.
+
+## v9 installed (plain), 2026-11-14: smoother strap
+| File | MD5 |
+|---|---|
+| `pac\prop\2905.pac` | 80fe691d2f23907568fab27481fe8ac3 |
+| `pac\prop\5038.pac` | cf711adbc6756c3be0c838eece1e7fde |
+v8 is kept at `_moddingwwe2k19_builds\belt\aew_us_v8_installed\`. Matthew's Bink intro (`bel_0023_0_0.bk2`) is installed and works.
