@@ -34,6 +34,12 @@ def unpack_block(blk):
         r = oodl.blocks(blk); assert r and r[0][1] is not None; return r[0][1]
     if blk[:4] == b'ZLIB': return zlib.decompress(blk[16:16 + struct.unpack_from('<I', blk, 8)[0]])
     raise ValueError(blk[:4])
+def oodl_block(raw):
+    """Stock-style Oodle block ('OODL', 0, 0x2e060030, 'KRKN', raw size, stream size) holding a Kraken stream made of
+    stored (uncompressed) 256 KB chunks: chunk header 0xCC 0x06 = restart | uncompressed | 0xC magic, decoder 6 (Kraken).
+    v1/v2 used ZLIB blocks: the model loaded but the texture pack did not (belt showed the stock textures)."""
+    st = b''.join(bytes([0xCC, 0x06]) + raw[i:i + 0x40000] for i in range(0, len(raw), 0x40000))
+    return b'OODL' + struct.pack('<2I', 0, 0x2e060030) + b'KRKN' + struct.pack('<2I', len(raw), len(st)) + st
 def zlib_block(raw):
     c = zlib.compress(raw, 9); return b'ZLIB' + struct.pack('<3I', 0x1230, len(c), len(raw)) + c
 def read_prop(path):
@@ -45,10 +51,10 @@ def write_prop(P, replaced):
     out = bytearray(s[:first])
     for i, e in enumerate(E):
         out += b'\0' * ((-len(out)) % 16)
-        blk = zlib_block(replaced[i]) if i in replaced else e['blk']
+        blk = oodl_block(replaced[i]) if i in replaced else e['blk']
         struct.pack_into('<4I', out, t + 16 * i, e['id'], len(out), len(blk), 0); out += blk
     old_total = sum(len(e['blk']) for e in E)
-    new_total = sum(len(zlib_block(replaced[i])) if i in replaced else len(e['blk']) for i, e in enumerate(E))
+    new_total = sum(len(oodl_block(replaced[i])) if i in replaced else len(e['blk']) for i, e in enumerate(E))
     struct.pack_into('<I', out, 60, (struct.unpack_from('<I', s, 60)[0] + new_total - old_total) & 0xffffffff)
     H = P['H']; H.files[0]['data'] = bytes(out); return H.build()[0]
 

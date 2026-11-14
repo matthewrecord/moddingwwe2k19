@@ -12,3 +12,4 @@ Branch `claude/belt-backport` (on top of `claude/backport-tool`). Write-up: `wri
 - **2026-11-14:** Matthew tested before install (the builds were only in the builds folder). Installed `iwgp_brahma_v1` into `WWE 2K19 - modded\pac\prop\` (2905, 5038); originals backed up to `_moddingwwe2k19_builds\belt\backup_originals\`. Awaiting retest.
 - **Correction (Matthew):** belt work targets the PLAIN install `D:\SteamLibrary\steamapps\common\WWE 2K19`. Modded install restored to stock 2905/5038. `iwgp_brahma_v1` installed in the plain game; originals in `WWE 2K19\_moddingwwe2k19_builds\belt\backup_originals\`.
 - v1 in game: geometry/weights OK, textures wrong (unaligned DDS in texture pack). v2 built and installed in plain (backups unchanged).
+- v2 in game: still stock-looking gold plate. v3 = Oodle-stored blocks instead of ZLIB, installed in plain.

@@ -51,7 +51,8 @@ HSPC/edit pacs). Gate: `beltview.py` renders flat + chain-bent pose next to stoc
 |---|---|---|---|
 | iwgp_us_v1 | US Championship (2003 + 5003) | `_moddingwwe2k19_builds\belt\iwgp_us_v1\` | superseded (Matthew wants the Brahma Bull slot) |
 | iwgp_brahma_v1 | WWE Championship "Brahma Bull" (2905 + 5038) | plain `WWE 2K19` | **in game:** loads, wraps the waist correctly, but the plate shows as flat gold with no IWGP detail |
-| iwgp_brahma_v2 | same | plain `WWE 2K19` | fix: texture pack DDS offsets 16-byte aligned + pack end padded (v1 had belt_n/belt_p at offsets = 8 mod 16), textures 1024 px / 11 mips exactly like stock; awaiting check |
+| iwgp_brahma_v2 | same | plain `WWE 2K19` | fix: texture pack DDS offsets 16-byte aligned + pack end padded (v1 had belt_n/belt_p at offsets = 8 mod 16), textures 1024 px / 11 mips exactly like stock | **in game:** same flat gold (stock textures still shown) |
+| iwgp_brahma_v3 | same | plain `WWE 2K19` | replaced blocks written as stock-style Oodle blocks (stored Kraken chunks) instead of ZLIB; content identical to v2; awaiting check |
 
 Open risks for v1: (1) ZLIB instead of Oodle blocks in a prop pac (expected fine); (2) 29k vertices vs ~3.5k stock;
 (3) roughness/metal look; (4) nameplate collapse.
@@ -59,3 +60,8 @@ Open risks for v1: (1) ZLIB instead of Oodle blocks in a prop pac (expected fine
 ## 6. In-game result v1 (2026-11-14)
 ZLIB blocks, the 29k-vertex mesh and the weights all work: the belt loads and wraps the waist. The plate rendered as flat gold.
 Cause found: `texconv.write_pack` doesn't align DDS data; stock props put every DDS on a 16-byte boundary. `belt_port.write_pack16` fixes it.
+
+## 7. v2 result and the ZLIB theory (2026-11-14)
+v2 (aligned pack) still showed a plain gold plate: the stock Brahma Bull base colour is pale gold + metal mask, i.e. exactly what the
+game draws, so the texture pack is not being taken from our pac while the model is. Theory: the texture path does not accept
+ZLIB blocks. v3 writes OODL/KRKN blocks with stored (uncompressed) Kraken chunks (`0xCC 0x06` chunk header, 256 KB), verified with ooz.
