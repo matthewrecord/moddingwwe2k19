@@ -134,13 +134,25 @@ banner, engraved gold/silver plates, red strap), no freeze. The two fixes that m
 convention. Not yet checked in game: the cutscene belt (5038, title presentation) close up, and the metal/roughness and normal-map
 sign tuning. Tracer DLL removed from the plain install (moved with its logs to `_moddingwwe2k19_builds\telemetry\removed\`).
 
-### Recipe for the next belt
-1. Find the target pair: `pac/prop/20xx|26xx-29xx` main (Havok scene name gives the title), cutscene partner = the 50xx pac with
-   an identical texture pack.
-2. Stage both stock pacs + the mod (`*_Default.mdl`, `*_Cutscene.mdl`, `Textures/`), back up the originals.
-3. `python3 -I tools/backport/belt_port.py --mod <mod> --stock <pac/prop> --main <main> --cut <cut> --out <dir>`
-   (ZLIB, <= 6000 vertices, normals flipped to the 2K19 convention, 1024 px textures). Check both pacs are below stock size.
-4. Copy to `pac/prop/`, test an entrance and a title presentation.
+### Recipe for the next belt (updated 2026-11-14; every step is something that broke in game)
+1. **Find the target pair:** `pac/prop/20xx|26xx-29xx` main (the Havok scene name gives the title); cutscene partner = the 50xx pac
+   with an identical texture pack.
+2. **Stage and back up** both stock pacs + the mod (`*_Default.mdl`, `*_Cutscene.mdl`, `Textures/`). Install the tracer
+   (`tools/telemetry` dinput8.dll) and keep it in until the belt is signed off.
+3. **Build:** `python3 -I tools/backport/belt_port.py --mod <mod> --stock <pac/prop> --main <main> --cut <cut> --out <dir> --metalize --gold-hue 35`
+   (plus `--strap R,G,B`, `--gloss` to taste). Built in and checked automatically:
+   - **Facing:** normals/winding flipped to the 2K19 convention (inward). Without it the plate's back faces show = flat colour.
+   - **File size at or below stock:** ZLIB blocks, <= 6000 vertices before splitting. Oversized pacs froze match loading.
+   - **Metal coverage (VITAL for a non-dull belt):** stock plates are ~61% fully metal with bright base colour (lum ~204). Mods
+     ported from newer games usually mark far less (IWGP: 23-26%), and in 2K19 non-metal gold renders as dull brown paint no matter
+     the gloss. `--metalize` fixes it; the builder **warns if plate metal fraction < 0.45 or metal base lum < 160**.
+   - **Strap triangle span <= ~3 cm along the belt** (stock max 3.2 cm). Decimation made 27 cm triangles and the strap end stuck
+     out at the back; `split_long` re-splits them. The builder warns above 3.3 cm.
+   - **Gold hue:** stock gold = 35 deg. Check the menu render next to a stock belt.
+4. **Read the WARNING lines and `manifest.json` (`quality`) before installing.** No warnings = ready.
+5. **Menu picture / name:** `belt_menu.py` (championship select image), `tools/build/titlename.py` (all name variants, 7 languages;
+   the game reads both `mods/SuperString/string_win.pac` copies).
+6. **Install, record MD5s in the handoff, test:** entrance (worn, back view too), title presentation, several arenas.
 
 ## 16. Customisation: white strap, gloss, menu picture, title name (2026-11-14)
 - `belt_port.py --strap R,G,B --gloss G`: recolours the strap front (mod colour map v 0..0.234, keeps the leather grain as
@@ -176,3 +188,10 @@ base colour scaled toward stock brightness. Build `aew_us_v7` = v6 + `--metalize
 ## 19. WWE '91 arena freeze (2026-11-14, open)
 After several good runs with v6 (pacs 1.39 MB, below stock), a freeze loading the WWE '91 arena. ~30 arena pacs were added/changed
 by the arena work today. Not attributed. Control run: stock belts + tracer, same arena, before blaming either side.
+
+## 20. Strap end sticking out at the back (2026-11-14)
+Matthew: in v7 the strap end didn't sit at the back. Measured, not assumed: weights/bones identical to stock (same palette, 264 vs
+255 verts on the end bones, same x ranges), end thickness within 3 mm of stock. Difference: **triangle length along the belt**,
+max 27.4 cm after decimation vs 3.2 cm stock (bones 6-10 cm apart), so flat facets cut across the bends. `split_long` splits
+x-spans > 3 cm (v8: max 2.99 cm, 6,796 / 7,020 vertices, 1.40 / 1.42 MB, still below stock). Builder `quality()` now checks
+metal fraction, metal brightness, strap span and pac size and prints WARNING lines.

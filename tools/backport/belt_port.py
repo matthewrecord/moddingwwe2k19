@@ -167,6 +167,34 @@ def decimate(M, max_verts):
     remap = np.full(len(M['P']), -1); remap[used] = np.arange(len(used))
     out = {k: M[k][used] for k in ('P', 'N', 'T', 'UV', 'BI', 'BW')}; out['tris'] = remap[T].astype(np.int64); out['names'] = M['names']
     return out
+def split_long(M, max_dx=3.0):
+    """Split edges spanning more than max_dx cm along x (the bend axis) at their midpoint, until none is left. Decimation left
+    strap triangles up to 27 cm long (stock max 3.2 cm, bones ~6-10 cm apart), which can't follow the wrap: the strap end stuck out
+    at the back in game (2026-11-14). Attributes are interpolated; skin weights are merged by bone and renormalised."""
+    P, N, Tg, UV = [list(M[k]) for k in ('P', 'N', 'T', 'UV')]; BI, BW = list(M['BI']), list(M['BW'])
+    tris = [tuple(t) for t in M['tris']]; cache = {}
+    def mid(a, b):
+        k = (min(a, b), max(a, b))
+        if k in cache: return cache[k]
+        P.append((P[a] + P[b]) / 2); n = N[a] + N[b]; N.append(n / max(np.linalg.norm(n), 1e-9)); t = Tg[a] + Tg[b]; Tg.append(t / max(np.linalg.norm(t), 1e-9))
+        UV.append((UV[a] + UV[b]) / 2); acc = {}
+        for bi, bw in ((BI[a], BW[a]), (BI[b], BW[b])):
+            for i, w in zip(bi, bw):
+                if w > 0: acc[int(i)] = acc.get(int(i), 0) + 0.5 * w
+        top = sorted(acc.items(), key=lambda x: -x[1])[:len(BI[a])]; tot = sum(w for _, w in top) or 1
+        bi = np.zeros(len(BI[a]), BI[a].dtype); bw = np.zeros(len(BW[a])); 
+        for q, (i, w) in enumerate(top): bi[q] = i; bw[q] = w / tot
+        BI.append(bi); BW.append(bw); cache[k] = len(P) - 1; return cache[k]
+    for _ in range(12):
+        out = []; changed = False
+        for a, b, c in tris:
+            e = [(abs(P[a][0] - P[b][0]), 0), (abs(P[b][0] - P[c][0]), 1), (abs(P[c][0] - P[a][0]), 2)]; L, k = max(e)
+            if L <= max_dx: out.append((a, b, c)); continue
+            changed = True; v = [a, b, c]; i, j = v[k], v[(k + 1) % 3]; o = v[(k + 2) % 3]; m = mid(i, j)
+            out += [(i, m, o), (m, j, o)]        # keeps winding
+        tris = out
+        if not changed: break
+    R = dict(M); R.update(P=np.array(P), N=np.array(N), T=np.array(Tg), UV=np.array(UV), BI=np.array(BI), BW=np.array(BW), tris=np.array(tris, np.int64)); return R
 def skin(M, j, ninf):
     pal = list(j.palette); slot = {j.bones[b]['name']: s for s, b in enumerate(pal)}
     parent = {b['name']: (j.bones[b['parent']]['name'] if b['parent'] >= 0 else None) for b in j.bones}
@@ -234,7 +262,7 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=
     j = jboy.JBOY(main_e['raw']); model = jbuild.Model(j)
     assert model.build() == main_e['raw'], 'round trip failed'
     if shift is None: shift = auto_shift(j, mdl_path); info['shift'] = [round(float(x), 2) for x in shift]
-    M = decimate(unwrap_uv(mod_mesh(mdl_path, shift)), max_verts)
+    M = split_long(decimate(unwrap_uv(mod_mesh(mdl_path, shift)), max_verts))
     I, W, miss = skin(M, j, j.objs[0]['ninf'])
     info['winding_agree'] = round(float(put_object(model, j, M, I, W)), 3)
     rep[main_i] = model.build(); info.update(vc=len(M['P']), tris=len(M['tris']), unmapped_bones=sorted(x for x in miss if x))
@@ -246,6 +274,28 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=
             assert names == ['belt', 'belt_n', 'belt_p'], names
             head, _ = texconv.read_pack(e['raw']); rep[i] = write_pack16(textures, head)
     return write_prop(P, rep), rep, info
+def quality(pac_bytes_path):
+    """Checks that caught real in-game problems (2026-11-14). Returns dict + list of warnings.
+    - plate metal fraction / base brightness: stock 2905 = 0.61 / lum 204 on metal. Below ~0.45 the plate renders dull brown.
+    - strap triangle span along x: stock max 3.2 cm; longer triangles can't follow the wrap (strap sticks out at the back).
+    - pac size must not exceed the stock pac (oversized pacs froze match loading)."""
+    import ddsread
+    P = read_prop(pac_bytes_path); E = P['entries']; tp = [e for e in E if e['raw'][:4] == b'\x03\x00\x00\x00'][0]['raw']
+    T = {t['name']: ddsread.decode(tp[t['off']:])[1].astype('f4') for t in texpack.parse(tp)[0]}
+    j = jboy.JBOY(max((e for e in E if e['raw'][:4] == b'JBOY'), key=lambda e: len(e['raw']))['raw']); o = j.objs[0]
+    tri = jboy.strip_to_tris(jboy.obj_indices(j, o)[1]); Pp, N, UV = o['pos'], o['nrm'], o['uv']
+    ax = 1 if abs(Pp[:, 1]).max() < abs(Pp[:, 2]).max() and (Pp[:, 1].max() - Pp[:, 1].min()) < (Pp[:, 2].max() - Pp[:, 2].min()) else 2
+    c = Pp[tri].mean(1); vis = N[tri].sum(1)[:, ax] > 0; plate = vis & (abs(c[:, 0]) < 14)
+    uv = UV[tri[plate]].mean(1); h, w = T['belt'].shape[:2]; px = (np.clip(uv[:, 1], 0, .999) * h).astype(int), (np.clip(uv[:, 0], 0, .999) * w).astype(int)
+    base, pm = T['belt'][px][:, :3], T['belt_p'][px]; met = pm[:, 0] > 128
+    dx = Pp[tri][:, :, 0].max(1) - Pp[tri][:, :, 0].min(1); strap = abs(c[:, 0]) > 14
+    q = dict(metal_fraction=round(float(met.mean()), 2), metal_base_lum=round(float(base[met].mean()), 0) if met.any() else 0,
+             strap_max_span_cm=round(float(dx[strap].max()), 2), pac_bytes=os.path.getsize(pac_bytes_path))
+    warn = []
+    if q['metal_fraction'] < 0.45: warn.append('plate metal fraction %.2f < 0.45 (stock 0.61): will look dull -> --metalize' % q['metal_fraction'])
+    if q['metal_base_lum'] < 160: warn.append('metal base colour lum %d < 160 (stock 204): dull' % q['metal_base_lum'])
+    if q['strap_max_span_cm'] > 3.3: warn.append('strap triangle spans %.1f cm (stock max 3.2): strap will not wrap cleanly' % q['strap_max_span_cm'])
+    return q, warn
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
@@ -258,6 +308,9 @@ def main():
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts)
         open(os.path.join(a.out, pid + '.pac'), 'wb').write(out)
         for i, raw in rep.items(): open(os.path.join(a.out, f'{pid}_block{i}.bin'), 'wb').write(raw)
-        man[pid] = dict(info, md5=hashlib.md5(out).hexdigest(), size=len(out), source=os.path.basename(mods[key]))
+        q, warn = quality(os.path.join(a.out, pid + '.pac')); stock_size = os.path.getsize(os.path.join(a.stock, pid + '.pac'))
+        if len(out) > stock_size: warn.append('pac %d bytes > stock %d: risk of load freeze' % (len(out), stock_size))
+        man[pid] = dict(info, md5=hashlib.md5(out).hexdigest(), size=len(out), stock_size=stock_size, source=os.path.basename(mods[key]), quality=q, warnings=warn)
+        for wmsg in warn: print('WARNING', pid, wmsg)
     print(json.dumps(man, indent=1)); open(os.path.join(a.out, 'manifest.json'), 'w').write(json.dumps(man, indent=1))
 if __name__ == '__main__': main()
