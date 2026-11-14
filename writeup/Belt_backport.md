@@ -161,3 +161,18 @@ stock 2K19 gold (skull and Brahma Bull menu pictures) hue 35 deg, mean RGB 156,1
 `belt_port.py --gold-hue 35` (`gold_hue()`) rotates only gold pixels (soft mask on hue/saturation) to the target hue; silver,
 enamel and leather untouched. Result on the menu render: hue 36.2, mean RGB 148,123,86. `writeup/img/belt_gold_hue.png`
 (top: skull, middle: before, bottom: after). Build `aew_us_v6` = v5 + `--gold-hue 35`.
+
+## 18. Dull plate fixed by measurement, not by gloss (2026-11-14)
+In game v6 looked dull/bronze under arena lights. Plate material vs stock Brahma Bull (front-facing plate faces, sampled through UVs):
+| | metal fraction | base colour on metal | base lum | roughness |
+|---|---|---|---|---|
+| stock 2905 | 0.61 | 251,214,148 | 204 | 22 |
+| v6 | 0.26 | 188,179,156 | 174 | 17 |
+| v7 (`--metalize`) | 0.53 | 196,184,159 | 179 | 12 |
+The mod's metal map marks only part of the gold; in 2K19's shader non-metal gold is diffuse brown, so gloss alone could not help.
+`--metalize`: gold pixels (hue 20-70, sat > .2) in the plate/keeper part of the texture plus the mod's own metal -> metal 255,
+base colour scaled toward stock brightness. Build `aew_us_v7` = v6 + `--metalize`.
+
+## 19. WWE '91 arena freeze (2026-11-14, open)
+After several good runs with v6 (pacs 1.39 MB, below stock), a freeze loading the WWE '91 arena. ~30 arena pacs were added/changed
+by the arena work today. Not attributed. Control run: stock belts + tracer, same arena, before blaming either side.

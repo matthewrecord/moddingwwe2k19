@@ -95,7 +95,7 @@ def gold_hue(rgb, target=35.0):
         sel = k == i; out[sel] = np.stack([p[sel], q[sel], t[sel]], -1)
     out += m0[..., None]
     return np.clip(np.where(w[..., None] > 0, out, a) * 255 + 0.5, 0, 255).astype('u1')
-def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None):
+def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False):
     def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
     col = L('belt_color.DDS').copy(); col[..., 3] = 255
     if hue is not None: col[..., :3] = gold_hue(col[..., :3], hue)
@@ -105,6 +105,20 @@ def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None):
         band = col[:int(0.234 * size), :, :3].astype('f4'); lum = band.mean(-1, keepdims=True); rel = lum / max(lum.mean(), 1)
         col[:int(0.234 * size), :, :3] = np.clip(np.array(strap, 'f4') * rel, 0, 255).astype('u1')
     N = L('belt_normal.DDS').astype(int); M = L('belt_metal.DDS')[..., 0].astype(float); R = L('belt_roughness.DDS')[..., 0].astype(float)
+    if metalize:
+        # Match stock 2K19 plates (measured 2026-11-14 on 2905): 61% of the plate fully metallic, metal base colour mean lum ~204
+        # (251,214,148). The mod marks only 26% metal with a darker photo base (lum ~174 on metal, 96 overall) -> dull brown in game.
+        # Gold (hue 25-70, sat > .2) and the mod's own metal become metal 255; their base colour is scaled up to stock brightness.
+        a = col[..., :3].astype('f4') / 255; mx = a.max(-1); mn = a.min(-1); sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
+        r, g, b = a[..., 0], a[..., 1], a[..., 2]; d = np.maximum(mx - mn, 1e-6)
+        h = np.where(mx == r, ((g - b) / d) % 6, np.where(mx == g, (b - r) / d + 2, (r - g) / d + 4)) * 60
+        plate = np.zeros(M.shape, bool); plate[int(0.46 * size):, :] = True                  # plate/keeper photos; strap bands above
+        gold = plate & (h > 20) & (h < 70) & (sat > 0.2) & (mx > 0.12)
+        metal = gold | (plate & (M > 100))
+        M = np.where(metal, 255.0, M)
+        lum = a.mean(-1); cur = lum[metal & (lum > 0.08)].mean() if metal.any() else 1
+        gain = np.clip(0.80 / max(cur, 1e-3), 1, 2.2)                                          # target mean lum 0.80 (stock 204/255)
+        col[..., :3] = np.where(metal[..., None], np.clip(a * gain, 0, 1) * 255, col[..., :3]).astype('u1')
     # 2K19 belt_n: BC5, R = same sign as 2K23, G inverted (measured on stock 2003 vs mod metal edges, writeup/Belt_backport.md)
     n = np.zeros(N.shape, 'u1'); n[..., 0] = N[..., 0]; n[..., 1] = 255 - N[..., 1]; n[..., 3] = 255
     # 2K19 belt_p: R = metalness, G = roughness in the stock range (metal ~25, leather ~50), B = 255
@@ -235,10 +249,10 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None)
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true')
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
-    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue); man = {}
+    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts)
