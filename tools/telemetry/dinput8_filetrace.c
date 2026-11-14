@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdint.h>
 
 static FILE *g_log; static CRITICAL_SECTION g_cs; static DWORD g_t0; static HMODULE g_real; static uintptr_t g_base, g_end;
 static volatile LONG g_lastio, g_lastpac; static char g_dir[MAX_PATH]; static int g_all; static volatile LONG g_nexc;
@@ -114,10 +115,48 @@ static void patch_iat(HMODULE m) {
     }
 }
 
+/* ---- v3: execution breakpoints (DR0-DR2) on the titantron/belt video path (belt intro investigation 2026-11-14) */
+static const uintptr_t BP_OFF[3] = {0x156ec20, 0x156ed79, 0x49ba20};
+static const char *BP_NAME[3] = {"titantron_play(obj)", "titantron_play.champ_branch", "video_name(id)"};
+static volatile LONG g_bphits;
+static void apply_bp(HANDLE th) {
+    CONTEXT c; memset(&c, 0, sizeof c); c.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+    if (!GetThreadContext(th, &c)) return;
+    c.Dr0 = g_base + BP_OFF[0]; c.Dr1 = g_base + BP_OFF[1]; c.Dr2 = g_base + BP_OFF[2];
+    c.Dr7 = 1 | 4 | 16;                /* local enable DR0-DR2, execute (RW=00, LEN=00) */
+    SetThreadContext(th, &c);
+}
+static void apply_bp_all(void) {
+    DWORD me = GetCurrentThreadId(), pid = GetCurrentProcessId(); HANDLE s = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    THREADENTRY32 te; te.dwSize = sizeof te; if (s == INVALID_HANDLE_VALUE) return;
+    for (BOOL ok = Thread32First(s, &te); ok; ok = Thread32Next(s, &te)) {
+        if (te.th32OwnerProcessID != pid || te.th32ThreadID == me) continue;
+        HANDLE th = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, te.th32ThreadID); if (!th) continue;
+        if (SuspendThread(th) != (DWORD)-1) { apply_bp(th); ResumeThread(th); }
+        CloseHandle(th);
+    }
+    CloseHandle(s);
+}
+static uint32_t rd32(uintptr_t a) { uint32_t v = 0; SIZE_T g; ReadProcessMemory(GetCurrentProcess(), (void *)a, &v, 4, &g); return v; }
+static LONG CALLBACK bpveh(EXCEPTION_POINTERS *x) {
+    if (x->ExceptionRecord->ExceptionCode != EXCEPTION_SINGLE_STEP) return EXCEPTION_CONTINUE_SEARCH;
+    CONTEXT *c = x->ContextRecord; DWORD64 st = c->Dr6;
+    if (!(st & 7)) return EXCEPTION_CONTINUE_SEARCH;
+    c->EFlags |= 0x10000;              /* RF: resume past the execute breakpoint */
+    if (InterlockedIncrement(&g_bphits) <= 400) {
+        uintptr_t ret = rd32(c->Rsp) | ((uintptr_t)rd32(c->Rsp + 4) << 32); uintptr_t r = ret - g_base; if (ret < g_base || ret >= g_end) r = 0;
+        if (st & 1) tlog("BP %s rcx=%llx [rcx+84]=%u [rcx+88]=%u [rcx+94]=%u ret=+%llx", BP_NAME[0], (unsigned long long)c->Rcx,
+                         rd32(c->Rcx + 0x84), rd32(c->Rcx + 0x88), rd32(c->Rcx + 0x94), (unsigned long long)r);
+        if (st & 2) tlog("BP %s ebx(champ)=%u [r15+84]=%u [r15+94]=%u", BP_NAME[1], (unsigned)c->Rbx, rd32(c->R15 + 0x84), rd32(c->R15 + 0x94));
+        if (st & 4) tlog("BP %s id=%u type=%u ret=+%llx", BP_NAME[2], (unsigned)c->R8, (unsigned)c->R9, (unsigned long long)r);
+    }
+    c->Dr6 = 0;
+    return EXCEPTION_CONTINUE_EXECUTION;
+}
 /* ---- exceptions and hang sampling */
 static LONG CALLBACK veh(EXCEPTION_POINTERS *x) {
     DWORD c = x->ExceptionRecord->ExceptionCode;
-    if (c == 0x406D1388 || c == DBG_PRINTEXCEPTION_C || c == 0x4001000A) return EXCEPTION_CONTINUE_SEARCH;
+    if (c == 0x406D1388 || c == DBG_PRINTEXCEPTION_C || c == 0x4001000A || c == EXCEPTION_SINGLE_STEP) return EXCEPTION_CONTINUE_SEARCH;
     if (InterlockedIncrement(&g_nexc) <= 200) {
         uintptr_t ip = (uintptr_t)x->ExceptionRecord->ExceptionAddress;
         tlog("EXCEPTION %08lx at %p (exe+%llx) p0=%llx p1=%llx", c, (void *)ip, (unsigned long long)(ip >= g_base && ip < g_end ? ip - g_base : 0),
@@ -156,7 +195,7 @@ static DWORD WINAPI watchdog(LPVOID p) {
        resetting v1's idle timer during a real hang), and whenever a file DUMP_NOW appears next to the exe (deleted after). */
     (void)p; int dumped = 0, beat = 0; char trig[MAX_PATH]; strcpy(trig, g_dir); strcat(trig, "DUMP_NOW");
     for (;;) {
-        Sleep(1000); DWORD now = GetTickCount(), idle = now - (DWORD)g_lastio, pidle = now - (DWORD)g_lastpac;
+        Sleep(1000); if (beat % 2 == 0) apply_bp_all(); DWORD now = GetTickCount(), idle = now - (DWORD)g_lastio, pidle = now - (DWORD)g_lastpac;
         if (++beat % 30 == 0) tlog("heartbeat io_idle=%lus pac_idle=%lus exc=%ld", idle / 1000, pidle / 1000, g_nexc);
         if (GetFileAttributesA(trig) != INVALID_FILE_ATTRIBUTES) { DeleteFileA(trig); tlog("=== DUMP_NOW trigger: sampling threads ===");
             for (int r = 0; r < 5; r++) { sample_threads(r); Sleep(1000); } }
@@ -176,8 +215,8 @@ BOOL WINAPI DllMain(HINSTANCE hi, DWORD r, LPVOID x) {
         { char nm[64]; sprintf(nm, "wwe2k19_filetrace_%lu.log", GetTickCount()); strcat(p, nm); } g_log = fopen(p, "w");
         HMODULE exe = GetModuleHandleA(0); g_base = (uintptr_t)exe;
         IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)((BYTE *)exe + ((IMAGE_DOS_HEADER *)exe)->e_lfanew); g_end = g_base + nt->OptionalHeader.SizeOfImage;
-        tlog("filetrace v2 loaded; exe base %p size %lx all=%d", (void *)g_base, nt->OptionalHeader.SizeOfImage, g_all);
-        patch_iat(exe); AddVectoredExceptionHandler(1, veh); CreateThread(0, 0, watchdog, 0, 0, 0);
+        tlog("filetrace v3 (belt-video breakpoints) loaded; exe base %p size %lx all=%d", (void *)g_base, nt->OptionalHeader.SizeOfImage, g_all);
+        patch_iat(exe); AddVectoredExceptionHandler(1, bpveh); AddVectoredExceptionHandler(0, veh); CreateThread(0, 0, watchdog, 0, 0, 0);
     }
     return TRUE;
 }

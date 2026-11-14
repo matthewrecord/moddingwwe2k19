@@ -242,3 +242,10 @@ Matthew: the AEW/IWGP title has no title-match intro animation. Findings:
   exe+0x49bd52 back to where the video id comes from.
 - 22 of 62 numbered titles have no bel_ video in vanilla (e.g. 4, 9, 14, 15, 17, 19, 21-24, 26-32), so a missing intro is
   normal for legacy titles in this game.
+- Static trace (2026-11-14): the name builder is function exe+0x49ba20 (args: rcx buf, rdx, r8d = video id, r9d = type);
+  8 callers. The arena-screen player exe+0x156ec20 (rcx = titantron object, video id at [obj+0x84]) labels the clip
+  'Championship' or 'Titantron' (flag in ebx at exe+0x156ed79) and calls the builder with [obj+0x84]. The id is NOT computed
+  from a constant in code (only 500000 immediate in .text is unrelated audio setup), so it comes from data.
+- Tracer v3 (`dinput8_filetrace.c`): execution breakpoints (DR0-DR2, no debugger) on exe+0x156ec20, +0x156ed79, +0x49ba20,
+  logging the video ids, champ flag and return addresses. Plan: one title match with a title that has an intro (e.g. WWE US,
+  bel_0005) and one with the AEW/IWGP title (slot 23), then compare.
