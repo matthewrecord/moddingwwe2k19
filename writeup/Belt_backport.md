@@ -306,3 +306,9 @@ that SHDC's BPE entry bytes against files on disk.
 G-buffer, then relights it every frame: light sweep, slow push-in, flare, glow, title name and an underline that fade in. Output is
 1920x1080, 30 fps, 300 frames (10 s, the stock intro length), H.264 for Matthew to convert to Bink2 as
 `movies/titantron/bel_0023_0_0.bk2`. The first render is at `_moddingwwe2k19_builds\belt\intro\aew_us_title_intro.mp4`.
+- v2 (Matthew's notes: the colours were gray and washed out, the sweep slightly slow, and the background should be transparent):
+  - All stock `bel_NNNN` intros are Bink2 **with alpha** (header flags 0x100012, bit 0x100000), 1920x1080, 240–301 frames.
+  - The renderer now writes RGBA: belt, glow, flare and text over a transparent background, with no black plate.
+  - Saturation is ×1.6 plus slight contrast, the strap diffuse is brighter, and the sweep finishes at 62% of the clip instead of 75%.
+  - Deliverables are in `_moddingwwe2k19_builds\belt\intro\`: `aew_us_title_intro_alpha.mov` (PNG codec, RGBA),
+    `..._frames_rgba.zip` (300 PNGs) and `..._preview_on_gray.mp4` (viewing only). Enable alpha when converting to Bink2.

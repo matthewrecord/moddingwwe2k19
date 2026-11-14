@@ -1,6 +1,6 @@
 """Title-match intro video for a backported belt: the belt rendered from its own 2K19 prop (front view), relit every frame
-with a sweeping light, slow push-in, light flare, title name fading in. Writes a 1920x1080 30 fps H.264 MP4 (default 10 s =
-300 frames, the length of the stock bel_NNNN intros) for Matthew to convert to Bink2 (movies/titantron/bel_NNNN_0_0.bk2).
+with a sweeping light, slow push-in, light flare, title name fading in. Writes RGBA PNG frames + a PNG-codec .mov with alpha
+(the stock bel_NNNN intros are Bink2 WITH alpha, flags 0x100012), 1920x1080 30 fps (default 10 s = 300 frames, the length of the stock bel_NNNN intros) for Matthew to convert to Bink2 (movies/titantron/bel_NNNN_0_0.bk2).
   belt_intro.py MAIN.pac OUT.mp4 --name "AEW UNITED STATES CHAMPIONSHIP" [--seconds 10]
 G-buffer is rasterised once (beltshot's geometry/culling), shading is redone per frame in numpy."""
 import sys, os, argparse, subprocess, numpy as np
@@ -39,8 +39,13 @@ def shade(G, L, gain=1.0):
     L = np.asarray(L, 'f8'); L /= np.linalg.norm(L); V = np.array([0, -1.0, 0]); Hh = (L + V) / np.linalg.norm(L + V)
     n = G['n']; base = G['base']; metal = G['pm'][..., 0:1]; rough = np.clip(G['pm'][..., 1:2], 0.04, 1)
     lam = np.clip(-(n @ L), 0, 1)[..., None]; spec = np.clip(-(n @ Hh), 0, 1)[..., None] ** (2 / rough ** 2 * 0.25 + 4)
-    c = base * (1 - metal) * (0.3 + 0.8 * lam) + base * metal * (0.75 + 0.6 * lam) + (0.04 * (1 - metal) + base * metal) * spec * 3.2 * (1 - rough)
+    c = base * (1 - metal) * (0.5 + 0.75 * lam) + base * metal * (0.75 + 0.6 * lam) + (0.04 * (1 - metal) + base * metal) * spec * 3.2 * (1 - rough)
     return np.clip(c * gain, 0, 1)
+
+def saturate(c, k):
+    g = (c @ np.array([0.299, 0.587, 0.114]))[..., None]
+    c = np.clip(g + (c - g) * k, 0, 1)
+    return np.clip((c - 0.5) * 1.08 + 0.5, 0, 1)            # a touch of contrast
 
 def ease(t): t = np.clip(t, 0, 1); return t * t * (3 - 2 * t)
 
@@ -51,7 +56,7 @@ def font(sz):
 
 def main():
     a = argparse.ArgumentParser(); a.add_argument('pac'); a.add_argument('out'); a.add_argument('--name', required=True)
-    a.add_argument('--seconds', type=float, default=10); a.add_argument('--fps', type=int, default=30); a.add_argument('--preview', type=int, nargs='*')
+    a.add_argument('--seconds', type=float, default=10); a.add_argument('--fps', type=int, default=30); a.add_argument('--sat', type=float, default=1.6); a.add_argument('--preview', type=int, nargs='*')
     a = a.parse_args()
     W, H = 1920, 1080; BW, BH = 2400, 1200                       # belt rendered larger than needed so the push-in stays sharp
     G, cov = gbuffer(a.pac, BW, BH)
@@ -61,45 +66,48 @@ def main():
     title = a.name.upper(); F = font(64)
     frames = a.preview if a.preview is not None else range(nf)
     if a.preview is None:
+        os.makedirs(a.out, exist_ok=True)
+    if False:
         ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', '%dx%d' % (W, H), '-r', str(a.fps), '-i', '-',
                                '-c:v', 'libx264', '-preset', 'slow', '-crf', '14', '-pix_fmt', 'yuv420p', a.out], stdin=subprocess.PIPE)
     for f in frames:
         t = f / (nf - 1)
-        # light sweeps left -> right across the plate, then settles front-high
-        ang = -1.1 + 2.2 * ease(t / 0.75)
+        ang = -1.1 + 2.2 * ease(t / 0.62)                           # light sweep left -> right
         L = [np.sin(ang) * 0.9, -0.75, -0.35 - 0.15 * np.cos(ang)]
         fade_in = ease(t / 0.12); fade_out = 1 - ease((t - 0.94) / 0.06)
-        belt = shade(G, L, gain=1.45 + 0.3 * ease((t - 0.6) / 0.3))
-        img = np.dstack([belt, cov])
-        scale = 0.84 + 0.08 * ease(t)                                    # slow push-in
-        bw = int(W * scale); bh = int(bw * BH / BW)
-        pil = Image.fromarray((img * 255).astype('u1'), 'RGBA').resize((bw, bh), Image.LANCZOS)
-        cy = int(H * 0.44 - bh / 2)
-        canvas = Image.fromarray((bgbase * 255 * fade_in).astype('u1'), 'RGB')
-        # soft glow behind the belt
-        glow = pil.split()[3].resize((bw // 8, bh // 8)).filter(ImageFilter.GaussianBlur(6)).resize((bw, bh))
-        g = np.asarray(glow, 'f4')[..., None] / 255 * 0.35 * fade_in
-        cv = np.asarray(canvas, 'f4') / 255; x0 = (W - bw) // 2
-        cv[cy:cy + bh, x0:x0 + bw] = np.clip(cv[cy:cy + bh, x0:x0 + bw] + g * np.array([1.0, 0.72, 0.35]), 0, 1)
-        canvas = Image.fromarray((cv * 255).astype('u1'))
-        bel = Image.fromarray((np.asarray(pil, 'f4')[..., :3] * fade_in).astype('u1')); canvas.paste(bel, (x0, cy), pil.split()[3])
-        # light flare travelling with the sweep
+        belt = saturate(shade(G, L, gain=1.45 + 0.3 * ease((t - 0.6) / 0.3)), a.sat)
+        scale = 0.84 + 0.08 * ease(t)
+        bw = int(W * scale); bh = int(bw * BH / BW); x0 = (W - bw) // 2; cy = int(H * 0.44 - bh / 2)
+        pil = Image.fromarray((np.dstack([belt, cov]) * 255).astype('u1'), 'RGBA').resize((bw, bh), Image.LANCZOS)
+        C = np.zeros((H, W, 3), 'f4'); A = np.zeros((H, W), 'f4')
+        def over(c, al, win=(slice(None), slice(None))):
+            C[win] = C[win] * (1 - al[..., None]) + c * al[..., None]; A[win] = A[win] + al * (1 - A[win])
+        win = (slice(cy, cy + bh), slice(x0, x0 + bw))
+        glow = np.asarray(pil.split()[3].resize((bw // 8, bh // 8)).filter(ImageFilter.GaussianBlur(6)).resize((bw, bh)), 'f4') / 255
+        over(np.array([1.0, 0.62, 0.18], 'f4'), glow * 0.45 * fade_in, win)
+        bp = np.asarray(pil, 'f4') / 255; over(bp[..., :3], bp[..., 3] * fade_in, win)
         fx = W / 2 + np.sin(ang) * W * 0.32; fy = cy + bh * 0.5
         fl = np.exp(-(((xx - fx) / 260) ** 2 + ((yy - fy) / 26) ** 2)) * 0.55 + np.exp(-((xx - fx) ** 2 + (yy - fy) ** 2) / 70 ** 2) * 0.5
-        fl *= np.sin(np.clip(t / 0.75, 0, 1) * np.pi) * fade_in
-        cv = np.asarray(canvas, 'f4') / 255 + fl[..., None] * np.array([1.0, 0.9, 0.7])
-        # title text
-        ta = ease((t - 0.45) / 0.15) * fade_out
+        fl = np.clip(fl * np.sin(np.clip(t / 0.62, 0, 1) * np.pi) * fade_in, 0, 1)
+        over(np.array([1.0, 0.88, 0.6], 'f4'), fl.astype('f4'))
+        ta = ease((t - 0.42) / 0.15) * fade_out
         txt = Image.new('L', (W, 140)); d = ImageDraw.Draw(txt); tw = d.textlength(title, font=F)
-        d.text(((W - tw) / 2, 30), title, font=F, fill=255)
-        ln = Image.new('L', (W, 140)); dl = ImageDraw.Draw(ln); half = tw / 2 * ease((t - 0.4) / 0.2)
-        dl.rectangle([W / 2 - half, 118, W / 2 + half, 121], fill=255)
-        tm = (np.asarray(txt, 'f4') + np.asarray(ln, 'f4'))[..., None] / 255 * ta; ty = int(H * 0.80)
-        cv[ty:ty + 140] = cv[ty:ty + 140] * (1 - tm) + tm * np.array([1.0, 0.86, 0.55])
-        cv *= fade_out
-        out = (np.clip(cv, 0, 1) * 255).astype('u1')
-        if a.preview is not None: Image.fromarray(out).save('%s_%03d.png' % (a.out, f))
-        else: ff.stdin.write(out.tobytes())
-    if a.preview is None: ff.stdin.close(); ff.wait(); print('wrote', a.out, nf, 'frames')
+        d.text(((W - tw) / 2, 30), title, font=F, fill=255); half = tw / 2 * ease((t - 0.37) / 0.2)
+        d.rectangle([W / 2 - half, 118, W / 2 + half, 121], fill=255)
+        ty = int(H * 0.80); tm = np.asarray(txt, 'f4') / 255 * ta
+        sh = np.asarray(txt.filter(ImageFilter.GaussianBlur(8)), 'f4') / 255 * ta * 0.7
+        over(np.zeros(3, 'f4'), sh, (slice(ty, ty + 140), slice(None)))
+        over(np.array([1.0, 0.80, 0.30], 'f4'), tm, (slice(ty, ty + 140), slice(None)))
+        A *= fade_out
+        out = np.dstack([np.clip(C, 0, 1), np.clip(A, 0, 1)])
+        out = (out * 255 + 0.5).astype('u1')
+        if a.preview is not None:
+            Image.fromarray(out, 'RGBA').save('%s_%03d.png' % (a.out, f))
+            chk = Image.new('RGBA', (W, H), (90, 90, 90, 255)); chk.alpha_composite(Image.fromarray(out, 'RGBA')); chk.convert('RGB').save('%s_%03d_ongray.jpg' % (a.out, f))
+        else: Image.fromarray(out, 'RGBA').save(os.path.join(a.out, 'frame_%03d.png' % f))
+    if a.preview is None:
+        subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', str(a.fps), '-i', os.path.join(a.out, 'frame_%03d.png'),
+                        '-c:v', 'png', '-pix_fmt', 'rgba', os.path.join(a.out, 'intro_alpha.mov')], check=True)
+        print('wrote', nf, 'RGBA frames + intro_alpha.mov to', a.out)
 
 if __name__ == '__main__': main()
