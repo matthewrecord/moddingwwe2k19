@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 # ---------------- arena environment (equirect, +z up, camera looks along +y at the belt front)
 EW, EH = 256, 128
+CROWD = float(os.environ.get("GL_CROWD", "1.0"))
 CAMLIGHT = float(os.environ.get("GL_CAMLIGHT", "0.15"))   # light behind the camera; in-game arenas are dark there
 def make_env(seed=3):
     rng = np.random.default_rng(seed)
@@ -27,7 +28,7 @@ def make_env(seed=3):
         d = np.arccos(np.clip(np.sin(th) * np.sin(pe) + np.cos(th) * np.cos(pe) * np.cos(phi - pp), -1, 1))
         env += np.exp(-(d / np.radians(2.2)) ** 2)[..., None] * np.array([1.0, 0.95, 0.85]) * rng.uniform(6, 14)
     band = (th <= np.radians(32)) & (th > np.radians(2))                      # crowd: dark, speckled colour
-    noise = rng.uniform(0, 1, (EH // 8, EW // 8, 3)) ** 2 * 0.16 + 0.05      # crowd: low-frequency, not pixel noise
+    noise = (rng.uniform(0, 1, (EH // 8, EW // 8, 3)) ** 2 * 0.16 + 0.05) * CROWD   # crowd: low-frequency, not pixel noise
     noise = np.stack([np.asarray(Image.fromarray((noise[..., c] * 255).astype('u1')).resize((EW, EH), Image.BILINEAR), 'f4') / 255 for c in range(3)], -1)
     env[band] = noise[band]
     led = (th > np.radians(8)) & (th < np.radians(11)); env[led] += np.array([0.5, 0.08, 0.06]) * (rng.uniform(0.5, 1, (EH, EW))[led][:, None])

@@ -470,3 +470,25 @@ Measured enamel albedo (texels used by the mesh):
 unsaturated texels within 6 px of red/blue. It sets flat stock enamel colours (±15% low-frequency shading), metal 0, roughness ~0.12.
 v15 = v14 + `--stock-enamel`. Result: red (227,48,49) v .89, blue (57,93,161) v .63, metal 0.02–0.04, roughness 0.13–0.14 (matches stock). No warnings.
 Installed: 2905 = see handoff; emulator crop: `writeup/img/aew_v15_enamel_vs_stock.png`.
+
+## 36. Lighting stage decoded: belts get a "too dark" boost only during entrances (2026-11-14)
+The forward lighting PS of `yPBR_RTCS_Belt` (blob 001), decompiled, has belt-specific inputs:
+- Material flag `g_bChampionBeltCorrection` (g_tMaterial +12).
+- Globals in `g_tGlobal_Light`: `g_fRoughnessMultiplier/Min_ChampionBelt`, `g_fIrradianceMultiplier/Min_ChampionBelt` and
+  `g_fIBLSpecularMultiplier/Min_ChampionBelt`.
+- With the correction on: roughness = max(rough × mul, min); arena IBL irradiance × IrrMul (floor IrrMin); IBL specular × SpcMul (floor SpcMin).
+
+The values come from Yuke's own `pac/misc/parameter/todo/todo_wwe19_champion_belt_too_dark.pac` (NIBJ table):
+- Belt_IrrMul 1.0, **Belt_SpcMul 2.0**, Belt_IrrMin 0, Belt_SpcMin 0.2.
+- Switches: **Entrance=1, Winning=0, TitleMatch=0**, CACMenu=0, Always=0.
+
+So every belt (stock too) gets 2× reflections during entrances but not in title-match presentations or winner scenes. That matches
+Matthew's screenshots: v14 looked good, and v15 (gold identical to v14) looked dark in title-match scenes.
+There's also `..._cutscene_no.pac` (per-cutscene overrides), not changed.
+
+Change: `tools/build/beltdark.py` (`--show`, `--on/--off` switches, `--irrmul/--spcmul/--irrmin/--spcmin`). It sets TitleMatch=1
+and Winning=1; the values are unchanged. The unedited round trip of the container is byte-identical.
+Installed `pac/misc/parameter/todo/todo_wwe19_champion_belt_too_dark.pac` = a638e5c04132fc60104cb45b3537a3fe
+(stock d04c87c49c5e3cb5a80024e3504dfa73, backed up in `backup_originals`).
+Effect: all belts look in title-match and winner scenes the way they already look in entrances. It's a global change, but it is Yuke's
+own correction, extended to the scenes where it was off.
