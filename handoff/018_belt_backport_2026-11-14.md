@@ -73,3 +73,11 @@ Installed for the control: STOCK 2905/5038 (95b0f2f1..., 69876b7d...) + tracer d
 | `pac\prop\5038.pac` | f25e5bf188687cdf527d1a1b441ebc63 |
 | `pac\menu\win\Assets\wwe19_texture\belt\ltag_belt_all_win.pac` | cab920af12d0ce55ec6123061bdf84b6 |
 Tracer still installed. v7 run (trace 40618828) did not freeze.
+
+## Intro fix installed (2026-11-14)
+| File (plain install) | MD5 | Stock MD5 (backup in `_moddingwwe2k19_builds\belt\backup_originals\`) |
+|---|---|---|
+| `pac/evt/evt_data.pac` | ebf691de461e52f03ee18755100bcd18 | c9664b0c848f14c4ffe0b9513965783c |
+| `pac/evt/evt_data_p10.pac` | f32df2a491b19289abe42fd0ff48cdad | eb8e71bf9dc05183a35982d41965ec6f |
+| `movies/titantron/bel_0023_0_0.bk2` | ac71460b7f03bf39492c66052d485f57 (placeholder = copy of the US title's bel_0005) | (new file) |
+Matthew's own encode replaces the placeholder: same name, Bink2, 10 s. Tracer v3c is still installed.
