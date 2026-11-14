@@ -1,7 +1,7 @@
 ARENA PACK (moddingwwe2k19) - 2026-11-14
 =========================================
 Everything from the arena rebuild (Nov 2026) as one drag-and-drop folder:
-387 files (178 new, 209 replacements), 2.0 GB. MANIFEST.md5 lists every file with its MD5.
+389 files (178 new, 211 replacements), 2.0 GB. MANIFEST.md5 lists every file with its MD5.
 
 REQUIREMENTS (the base this was built and tested on)
 - Clean WWE 2K19 (Steam).
@@ -17,12 +17,14 @@ INSTALL
 Do not copy MANIFEST.md5 or this README into the game folder.
 Keep nothing else (backups, work folders) inside the game folder: a chunk rebuild indexes everything there.
 
-ARENAS (slot - arena - replaces)
+ARENAS (slot - arena - replaces; 104/115 keep their own arena, new stage)
   96  RAW                         Great Balls of Fire
   53  SMACKDOWN (SmackDown 21)    No Mercy '16
    5  TOKYO DOME                  Battleground '13
  107  AEW DYNAMITE '20            No Way Out '01
+ 104  WRESTLEMANIA 29 (2K15-2K18 Arena Port stage; graphics/videos = 81-arena pack)
  112  AEW REVOLUTION              Backlash '03
+ 115  WRESTLEMANIA 32 (2K15-2K18 Arena Port stage; graphics/videos = 81-arena pack)
  117  AEW DARK                    Armageddon '02
  118  AEW ALL OUT                 Bad Blood '04
  119  AEW DOUBLE OR NOTHING       Vengeance '01
