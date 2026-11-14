@@ -300,3 +300,9 @@ that SHDC's BPE entry bytes against files on disk.
   tracer logs `seq_step case=8` and a lookup with key=23, and the result is 502300.
 - **Result (2026-11-14): confirmed in game.** The intro played for the AEW US title. The tracer logged `seq_step case=8`,
   lookup key=23 → found, video 502300, exactly as predicted.
+
+### 26. Intro video made from the belt itself (2026-11-14)
+`tools/backport/belt_intro.py MAIN.pac OUT.mp4 --name "..."` rasterises the 2K19 prop once (beltshot geometry + culling) into a
+G-buffer, then relights it every frame: light sweep, slow push-in, flare, glow, title name and an underline that fade in. Output is
+1920x1080, 30 fps, 300 frames (10 s, the stock intro length), H.264 for Matthew to convert to Bink2 as
+`movies/titantron/bel_0023_0_0.bk2`. The first render is at `_moddingwwe2k19_builds\belt\intro\aew_us_title_intro.mp4`.
