@@ -49,6 +49,19 @@ git push origin --delete claude/<task>
 
 If `main` moved and the fast-forward fails, rebase the branch again and retry.
 
+## Debugging in-game problems (lesson from the belt port, 2026-11-14)
+The belt port lost a day to guessing: each test build changed several things, results were judged by eye against an offline
+renderer that had never been validated, and wrong theories (memory, UV misreads) cost Matthew a game run each. What found the
+real cause in one run was a **control**. Rules:
+1. **Control first.** Before blaming your own data, run the stock asset through the same test (stock mesh + test texture, stock
+   file + one changed block). If the stock asset behaves as your model predicts, the fault is in your data; if not, your model of
+   the game is wrong. Do this before the second failed in-game test, not after the sixth.
+2. **One variable per build.** Each in-game test changes one thing from a known-good build.
+3. **Write the prediction down (commit it) before Matthew runs the test.** Compare against it, not against memory.
+4. **Measure, don't eyeball.** Use test textures with fine structure (grid lines) so 'matches' is checkable.
+5. **Say what is proven and what is inferred.** Don't present a theory as the cause until a test has separated it from the alternatives.
+6. **Your offline tools must model what the game does** (e.g. back-face culling). A renderer that draws both sides hid the bug.
+
 ## Handoff (end of every session)
 
 1. Update `STATE.md` and `writeup/Status.md` (current state, next step) and/or add `handoff/NNN_<topic>_<date>.md`.
