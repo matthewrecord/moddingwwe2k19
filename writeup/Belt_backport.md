@@ -372,3 +372,7 @@ Matthew asked for a video made from the actual photo, with the background isolat
   - Old public RAD Video Tools releases only encode Bink 1 (the Bink 2 encoder ships with the licensed SDK).
   - Placeholder restored. The hung file is kept as `intro\photo_KB2n_hung.bk2`.
   - Remaining routes: patch the tag to `m` (works only if the bitstream is unchanged), or ship a newer `bink2w64.dll`.
+- **Bink 1 route:** the game's `bink2w64.dll` also lists `BIKi`/`BIKk`, and 8 titantrons in `movies/titantron` are Bink 1 (`BIKi`)
+  renamed to `.bk2`. Matthew's Bink 1 encode of photo2 (old RAD tools, alpha on, forced 30 fps, no audio) is `BIKi`, 1920x1080,
+  300 frames, 30/1, flags 0x100000 (alpha). It is installed as `bel_0023_0_0.bk2` (MD5 e3a445af1b555fbe19725e76b9308a16), pending an in-game test.
+  Untested: Bink 1 *with alpha* (the existing Bink 1 titantrons have none).
