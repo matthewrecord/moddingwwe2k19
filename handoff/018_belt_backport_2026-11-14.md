@@ -88,3 +88,10 @@ Matthew's own encode replaces the placeholder: same name, Bink2, 10 s. Tracer v3
 | `pac\prop\2905.pac` | 80fe691d2f23907568fab27481fe8ac3 |
 | `pac\prop\5038.pac` | cf711adbc6756c3be0c838eece1e7fde |
 v8 is kept at `_moddingwwe2k19_builds\belt\aew_us_v8_installed\`. Matthew's Bink intro (`bel_0023_0_0.bk2`) is installed and works.
+
+## v10 installed (plain), 2026-11-14: colour-matched to the reference photo
+| File | MD5 |
+|---|---|
+| `pac\prop\2905.pac` | b6254fb09531edbedf573bad11385526 |
+| `pac\prop\5038.pac` | 415300adfb2839c2301df80f485498d9 |
+v9 is kept at `_moddingwwe2k19_builds\belt\aew_us_v9_installed\`. Intro v4 frames are in `intro\frames_rgba_v4\`, waiting for Matthew's Bink encode.
