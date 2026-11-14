@@ -76,3 +76,8 @@ real cause in one run was a **control**. Rules:
 2. Back up every file about to be replaced (name `<file>.bak_<date>`), record MD5s.
 3. Apply to the **modded** install only; verify the new MD5s; note them in the handoff.
 4. Matthew tests in game; his result goes into the next handoff.
+
+### Delivery pitfall: never reuse an output file name (2026-11-14)
+`device_commit_files` with a `stagedPath` whose name was already committed earlier in the session wrote the *earlier* file's
+content (it put the hanging KB2n intro back into the game instead of the new Bink 1 file). Always give each delivered build a
+unique file name, then check the MD5 on the device after every install.
