@@ -249,3 +249,7 @@ Matthew: the AEW/IWGP title has no title-match intro animation. Findings:
 - Tracer v3 (`dinput8_filetrace.c`): execution breakpoints (DR0-DR2, no debugger) on exe+0x156ec20, +0x156ed79, +0x49ba20,
   logging the video ids, champ flag and return addresses. Plan: one title match with a title that has an intro (e.g. WWE US,
   bel_0005) and one with the AEW/IWGP title (slot 23), then compare.
+- v3 run (trace 43463687): US title match -> video ids 61000000 then **500500** (bel_0005, intro shown), both via
+  exe+0x573940 (screen player, id from [obj+0x20]; 'Championship' label when id // 100000 == 5). AEW/IWGP slot 23 ->
+  12500000 only, **no 5023xx request**. So the title intro is scheduled upstream as its own screen object; nothing schedules
+  one for title 23. v3b logs the call chain for every exe+0x573940 / 0x49ba20 hit to find the scheduler.
