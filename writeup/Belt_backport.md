@@ -203,3 +203,17 @@ in a good load the next files are `pac/root/audience_p30/p10/audience.pac` then 
 moment of the hang (it was loaded earlier in the session). Tracer v1's sampler never fired: unlogged I/O (audio) reset its idle
 timer. Asked Matthew for a Task Manager full dump of the frozen process. Tracer v2 (`dinput8_filetrace.c`): samples threads when no
 .pac has been opened for 15 s, and on a `DUMP_NOW` file next to the exe.
+
+## 22. Full dump of the v8 freeze (Task Manager dump, 2026-11-14)
+`C:\Users\Acer\AppData\Local\Temp\WWE2K19_x64.DMP` (3.97 GB, not copied; read in place with `minidump` on the laptop).
+- 144 threads, **all blocked in Windows waits, none running**: a deadlock / wait on a signal that never comes, not a crash or a loop.
+- Main thread (24776): waiting at exe+ab06a -> exe+127fea0 on the global job object at 0x1425e8920 (waits for a batch of
+  background jobs).
+- Loader / file thread (30008, the one that logged every open): a `CGameWorkerThread`, idle in its sleep-poll loop
+  (exe+8f7ea5 tests [obj+0x58]; obj 0x787a210 has 0 = no work). Its object references SOUNDPAC / `/SOND/DUPL/` names.
+- 18 pool workers idle at exe+1298895 (waiting for jobs).
+So: the main thread waits for a job that no worker holds (it never started or was dropped). The dump does not name the asset.
+Not attributed to the belt: the belt was loaded and displayed earlier in the session; the hang is on the next match load.
+Plan (control, per WORKFLOW): tracer v2 + STOCK belts, several back-to-back matches including WWE '91. If stock never
+freezes in the same sequence, bisect v8 vs stock (model block only / texture block only).
+Session tools: `$HOME/dmp/hang.py` (per-thread wait sites), `obj.py`, `wwedisasm.py` (note: never name a script dis.py).
