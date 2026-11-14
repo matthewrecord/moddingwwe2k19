@@ -64,3 +64,4 @@ Fast-forward of `claude/belt-backport` (includes all of `claude/backport-tool`) 
 ## WWE 91 freeze control (2026-11-14)
 Installed for the control: STOCK 2905/5038 (95b0f2f1..., 69876b7d...) + tracer dinput8.dll (dbf4dd53...). Menu picture and strings stay v5/v6. v7 waits in `aew_us_v7\`. Prediction: if the arena freezes with stock belts, the freeze is the arena work, not the belt.
 - Matthew: the tracer should have stayed installed (the WWE 91 freeze happened while it was removed, so no log). Reinstalled; it stays until the belt work is signed off.
+- Control result: 1 run in the WWE 91 arena with STOCK belts loaded fine (trace 40359125, no hang). Not conclusive alone (intermittent). Matthew was surprised to see the Brahma Bull (control not clear enough in my message). Installed v7 (2905 , 5038 , menu ) with the tracer kept in: any freeze is now logged directly.
