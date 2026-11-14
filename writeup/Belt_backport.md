@@ -278,3 +278,23 @@ Big Show entered (evt 00125) both times; only the title changed.
 **Proven:** the wrestler isn't the variable. For title 23, sequence step 8 (the title-belt scene, which also looks up the video) is never queued at all. The video file and the DB lookup aren't the blocker. Whatever builds the intro sequence decides per title whether to add step 8.
 **Also learned:** the lookup key for the US title is 5, not its slot number. It's a separate per-title video/scene index, so title 23 probably has no entry, or a flag that's off.
 **Next:** find the code that queues step 8 (the writer of `[step+4]=8`), and see which per-title field it tests.
+
+### 25. What gates the title intro: the championship table in `pac/evt/evt_data.pac` (2026-11-14)
+
+Found by reading the game's DB object out of the full dump (`[[exe+0x25e3800]+0x40]`) back to its source SHDC, then matching
+that SHDC's BPE entry bytes against files on disk.
+
+- `pac/evt/evt_data.pac`: HSPC → SHDC with 62 BPE-compressed text tables. **Id 13 = championship table**. `evt_data_p10.pac`
+  carries a full copy of id 13 (it is a patch layer, so edit both). p20/p30 don't touch it.
+- Row format (12 columns): `title_id intro_video intro_frames cutscene_prop main_prop 0 str_a str_b 0 0 0 0`.
+  The US title (id 5) is `5 500500 540 5003 2003 ...`. Title 23 (Brahma Bull → AEW US) was `23 0 0 5038 2905 ...`.
+- Titles with video 0 never get match-intro step 8 (the title-belt scene). The step-8 handler looks up field 1 (video id) by
+  the title id from `exe+0x5501a0`. This also explains why the stock Brahma Bull belt never had an intro.
+- Edit: `23 502300 600 5038 2905 ...` → plays `movies/titantron/bel_0023_0_0.bk2`. 600 = the frame count the other
+  10-second intros use.
+- Tool: `tools/build/titletable.py` (`--show`, `--set "ID VIDEO FRAMES"`). It includes a BPE *encoder*: Gage pair
+  table in the layout `tools/audio/bpe.py` decodes; skip bytes >127 are followed by exactly one entry. Codes are only reused
+  when free in the data *and* in every earlier pair. Unedited round trips of both pacs are byte-identical. The edited
+  entry is the same size as stock (1232 bytes), so both pacs keep their stock sizes.
+- Prediction (written before the test): with a .bk2 at `bel_0023_0_0.bk2`, the AEW title match shows the step-8 scene, the
+  tracer logs `seq_step case=8` and a lookup with key=23, and the result is 502300.
