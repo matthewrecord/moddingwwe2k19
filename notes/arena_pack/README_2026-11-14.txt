@@ -1,7 +1,7 @@
 ARENA PACK (moddingwwe2k19) - 2026-11-14
 =========================================
 Everything from the arena rebuild (Nov 2026) as one drag-and-drop folder:
-434 files (188 new, 246 replacements), 2.0 GB. MANIFEST.md5 lists every file with its MD5.
+434 files (188 new, 246 replacements), 2.2 GB. MANIFEST.md5 lists every file with its MD5.
 
 REQUIREMENTS (the base this was built and tested on)
 - Clean WWE 2K19 (Steam).
@@ -14,6 +14,7 @@ INSTALL
    (...\steamapps\common\WWE 2K19\). Overwrite when asked.
 2. Rebuild the chunk file (chunk0.def) the way you normally do, so the 178 new files get indexed.
 3. Start the game. Check: Exhibition > Select Arena.
+4. Optional check: every file in MANIFEST.md5 should match (same MD5) in the game folder.
 Do not copy MANIFEST.md5 or this README into the game folder.
 Keep nothing else (backups, work folders) inside the game folder: a chunk rebuild indexes everything there.
 
@@ -57,6 +58,8 @@ WHOLE FILES (these replace the pack's copies; they are the pack's files plus our
   The string files differ from the pack only in the 25 arena names above.
 
 MATCH CARDS: every arena above except the Raw/SmackDown ones (96, 53, 141, 153) shows no wrestler names.
+  Raw (96) and Raw '20 (141) use the Raw card font + black names beside the Raw logo; SmackDown 21/'20 keep
+  the stock white names on the blue bar. Tokyo Dome (5) uses the shared generic card (names shown).
 
 SHARED CHANGES WORTH KNOWING
 - Crowd 3 = AEW crowd shirts (crowd 3 was unused by any arena before).

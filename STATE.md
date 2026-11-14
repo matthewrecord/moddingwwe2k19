@@ -1,6 +1,7 @@
 # Current state (one screen; read this first, then writeup/Status.md)
 
-- **2026-11-14 later (latest): Raw '20 → 141, SmackDown '20 → 153 installed; light byte-order bug fixed on 124/143/128/160; SS22 hang fixed (crowd seats -2); pack 434 files. Waiting on Matthew's test.**
+- **2026-11-14 final (handoff 019, latest): drag-and-drop Arena Pack final: 434 files, verified. Waiting on Matthew's tests (see handoff 019).**
+- **2026-11-14 later: Raw '20 → 141, SmackDown '20 → 153 installed; light byte-order bug fixed on 124/143/128/160; SS22 hang fixed (crowd seats -2); pack 434 files. Waiting on Matthew's test.**
 - **2026-11-14: batch 4 confirmed. Drag-and-drop Arena Pack built in Resources (`_Arena Pack (moddingwwe2k19) 2026-11-14`, 387 files, MD5-verified) for Matthew's from-scratch install; modded-game survey done (candidates: port versions of 104/106/108/110/111/115). See Arena_inventory.md last section.**
 - **2026-11-13 night (handoff 018): AEW polish + batch 4 (127 NXT 2.0, 128 NXT W&G, 5 Tokyo Dome, 123 All In) installed, waiting on Matthew's test. Work folder now `common\WWE2K19_arena_work`.**
 - **2026-11-13 evening: installs looked broken because chunk0.def was rebuilt over `_arena_work` (backup tables shadowed the live ones). Work folder moved to `common\WWE2K19_arena_work`, def cleaned; retest pending.**
