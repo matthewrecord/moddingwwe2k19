@@ -32,6 +32,7 @@ def main():
     # slight richness + lift (the photo is already well lit; keep it bright, never shadowed)
     lum = rgb.mean(-1, keepdims=True); rgb = np.clip(lum + (rgb - lum) * 1.12, 0, 1); rgb = np.clip((rgb - 0.5) * 1.05 + 0.53, 0, 1)
     sh_, sw_ = rgb.shape[:2]; yy0, xx0 = np.mgrid[0:sh_, 0:sw_]
+    ALB = np.asarray(Image.fromarray((al * 255).astype('u1')).filter(ImageFilter.GaussianBlur(25)), 'f4') / 255
     nf = int(a.seconds * a.fps); title = a.name.upper(); F = font(64)
     yy, xx = np.mgrid[0:H, 0:W]
     frames = a.preview if a.preview is not None else range(nf)
@@ -39,7 +40,8 @@ def main():
     for f in frames:
         t = f / (nf - 1); fade_in = ease(t / 0.10); fade_out = 1 - ease((t - 0.94) / 0.06)
         # specular sweep: a soft diagonal band crossing the belt left -> right by 62% of the clip
-        p = -0.25 + 1.5 * ease(t / 0.62); band_x = p * sw_ - (yy0 - sh_ / 2) * 0.35
+        p = 0.06 + 0.88 * ease(t / 0.62)                     # stays on the belt (6-94% of its width)
+        band_x = p * sw_ - (yy0 - sh_ / 2) * 0.35
         spec = np.exp(-((xx0 - band_x) / (sw_ * 0.06)) ** 2)[..., None]
         glint = spec * metal[..., None] * np.array([1.0, 0.92, 0.80]) * 0.75
         belt = np.clip(rgb + glint + spec * al[..., None] * 0.06, 0, 1)
@@ -56,6 +58,8 @@ def main():
         bp = np.asarray(pil, 'f4')[off:] / 255; over(bp[..., :3], bp[..., 3] * fade_in, win)
         # flare riding the sweep at plate height, with coloured streaks
         fx = x0 + (p * sw_) / sw_ * bw; fy = cy + bh * 0.42; amp = np.sin(np.clip(t / 0.62, 0, 1) * np.pi) * fade_in
+        # only flare where there is belt under it: sample the blurred belt alpha at the flare centre
+        ix = int(np.clip(p * sw_, 0, sw_ - 1)); iy = int(sh_ * 0.42); amp *= float(ALB[iy, ix])
         core = np.exp(-((xx - fx) ** 2 + (yy - fy) ** 2) / 90 ** 2)
         streak = np.exp(-(((xx - fx) / 520) ** 2 + ((yy - fy) / 9) ** 2))
         diag1 = np.exp(-((((xx - fx) * 0.94 + (yy - fy) * 0.34) / 380) ** 2 + (((yy - fy) * 0.94 - (xx - fx) * 0.34) / 6) ** 2))

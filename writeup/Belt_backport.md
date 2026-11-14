@@ -358,3 +358,5 @@ Matthew asked for a video made from the actual photo, with the background isolat
 - `tools/backport/photo_intro.py`: the photo stays fully lit, never shadowed, with slight richness and lift. Animation: a specular
   sweep across metal pixels (copper, detected by hue/saturation, and silver), a flare with orange and purple streaks riding the
   sweep, a soft drop shadow, a push-in, and copper title text. Output is RGBA, 1920x1080, 30 fps, 300 frames.
+- photo2: the flare and sweep now run from 6% to 94% of the belt's width instead of starting and ending off it. The flare's
+  strength also scales with the (blurred) belt coverage under its centre. Frames are in `intro\frames_rgba_photo2\`.
