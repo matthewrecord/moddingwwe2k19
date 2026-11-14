@@ -15,7 +15,7 @@
 #include <ctype.h>
 
 static FILE *g_log; static CRITICAL_SECTION g_cs; static DWORD g_t0; static HMODULE g_real; static uintptr_t g_base, g_end;
-static volatile LONG g_lastio; static int g_all; static volatile LONG g_nexc;
+static volatile LONG g_lastio, g_lastpac; static char g_dir[MAX_PATH]; static int g_all; static volatile LONG g_nexc;
 typedef HRESULT (WINAPI *DI8C)(HINSTANCE, DWORD, REFIID, LPVOID *, LPUNKNOWN);
 static void tlog(const char *fmt, ...) {
     va_list ap; EnterCriticalSection(&g_cs);
@@ -55,12 +55,14 @@ static HANDLE WINAPI hCFW(LPCWSTR n, DWORD a, DWORD s, LPSECURITY_ATTRIBUTES sa,
     HANDLE h = oCFW(n, a, s, sa, c, f, t); DWORD e = GetLastError(); char p[260] = "";
     if (n) WideCharToMultiByte(CP_UTF8, 0, n, -1, p, 259, 0, 0);
     InterlockedExchange(&g_lastio, (LONG)GetTickCount());
+    if (strstr(p, ".pac")) InterlockedExchange(&g_lastpac, (LONG)GetTickCount());
     if (interesting(p)) tlog("OPEN %s -> %p%s err=%lu flags=%lx", p, h, h == INVALID_HANDLE_VALUE ? " FAIL" : "", e, f);
     hadd(h, p); SetLastError(e); return h;
 }
 static HANDLE WINAPI hCFA(LPCSTR n, DWORD a, DWORD s, LPSECURITY_ATTRIBUTES sa, DWORD c, DWORD f, HANDLE t) {
     HANDLE h = oCFA(n, a, s, sa, c, f, t); DWORD e = GetLastError();
     InterlockedExchange(&g_lastio, (LONG)GetTickCount());
+    if (n && strstr(n, ".pac")) InterlockedExchange(&g_lastpac, (LONG)GetTickCount());
     if (n && interesting(n)) tlog("OPENA %s -> %p%s err=%lu", n, h, h == INVALID_HANDLE_VALUE ? " FAIL" : "", e);
     hadd(h, n ? n : ""); SetLastError(e); return h;
 }
@@ -150,26 +152,31 @@ static void sample_threads(int round) {
     CloseHandle(s);
 }
 static DWORD WINAPI watchdog(LPVOID p) {
-    (void)p; int dumped = 0, beat = 0;
+    /* v2: sample when no .pac has been OPENED for 15 s while a load was in progress (other I/O such as audio streaming kept
+       resetting v1's idle timer during a real hang), and whenever a file DUMP_NOW appears next to the exe (deleted after). */
+    (void)p; int dumped = 0, beat = 0; char trig[MAX_PATH]; strcpy(trig, g_dir); strcat(trig, "DUMP_NOW");
     for (;;) {
-        Sleep(1000); DWORD idle = GetTickCount() - (DWORD)g_lastio;
-        if (++beat % 30 == 0) tlog("heartbeat idle=%lus exc=%ld", idle / 1000, g_nexc);
-        if (idle > 8000 && dumped < 3) { tlog("=== no file I/O for %lus: sampling threads (dump %d) ===", idle / 1000, dumped + 1);
+        Sleep(1000); DWORD now = GetTickCount(), idle = now - (DWORD)g_lastio, pidle = now - (DWORD)g_lastpac;
+        if (++beat % 30 == 0) tlog("heartbeat io_idle=%lus pac_idle=%lus exc=%ld", idle / 1000, pidle / 1000, g_nexc);
+        if (GetFileAttributesA(trig) != INVALID_FILE_ATTRIBUTES) { DeleteFileA(trig); tlog("=== DUMP_NOW trigger: sampling threads ===");
+            for (int r = 0; r < 5; r++) { sample_threads(r); Sleep(1000); } }
+        if (pidle > 15000 && pidle < 120000 && dumped < 3 && (dumped == 0 || pidle > 15000u + 20000u * dumped)) {
+            tlog("=== no .pac opened for %lus (io_idle %lus): sampling threads (dump %d) ===", pidle / 1000, idle / 1000, dumped + 1);
             for (int r = 0; r < 5; r++) { sample_threads(r); Sleep(1000); } dumped++; }
-        if (idle < 2000) dumped = 0;
+        if (pidle < 2000) dumped = 0;
     }
     return 0;
 }
 BOOL WINAPI DllMain(HINSTANCE hi, DWORD r, LPVOID x) {
     (void)hi; (void)x;
     if (r == DLL_PROCESS_ATTACH) {
-        InitializeCriticalSection(&g_cs); g_t0 = GetTickCount(); g_lastio = (LONG)g_t0;
-        char p[MAX_PATH]; GetModuleFileNameA(0, p, MAX_PATH); char *s = strrchr(p, '\\'); if (s) s[1] = 0;
+        InitializeCriticalSection(&g_cs); g_t0 = GetTickCount(); g_lastio = (LONG)g_t0; g_lastpac = (LONG)g_t0;
+        char p[MAX_PATH]; GetModuleFileNameA(0, p, MAX_PATH); char *s = strrchr(p, '\\'); if (s) s[1] = 0; strcpy(g_dir, p);
         char q[MAX_PATH]; strcpy(q, p); strcat(q, "TRACE_ALL"); g_all = GetFileAttributesA(q) != INVALID_FILE_ATTRIBUTES;
         { char nm[64]; sprintf(nm, "wwe2k19_filetrace_%lu.log", GetTickCount()); strcat(p, nm); } g_log = fopen(p, "w");
         HMODULE exe = GetModuleHandleA(0); g_base = (uintptr_t)exe;
         IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)((BYTE *)exe + ((IMAGE_DOS_HEADER *)exe)->e_lfanew); g_end = g_base + nt->OptionalHeader.SizeOfImage;
-        tlog("filetrace v1 loaded; exe base %p size %lx all=%d", (void *)g_base, nt->OptionalHeader.SizeOfImage, g_all);
+        tlog("filetrace v2 loaded; exe base %p size %lx all=%d", (void *)g_base, nt->OptionalHeader.SizeOfImage, g_all);
         patch_iat(exe); AddVectoredExceptionHandler(1, veh); CreateThread(0, 0, watchdog, 0, 0, 0);
     }
     return TRUE;

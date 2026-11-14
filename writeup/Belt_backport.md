@@ -195,3 +195,11 @@ Matthew: in v7 the strap end didn't sit at the back. Measured, not assumed: weig
 max 27.4 cm after decimation vs 3.2 cm stock (bones 6-10 cm apart), so flat facets cut across the bends. `split_long` splits
 x-spans > 3 cm (v8: max 2.99 cm, 6,796 / 7,020 vertices, 1.40 / 1.42 MB, still below stock). Builder `quality()` now checks
 metal fraction, metal brightness, strap span and pac size and prints WARNING lines.
+
+## 21. Freeze with v8, traced (2026-11-14)
+Session trace `wwe2k19_filetrace_41036359.log`: match 1 loaded fine (prop 2905 read at 67.9 s and 72.0 s, cutscene 5038 at 142.4 s,
+title presentation shown). The freeze came on the NEXT match load at 320 s: last opened file `pac/arena/ringmat/arringmatcm00000.pac`;
+in a good load the next files are `pac/root/audience_p30/p10/audience.pac` then `pac/ch/*`. The belt was not being read at the
+moment of the hang (it was loaded earlier in the session). Tracer v1's sampler never fired: unlogged I/O (audio) reset its idle
+timer. Asked Matthew for a Task Manager full dump of the frozen process. Tracer v2 (`dinput8_filetrace.c`): samples threads when no
+.pac has been opened for 15 s, and on a `DUMP_NOW` file next to the exe.
