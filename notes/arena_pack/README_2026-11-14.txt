@@ -12,7 +12,7 @@ REQUIREMENTS (the base this was built and tested on)
 INSTALL
 1. Copy the "pac" and "mods" folders from here into the game folder
    (...\steamapps\common\WWE 2K19\). Overwrite when asked.
-2. Rebuild the chunk file (chunk0.def) the way you normally do, so the 178 new files get indexed.
+2. Rebuild the chunk file (chunk0.def) the way you normally do, so the 188 new files get indexed.
 3. Start the game. Check: Exhibition > Select Arena.
 4. Optional check: every file in MANIFEST.md5 should match (same MD5) in the game folder.
 Do not copy MANIFEST.md5 or this README into the game folder.
