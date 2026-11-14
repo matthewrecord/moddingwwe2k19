@@ -97,3 +97,10 @@ the match loader budgets memory from the declared prop sizes, and the stored-Ood
 over depending on arena/wrestlers: intermittent, at ~1/5 of the bar, never with stock. Test: `diag_matte` rebuilt with
 **ZLIB** blocks (1.23 MB, smaller than stock; v1/v2 ZLIB builds always loaded). `belt_port.CODEC` = 'zlib' by default now.
 Tracer note: the 8 s idle sampler never fired because unlogged I/O kept resetting it; v2 should trigger on 'no pac opened'.
+
+## 12. Freeze solved (2026-11-14)
+`diag_matte_zlib` (ZLIB blocks, 1.23 MB, smaller than stock) **loaded every time** across several matches/arenas (Matthew).
+Conclusion: the stored-Oodle pacs (2-3x stock size) caused the intermittent hang at ~1/5 of the loading bar, before the belt is
+read. Rule for belt builds: keep the pac at or below the stock size; ZLIB is the default codec.
+Look: plate still reads as smooth tan/cream at the bottom edge of the entrance shots; the plate centre (flag, engraving) is out
+of frame, so the colour-map question is still open.
