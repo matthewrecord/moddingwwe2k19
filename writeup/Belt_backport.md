@@ -415,3 +415,17 @@ v12 = `--strap 214,220,224 --metalize --stock-metal 252,221,164 --leather-rough 
   boundaries. No warnings. Pacs are 1.23/1.25 MB.
 - Installed: 2905 = bb9dcdcca4671d33ce4e80927073b800, 5038 = 90a18f744332cb28c0226c729c5bbcb7.
 - Caveat: the preview renderer shows flat cream (it has no normal map or environment), so only the game shows the real result.
+
+## 32. In-game look emulator `tools/backport/gamelook.py` and a stock comparison sheet (2026-11-14)
+What it models:
+- Per-pixel normal mapping (belt_n, tangents from UVs) and metal/roughness from belt_p.
+- Reflections of a synthetic arena: dark ceiling, rig spots, crowd band, bright canvas, and camera-side broadcast light,
+  prefiltered by roughness, plus a GGX key light and filmic tone mapping.
+- Sheet: `writeup/img/stock_vs_aew_gamelook.png` (16 belts; labels are from the SuperString names per title slot, and some don't match the prop shown).
+
+**Validation failed for our belt.** The emulator renders v12 as clean pale gold, but the game shows v12 dark and blotchy. So the game
+does something to our prop that the emulator (and every offline check so far) doesn't model. Ruled out by measurement:
+vertex colour (all 255 like stock), the stored-tangent convention (= +dP/du like stock), front-face UV handedness (0.99 vs stock 0.98),
+normal-map statistics (tilt and high frequency within the stock range), and metal albedo/roughness (v12 matches stock).
+Next: an in-game **swap test** to separate mesh from textures (A: stock Brahma textures on our mesh; B: our v12 textures on the
+stock Brahma mesh), before any further look tuning.
