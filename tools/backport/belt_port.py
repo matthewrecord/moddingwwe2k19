@@ -1,0 +1,184 @@
+"""Backport a 2K22+ title belt mod (community .mdl + DDS) into a WWE 2K19 title belt prop pair.
+
+2K19 title belts (pac/prop): <20xx>.pac = main belt (flat, bone01..bone14 chain), <50xx>.pac = cutscene belt
+(L_bone01..12 / R_bone01..12). Both are HSPC -> SHDC -> Oodle blocks: JBOY model, texture pack (belt, belt_n,
+belt_p), [nameplate JBOY + texture, font data], 800-byte block, Havok, mask texture. The 2K23 mod's Default.mdl
+and Cutscene.mdl use the same bone names and nearly the same rest layout, so each mesh replaces the stock object
+in place; every other block is kept. Replaced blocks are written as ZLIB (the game's loader takes ZLIB and Oodle).
+
+Usage: python3 -I belt_port.py --mod <mod dir> --stock <prop dir> --main 2003 --cut 5003 --out <dir>
+"""
+import argparse, os, struct, sys, zlib, json, hashlib
+import numpy as np
+HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(HERE, '..', 'lib'))
+import oodl, jboy, jbuild, mdl, texpack, texconv
+from yukes import HSPC
+import etcpak
+from PIL import Image
+
+# ---------------------------------------------------------------- containers
+def shdc_files(s):
+    """SHDC of a prop pac: 16-byte file entries (id, off, size, 0); table located by the first entry's offset."""
+    n = struct.unpack_from('<I', s, 56)[0]
+    for t in range(0x40, 0x400, 4):
+        ok = True; E = []
+        for i in range(n):
+            fid, off, sz, z = struct.unpack_from('<4I', s, t + 16 * i)
+            if z != 0 or off < 0x40 or off + sz > len(s): ok = False; break
+            E.append((fid, off, sz))
+        if ok and E and E[0][1] == t + 16 * n + ((-(t + 16 * n)) % 16) and s[E[0][1]:E[0][1] + 4] in (b'OODL', b'ZLIB'):
+            return t, E
+    raise ValueError('SHDC table not found')
+def unpack_block(blk):
+    if blk[:4] == b'OODL':
+        r = oodl.blocks(blk); assert r and r[0][1] is not None; return r[0][1]
+    if blk[:4] == b'ZLIB': return zlib.decompress(blk[16:16 + struct.unpack_from('<I', blk, 8)[0]])
+    raise ValueError(blk[:4])
+def zlib_block(raw):
+    c = zlib.compress(raw, 9); return b'ZLIB' + struct.pack('<3I', 0x1230, len(c), len(raw)) + c
+def read_prop(path):
+    b = open(path, 'rb').read(); H = HSPC(b); s = H.files[0]['data']; t, E = shdc_files(s)
+    return dict(H=H, s=s, table=t, entries=[dict(id=f, raw=unpack_block(s[o:o + z]), blk=s[o:o + z]) for f, o, z in E])
+def write_prop(P, replaced):
+    """replaced: {index: new raw bytes}. Other blocks keep their original compressed bytes."""
+    s = P['s']; t = P['table']; E = P['entries']; first = struct.unpack_from('<I', s, t + 4)[0]
+    out = bytearray(s[:first])
+    for i, e in enumerate(E):
+        out += b'\0' * ((-len(out)) % 16)
+        blk = zlib_block(replaced[i]) if i in replaced else e['blk']
+        struct.pack_into('<4I', out, t + 16 * i, e['id'], len(out), len(blk), 0); out += blk
+    old_total = sum(len(e['blk']) for e in E)
+    new_total = sum(len(zlib_block(replaced[i])) if i in replaced else len(e['blk']) for i, e in enumerate(E))
+    struct.pack_into('<I', out, 60, (struct.unpack_from('<I', s, 60)[0] + new_total - old_total) & 0xffffffff)
+    H = P['H']; H.files[0]['data'] = bytes(out); return H.build()[0]
+
+# ---------------------------------------------------------------- textures
+def mips(a):
+    L = [a]
+    while min(L[-1].shape[:2]) > 1:
+        h, w = L[-1].shape[:2]; L.append(texconv.resize(L[-1], max(1, w // 2), max(1, h // 2)))
+    return L
+def dds(rgba, kind):
+    """kind: 'DXT1' | 'ATI2' (BC5 from R,G). Full mip chain, legacy header like the stock files."""
+    data = bytearray(); L = mips(np.ascontiguousarray(rgba, dtype='u1'))
+    for m in L:
+        h, w = m.shape[:2]
+        if w < 4 or h < 4:
+            pad = np.zeros((max(4, h), max(4, w), 4), 'u1'); pad[:h, :w] = m; m = pad; h, w = m.shape[:2]
+        buf = np.ascontiguousarray(m).tobytes()
+        data += etcpak.compress_bc1(buf, w, h) if kind == 'DXT1' else etcpak.compress_bc5(buf, w, h)
+    h, w = rgba.shape[:2]; hdr = bytearray(128); hdr[0:4] = b'DDS '
+    blk = 8 if kind == 'DXT1' else 16
+    struct.pack_into('<7I', hdr, 4, 124, 0x1007 | 0x80000 | 0x20000, h, w, (w // 4) * (h // 4) * blk, 0, len(L))
+    struct.pack_into('<2I', hdr, 76, 32, 4); hdr[84:88] = kind.encode(); struct.pack_into('<I', hdr, 108, 0x401008)
+    return bytes(hdr) + bytes(data)
+def load_dds(path):
+    sys.path.insert(0, HERE); import ddsread; return ddsread.decode(open(path, 'rb').read())[1]
+def build_textures(tex_dir, size):
+    def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
+    col = L('belt_color.DDS').copy(); col[..., 3] = 255
+    N = L('belt_normal.DDS').astype(int); M = L('belt_metal.DDS')[..., 0].astype(float); R = L('belt_roughness.DDS')[..., 0].astype(float)
+    # 2K19 belt_n: BC5, R = same sign as 2K23, G inverted (measured on stock 2003 vs mod metal edges, writeup/Belt_backport.md)
+    n = np.zeros(N.shape, 'u1'); n[..., 0] = N[..., 0]; n[..., 1] = 255 - N[..., 1]; n[..., 3] = 255
+    # 2K19 belt_p: R = metalness, G = roughness in the stock range (metal ~25, leather ~50), B = 255
+    g = 50 - 25 * (M / 255) + 0.15 * (R - R.mean())
+    p = np.stack([M, np.clip(g, 12, 90), np.full_like(M, 255), np.full_like(M, 255)], -1).astype('u1')
+    return [('belt', dds(col, 'DXT1')), ('belt_n', dds(n, 'ATI2')), ('belt_p', dds(p, 'DXT1'))]
+
+# ---------------------------------------------------------------- mesh
+def mod_mesh(path, shift):
+    m = mdl.MDL(path); st = m.meshes[0]['streams']; T = m.lods()[0][0].astype(np.int64)
+    P = st['POSITION'].astype('f8') + np.asarray(shift)
+    Nn = st['NORMAL'][:, :3].astype('f8'); Nn /= np.maximum(np.linalg.norm(Nn, axis=1, keepdims=True), 1e-9)
+    Tg = st['TANGENT'][:, :3].astype('f8'); Tg /= np.maximum(np.linalg.norm(Tg, axis=1, keepdims=True), 1e-9)
+    UV = st['TEXCOORD'].astype('f8'); BI = st['BI'].astype(int); BW = st['BW'].astype('f8')
+    names = [m.S[i] if i < len(m.S) else None for i in range(BI.max() + 1)]
+    return dict(P=P, N=Nn, T=Tg, UV=UV, BI=BI, BW=BW, tris=T, names=names)
+def unwrap_uv(M):
+    """Move every triangle's UVs into [0,1] (no triangle straddles a tile edge in the mod) by duplicating vertices."""
+    T = M['tris']; tu = M['UV'][T]; off = np.floor(tu.min(1) + 1e-6)
+    assert (np.floor(tu.max(1) - 1e-6) == off).all(), 'triangle crosses a UV tile edge'
+    key = {}; newT = np.empty_like(T); src = []
+    for t in range(len(T)):
+        for c in range(3):
+            k = (T[t, c], off[t, 0], off[t, 1])
+            if k not in key: key[k] = len(src); src.append(k)
+            newT[t, c] = key[k]
+    src = np.array(src); v = src[:, 0].astype(int)
+    out = {k: M[k][v] for k in ('P', 'N', 'T', 'UV', 'BI', 'BW')}; out['UV'] = out['UV'] - src[:, 1:3]
+    out['tris'] = newT; out['names'] = M['names']; return out
+def skin(M, j, ninf):
+    pal = list(j.palette); slot = {j.bones[b]['name']: s for s, b in enumerate(pal)}
+    parent = {b['name']: (j.bones[b['parent']]['name'] if b['parent'] >= 0 else None) for b in j.bones}
+    def slot_of(nm):
+        while nm is not None and nm not in slot: nm = parent.get(nm)
+        return slot.get(nm, slot.get('root'))
+    vc = len(M['P']); I = np.full((vc, ninf), 0xFF, int); W = np.zeros((vc, ninf))
+    miss = set()
+    for v in range(vc):
+        acc = {}
+        for b, w in zip(M['BI'][v], M['BW'][v]):
+            if w <= 0: continue
+            nm = M['names'][b]
+            if nm not in slot: miss.add(nm)
+            s = slot_of(nm); acc[s] = acc.get(s, 0) + w
+        top = sorted(acc.items(), key=lambda x: -x[1])[:ninf]; tot = sum(w for _, w in top) or 1
+        for k, (s, w) in enumerate(top): I[v, k] = s; W[v, k] = w / tot
+    return I, W, miss
+def put_object(model, j, M, I, W):
+    """Write object 0 like the stock prop: skin entries = u8 palette slot, u8 0, u16 0, f32 weight (unused slot 0xFF)."""
+    tris = M['tris']
+    # winding: keep the stock convention (face normal agrees with vertex normals after strip decode)
+    strip = jbuild.tris_to_strip(tris); back = jboy.strip_to_tris(strip)
+    fn = np.cross(M['P'][back[:, 1]] - M['P'][back[:, 0]], M['P'][back[:, 2]] - M['P'][back[:, 0]])
+    agree = (np.einsum('ij,ij->i', fn, M['N'][back].sum(1)) > 0).mean()
+    if agree < 0.5: strip = jbuild.tris_to_strip(tris[:, [0, 2, 1]]); back = jboy.strip_to_tris(strip)
+    assert len(back) == len(tris) and strip.max() < 65536
+    vc = len(M['P']); ninf = W.shape[1]
+    jbuild.set_object(model, 0, M['P'], M['N'], np.full((vc, 4), 255, 'u1'), M['UV'], M['T'], np.zeros((vc, ninf), int), W, strip,
+                      bbox_sphere=tuple(((M['P'].min(0) + M['P'].max(0)) / 2).tolist()) + (float(np.linalg.norm(M['P'].max(0) - M['P'].min(0)) / 2),))
+    S = np.zeros((vc, ninf), dtype=[('s', 'u1'), ('z', 'u1'), ('p', '>u2'), ('w', '>f4')]); S['s'] = I; S['w'] = W
+    model.data[model.chunk(0, 'skin')] = bytearray(S.tobytes())
+    return agree
+def collapse(raw):
+    """Hide a JBOY (nameplate) by putting all its vertices at the origin (degenerate, never drawn)."""
+    j = jboy.JBOY(raw); b = bytearray(raw)
+    for o in j.objs:
+        for p in o['vptr']:
+            V = np.frombuffer(b, '>f4', o['vc'] * 7, p + 8).reshape(o['vc'], 7).copy(); V[:, 0:3] = 0
+            b[p + 8:p + 8 + V.nbytes] = V.astype('>f4').tobytes()
+    return bytes(b)
+
+def port(stock_path, mdl_path, shift, textures, keep_nameplate=False):
+    P = read_prop(stock_path); rep = {}; info = {}
+    jb = [(i, e) for i, e in enumerate(P['entries']) if e['raw'][:4] == b'JBOY']
+    main_i, main_e = max(jb, key=lambda x: len(x[1]['raw']))
+    j = jboy.JBOY(main_e['raw']); model = jbuild.Model(j)
+    assert model.build() == main_e['raw'], 'round trip failed'
+    M = unwrap_uv(mod_mesh(mdl_path, shift))
+    I, W, miss = skin(M, j, j.objs[0]['ninf'])
+    info['winding_agree'] = round(float(put_object(model, j, M, I, W)), 3)
+    rep[main_i] = model.build(); info.update(vc=len(M['P']), tris=len(M['tris']), unmapped_bones=sorted(x for x in miss if x))
+    for i, e in enumerate(P['entries']):
+        if i == main_i: continue
+        if e['raw'][:4] == b'JBOY' and not keep_nameplate: rep[i] = collapse(e['raw']); info.setdefault('collapsed', []).append(i)
+        if e['raw'][:4] == b'\x03\x00\x00\x00':
+            names = [t['name'] for t in texpack.parse(e['raw'])[0]]
+            assert names == ['belt', 'belt_n', 'belt_p'], names
+            head, _ = texconv.read_pack(e['raw']); rep[i] = texconv.write_pack(textures, head)
+    return write_prop(P, rep), rep, info
+def main():
+    a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
+    a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
+    a.add_argument('--size', type=int, default=2048); a.add_argument('--keep-nameplate', action='store_true')
+    a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
+    mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
+    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size); man = {}
+    # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
+    for pid, key, shift in ((a.main, 'default', (0, 0.6, 0)), (a.cut, 'cutscene', (0, -3.0, 1.0))):
+        out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate)
+        open(os.path.join(a.out, pid + '.pac'), 'wb').write(out)
+        for i, raw in rep.items(): open(os.path.join(a.out, f'{pid}_block{i}.bin'), 'wb').write(raw)
+        man[pid] = dict(info, md5=hashlib.md5(out).hexdigest(), size=len(out), source=os.path.basename(mods[key]))
+    print(json.dumps(man, indent=1)); open(os.path.join(a.out, 'manifest.json'), 'w').write(json.dumps(man, indent=1))
+if __name__ == '__main__': main()
