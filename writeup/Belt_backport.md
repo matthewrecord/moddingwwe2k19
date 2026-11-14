@@ -365,3 +365,10 @@ Matthew asked for a video made from the actual photo, with the background isolat
   - **Risk:** the stock intros are `KB2i`/`KB2j`, and the game's `bink2w64.dll` contains revision tags only up to `KB2m`. A `KB2n`
     file may not play. Not yet tested in game.
   - The previous placeholder (US-title copy) is saved in `intro\installed_before_photo\`.
+- **Result: the `KB2n` file hangs the game at the intro** (trace 86111015):
+  - Step 8 ran at 259.8 s, with key 23 → 502300, then no further I/O.
+  - So the game's `bink2w64.dll` (which lists up to `KB2m`) opens the file but can't play it, and doesn't fail cleanly.
+  - `/Slices2` does not change the tag (the 2026.10 encoder always writes `n`).
+  - Old public RAD Video Tools releases only encode Bink 1 (the Bink 2 encoder ships with the licensed SDK).
+  - Placeholder restored. The hung file is kept as `intro\photo_KB2n_hung.bk2`.
+  - Remaining routes: patch the tag to `m` (works only if the bitstream is unchanged), or ship a newer `bink2w64.dll`.
