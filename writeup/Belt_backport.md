@@ -259,3 +259,9 @@ Matthew: the AEW/IWGP title has no title-match intro animation. Findings:
   `exe+0x4a0d80(table=[[0x1425e3800]+0x40], key=championship, field=1, &id)` -> id = the title's intro video (500500 for US).
   exe+0x4a0d80 is a generic DB query over a base table ([+0x298]) plus a list of extra tables ([+0x2a8], count [+0x18]).
 - Tracer v3c: breakpoints on the step switch (+0x5814e6), the lookup call (+0x581594, key) and its result (+0x581599).
+- v3c run (trace 44155984): US title match -> sequence step 8 ran, `title_video_lookup(key=5, field=1) -> 500500`, and
+  `pac/evt/29000.pac` ("29000_Titlematch_Belt_Scene") loaded at that moment. AEW/IWGP match -> step 8 never ran, no lookup,
+  no 29000. BUT the event files loaded before were wrestler entrances: `evt/00105` = AJ Styles, `evt/00125` = Big Show
+  (evt pacs = HSPC -> BPE (`tools/audio/bpe.py`): file 0 '0FOP' event, file 1 SHDC assets). The two matches differed in
+  wrestler AND title, so title vs wrestler is not separated (my error: two variables). Control needed: same wrestler,
+  US title vs AEW title.
