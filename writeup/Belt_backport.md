@@ -360,3 +360,8 @@ Matthew asked for a video made from the actual photo, with the background isolat
   sweep, a soft drop shadow, a push-in, and copper title text. Output is RGBA, 1920x1080, 30 fps, 300 frames.
 - photo2: the flare and sweep now run from 6% to 94% of the belt's width instead of starting and ending off it. The flare's
   strength also scales with the (blurred) belt coverage under its centre. Frames are in `intro\frames_rgba_photo2\`.
+- Matthew's Bink encode of photo2 (2026-11-14) is installed as `movies/titantron/bel_0023_0_0.bk2` (MD5 0357f848a3fa3e157c0f1a194c97ac4b):
+  - Header is `KB2n`, 1920x1080, 300 frames, 30 fps, alpha (flags 0x140012).
+  - **Risk:** the stock intros are `KB2i`/`KB2j`, and the game's `bink2w64.dll` contains revision tags only up to `KB2m`. A `KB2n`
+    file may not play. Not yet tested in game.
+  - The previous placeholder (US-title copy) is saved in `intro\installed_before_photo\`.
