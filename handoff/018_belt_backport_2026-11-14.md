@@ -65,3 +65,11 @@ Fast-forward of `claude/belt-backport` (includes all of `claude/backport-tool`) 
 Installed for the control: STOCK 2905/5038 (95b0f2f1..., 69876b7d...) + tracer dinput8.dll (dbf4dd53...). Menu picture and strings stay v5/v6. v7 waits in `aew_us_v7\`. Prediction: if the arena freezes with stock belts, the freeze is the arena work, not the belt.
 - Matthew: the tracer should have stayed installed (the WWE 91 freeze happened while it was removed, so no log). Reinstalled; it stays until the belt work is signed off.
 - Control result: 1 run in the WWE 91 arena with STOCK belts loaded fine (trace 40359125, no hang). Not conclusive alone (intermittent). Matthew was surprised to see the Brahma Bull (control not clear enough in my message). Installed v7 (2905 4dad90b087ef1dc3b6697ab623b0fd52, 5038 d124df9134d71629438897559560558e, menu 3ffc8739cbd592d03197e90b60c0e334) with the tracer kept in: any freeze is now logged directly.
+
+## v8 installed (plain), 2026-11-14
+| File | Installed MD5 (`aew_us_v8`) |
+|---|---|
+| `pac\prop\2905.pac` | a463c4316dff6ea4e8c7ff3cc4b1f69c |
+| `pac\prop\5038.pac` | f25e5bf188687cdf527d1a1b441ebc63 |
+| `pac\menu\win\Assets\wwe19_texture\belt\ltag_belt_all_win.pac` | cab920af12d0ce55ec6123061bdf84b6 |
+Tracer still installed. v7 run (trace 40618828) did not freeze.
