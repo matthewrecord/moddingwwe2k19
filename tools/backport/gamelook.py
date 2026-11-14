@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 # ---------------- arena environment (equirect, +z up, camera looks along +y at the belt front)
 EW, EH = 256, 128
+CAMLIGHT = float(os.environ.get("GL_CAMLIGHT", "0.15"))   # light behind the camera; in-game arenas are dark there
 def make_env(seed=3):
     rng = np.random.default_rng(seed)
     u = (np.arange(EW) + 0.5) / EW; v = (np.arange(EH) + 0.5) / EH
@@ -33,7 +34,7 @@ def make_env(seed=3):
     # broadcast / hard-camera lighting behind the camera (direction -y), soft and bright: what makes belts glow on TV
     dcam = np.arccos(np.clip(np.cos(th) * np.cos(phi - np.pi) * 1.0, -1, 1))   # angle from the -y horizon direction
     dcam = np.arccos(np.clip(np.sin(th) * np.sin(np.radians(25)) + np.cos(th) * np.cos(np.radians(25)) * np.cos(phi - np.pi), -1, 1))
-    env += np.exp(-(dcam / np.radians(28)) ** 2)[..., None] * np.array([1.0, 0.97, 0.92]) * 1.6
+    env += np.exp(-(dcam / np.radians(28)) ** 2)[..., None] * np.array([1.0, 0.97, 0.92]) * CAMLIGHT
     floor = th <= np.radians(2)                                               # ring canvas / apron: bright, lit from above
     env[floor] = np.array([0.55, 0.55, 0.58]) * np.clip(1.2 - (-th[floor]) / np.radians(90) * 0.8, 0.3, 1)[:, None]
     return env

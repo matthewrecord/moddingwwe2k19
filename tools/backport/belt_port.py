@@ -312,7 +312,48 @@ def write_pack16(entries, head):
         recs += nm.encode()[:15].ljust(16, b'\0') + b'dds\0' + struct.pack('<3I', len(d), base + len(data), 0); data += d
     data += b'\0' * ((-(base + len(data))) % 16)
     return bytes(out + recs + b'\0' * (base - 0x10 - 32 * n) + data)
-def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=6000):
+def pillow_normals(M, textures, strength):
+    """Stock 2K19 plates are shaded like domes: front-facing metal vertex normals spread ~40-46 deg (median) radially around each
+    plate, so a plate facing the camera still catches overhead/side lights. The 2K23 plate faces are flat (median 8 deg): facing
+    the camera, flat polished gold mirrors the dark arena behind the camera and reads dark/muddy in game (v10-v12, 2026-11-14;
+    measured in writeup/Belt_backport.md 34). Bend each plate's front normals toward its rim: stored (inward) normal
+    = normalize((-u*s, 1, -v*s)) with u, v = position relative to the plate centre / half-extent."""
+    import ddsread
+    bp_tex = [d for n, d in textures if n == 'belt_p'][0]; met = ddsread.decode(bp_tex)[1][..., 0] > 127
+    H, W = met.shape; P, N, UV = M['P'], M['N'].copy(), M['UV']
+    u = np.clip((UV[:, 0] % 1) * W, 0, W - 1).astype(int); v = np.clip((UV[:, 1] % 1) * H, 0, H - 1).astype(int)
+    nn = N / np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-9)
+    mv = met[v, u]
+    fa = 1 if np.abs(nn[mv, 1]).mean() >= np.abs(nn[mv, 2]).mean() else 2   # main prop faces +y, cutscene prop +z (stored)
+    sg = np.sign(nn[mv, fa].sum()) or 1.0; va = 3 - fa                        # vertical axis = the other of y/z
+    front = nn[:, fa] * sg > 0.7                           # all front-facing (plates incl. enamel; strap skipped below)
+    if not front.any(): return M, 0
+    # plates = connected pieces of the front metal surface (mesh connectivity), so neighbouring keepers stay separate
+    par = np.arange(len(P))
+    def find(i):
+        while par[i] != i: par[i] = par[par[i]]; i = par[i]
+        return i
+    for t in M['tris']:
+        if front[t].all():
+            r0 = find(t[0])
+            for k in t[1:]:
+                rk = find(k)
+                if rk != r0: par[rk] = r0
+    roots = np.array([find(i) for i in range(len(P))])
+    n_pl = 0
+    for r in np.unique(roots[front]):
+        sel = front & (roots == r)
+        if sel.sum() < 12: continue
+        lo, hi = P[sel].min(0), P[sel].max(0); c = (lo + hi) / 2
+        hx = (hi[0] - lo[0]) / 2; hz = (hi[va] - lo[va]) / 2
+        if hx < 1.0 or hz < 1.0 or hx > 30: continue      # grommets / slivers / the strap itself: leave flat
+        if not met[v[sel], u[sel]].any(): continue        # no metal: not a plate
+        uu = (P[sel, 0] - c[0]) / hx; vv = (P[sel, va] - c[va]) / hz
+        nv = np.zeros((sel.sum(), 3)); nv[:, 0] = -uu * strength; nv[:, fa] = sg; nv[:, va] = -vv * strength
+        N[sel] = nv / np.linalg.norm(nv, axis=1, keepdims=True) * np.linalg.norm(N[sel], axis=1, keepdims=True); n_pl += 1
+    out = dict(M); out['N'] = N; return out, n_pl
+
+def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=6000, pillow=0.0):
     P = read_prop(stock_path); rep = {}; info = {}
     jb = [(i, e) for i, e in enumerate(P['entries']) if e['raw'][:4] == b'JBOY']
     main_i, main_e = max(jb, key=lambda x: len(x[1]['raw']))
@@ -320,6 +361,7 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=
     assert model.build() == main_e['raw'], 'round trip failed'
     if shift is None: shift = auto_shift(j, mdl_path); info['shift'] = [round(float(x), 2) for x in shift]
     M = split_long(decimate(unwrap_uv(mod_mesh(mdl_path, shift)), max_verts))
+    if pillow: M, info['pillow_plates'] = pillow_normals(M, textures, pillow)
     I, W, miss = skin(M, j, j.objs[0]['ninf'])
     info['winding_agree'] = round(float(put_object(model, j, M, I, W)), 3)
     rep[main_i] = model.build(); info.update(vc=len(M['P']), tris=len(M['tris']), unmapped_bones=sorted(x for x in miss if x))
@@ -356,13 +398,13 @@ def quality(pac_bytes_path):
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--pillow', type=float, default=0.0, help='dome plate normals like stock (try 1.0)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
     tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade, tuple(int(x) for x in a.stock_metal.split(',')) if a.stock_metal else None, a.leather_rough); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
-        out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts)
+        out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts, a.pillow)
         open(os.path.join(a.out, pid + '.pac'), 'wb').write(out)
         for i, raw in rep.items(): open(os.path.join(a.out, f'{pid}_block{i}.bin'), 'wb').write(raw)
         q, warn = quality(os.path.join(a.out, pid + '.pac')); stock_size = os.path.getsize(os.path.join(a.stock, pid + '.pac'))

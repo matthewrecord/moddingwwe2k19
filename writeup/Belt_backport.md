@@ -437,3 +437,22 @@ Open and unexplained: why our prop renders darker in game than its textures pred
 that would split mesh from textures, if anyone picks this up again.
 Lesson (process): the cause should have been isolated with a stock-vs-mod emulator and a swap test early on, not tuned by eye
 over 12 in-game rounds. Matthew's time is the scarce resource.
+
+## 34. Root cause found offline: flat plate geometry (2026-11-14, no further in-game tests)
+- **Shader decoded** (`pac/shader/win/ysh_win.pac`; DXBC → SPIR-V via vkd3d-compiler → GLSL via spirv-cross). Belts use
+  `yPBR_RTCS_Belt`. G-buffer PS: base = g_texBaseColor (lerped to a per-object tint), metal/rough = g_texMtlRgh.xy, AO =
+  g_texWorldAO at TEXCOORD0.zw (constant for one-UV props, so the same for stock and ours), normal =
+  normalize(N − nx·T − ny·cross(N,T)). This confirms our channel layout. The normal-map channel relationship was checked by
+  integrability (curl/sym 0.23 for ours, 0.25–0.28 for stock).
+- **Real difference:** stock plate *vertex normals* are domed. Front-facing metal normals spread a median of 39–46° (p90 46–70°)
+  radially around each plate. The 2K23 plate is flat (median 8°). Facing the camera, flat polished gold mirrors the dark arena behind
+  the camera, so it reads dark and muddy, whatever its colour. This explains why every texture-only change failed, and why more gloss made it darker.
+- **Emulator re-validated:** with a dark arena behind the camera (as in game), `gamelook.py` now reproduces the in-game pattern
+  (stock plates bright and modelled, ours dark and muddy).
+- **Fix:** `belt_port.py --pillow 1.2`. It bends each plate's front normals toward its rim (per connected front-facing piece, axis
+  auto-detected for the main +y and cutscene +z props), giving a median of 44.6° like stock.
+- **v14** = `--strap 214,220,224 --metalize --stock-metal 252,221,164 --leather-rough 0.4 --strap-smooth 0.75 --pillow 1.2`.
+  No warnings; winding agreement 1.0. Installed: 2905 = 8cfb33a8cd5923737b01fc320d28c1b1, 5038 = 2c5e8a7419f4a45128ac8d1c5b777216.
+  Emulator comparison: `writeup/img/aew_v14_vs_stock.png`.
+- **Remaining, visible in the emulator:** the gold reads paler than stock, and the 2K23 normal map adds speckle. Both are tunable
+  offline in `gamelook.py` before anything goes to the game.
