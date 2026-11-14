@@ -253,3 +253,9 @@ Matthew: the AEW/IWGP title has no title-match intro animation. Findings:
   exe+0x573940 (screen player, id from [obj+0x20]; 'Championship' label when id // 100000 == 5). AEW/IWGP slot 23 ->
   12500000 only, **no 5023xx request**. So the title intro is scheduled upstream as its own screen object; nothing schedules
   one for title 23. v3b logs the call chain for every exe+0x573940 / 0x49ba20 hit to find the scheduler.
+- v3b run (trace 43804859): the 500500 screen object (vtbl +21065c8) comes from exe+0x582f80 (create screen object), called at
+  exe+0x5815d0 in a jump-table case of exe+0x5814c0 (title-match sequence steps, case = [step+4], 0..0x14). That case:
+  `edx = exe+0x5501a0(0)` (current championship number, must be < 245; byte [0x14266f6f5] must be 0), then
+  `exe+0x4a0d80(table=[[0x1425e3800]+0x40], key=championship, field=1, &id)` -> id = the title's intro video (500500 for US).
+  exe+0x4a0d80 is a generic DB query over a base table ([+0x298]) plus a list of extra tables ([+0x2a8], count [+0x18]).
+- Tracer v3c: breakpoints on the step switch (+0x5814e6), the lookup call (+0x581594, key) and its result (+0x581599).

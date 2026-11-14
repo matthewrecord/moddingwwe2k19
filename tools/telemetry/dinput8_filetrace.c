@@ -116,8 +116,8 @@ static void patch_iat(HMODULE m) {
 }
 
 /* ---- v3: execution breakpoints (DR0-DR2) on the titantron/belt video path (belt intro investigation 2026-11-14) */
-static const uintptr_t BP_OFF[3] = {0x573940, 0x156ec20, 0x49ba20};
-static const char *BP_NAME[3] = {"tron_screen_play(obj)", "titantron_play(obj)", "video_name(id)"};
+static const uintptr_t BP_OFF[3] = {0x5814e6, 0x581594, 0x581599};
+static const char *BP_NAME[3] = {"seq_step", "title_video_lookup(key)", "title_video_lookup.result"};
 static volatile LONG g_bphits;
 static void apply_bp(HANDLE th) {
     CONTEXT c; memset(&c, 0, sizeof c); c.ContextFlags = CONTEXT_DEBUG_REGISTERS;
@@ -148,11 +148,10 @@ static LONG CALLBACK bpveh(EXCEPTION_POINTERS *x) {
         char stk[400] = ""; int n = 0;                       /* exe return addresses on the stack (call chain) */
         for (int k = 0; k < 400 && n < 14; k++) { uintptr_t v = rd32(c->Rsp + 8 * k) | ((uintptr_t)rd32(c->Rsp + 8 * k + 4) << 32);
             if (v > g_base && v < g_end) { char t[24]; sprintf(t, " +%llx", (unsigned long long)(v - g_base)); strcat(stk, t); n++; } }
-        if (st & 1) tlog("BP %s obj=%llx [obj+20]=%u [obj+24]=%u [obj+30]=%u vtbl=+%llx | %s", BP_NAME[0], (unsigned long long)c->Rcx,
-                         rd32(c->Rcx + 0x20), rd32(c->Rcx + 0x24), rd32(c->Rcx + 0x30),
-                         (unsigned long long)((rd32(c->Rcx) | ((uintptr_t)rd32(c->Rcx + 4) << 32)) - g_base), stk);
-        if (st & 2) tlog("BP %s obj=%llx [obj+84]=%u | %s", BP_NAME[1], (unsigned long long)c->Rcx, rd32(c->Rcx + 0x84), stk);
-        if (st & 4) tlog("BP %s id=%u type=%u ret=+%llx | %s", BP_NAME[2], (unsigned)c->R8, (unsigned)c->R9, (unsigned long long)r, stk);
+        if (st & 1) tlog("BP %s case=[rdi+4]=%d rdi=%llx | %s", BP_NAME[0], (int)rd32(c->Rdi + 4), (unsigned long long)c->Rdi, stk);
+        if (st & 2) tlog("BP %s key(edx)=%u field(r8)=%u table=%llx byte266f6f5=%u", BP_NAME[1], (unsigned)c->Rdx, (unsigned)c->R8,
+                         (unsigned long long)c->Rcx, rd32(g_base + 0x266f6f5) & 0xff);
+        if (st & 4) tlog("BP %s found(eax)=%u video_id=[rsp+50]=%u", BP_NAME[2], (unsigned)c->Rax, rd32(c->Rsp + 0x50));
     }
     c->Dr6 = 0;
     return EXCEPTION_CONTINUE_EXECUTION;
@@ -219,7 +218,7 @@ BOOL WINAPI DllMain(HINSTANCE hi, DWORD r, LPVOID x) {
         { char nm[64]; sprintf(nm, "wwe2k19_filetrace_%lu.log", GetTickCount()); strcat(p, nm); } g_log = fopen(p, "w");
         HMODULE exe = GetModuleHandleA(0); g_base = (uintptr_t)exe;
         IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)((BYTE *)exe + ((IMAGE_DOS_HEADER *)exe)->e_lfanew); g_end = g_base + nt->OptionalHeader.SizeOfImage;
-        tlog("filetrace v3b (belt-video breakpoints + call chains) loaded; exe base %p size %lx all=%d", (void *)g_base, nt->OptionalHeader.SizeOfImage, g_all);
+        tlog("filetrace v3c (title video lookup breakpoints) loaded; exe base %p size %lx all=%d", (void *)g_base, nt->OptionalHeader.SizeOfImage, g_all);
         patch_iat(exe); AddVectoredExceptionHandler(1, bpveh); AddVectoredExceptionHandler(0, veh); CreateThread(0, 0, watchdog, 0, 0, 0);
     }
     return TRUE;
