@@ -228,3 +228,6 @@ Matthew: the AEW/IWGP title has no title-match intro animation. Findings:
 - Test 1 (mechanism): `bel_0023_0_0.bk2` = copy of `bel_0005` (US title video, md5 ac71460b7f03bf39492c66052d485f57).
   New file, nothing overwritten; delete it to undo.
 - For a real IWGP video: render 300 frames 1920x1080 (beltshot-style) and encode Bink 2 with RAD Video Tools (Windows).
+- Test 1 result: **no intro played** with `bel_0023_0_0.bk2` present. So the video file alone does not enable an intro for
+  title 23; which titles get one is decided elsewhere (not found). Matthew: "it's fine", dropped. Placeholder moved out to
+  `_moddingwwe2k19_builds\belt\removed\`. Lead if revisited: a per-title flag/table referencing the bel_ ids (not searched).
