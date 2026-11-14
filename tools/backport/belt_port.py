@@ -172,7 +172,12 @@ def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=Fals
         ref = lo[met].mean() if met.any() else 1
         shade = np.clip(1 + 0.06 * (lo / max(ref, 1e-3) - 1) / 0.25, 0.94, 1.06)[..., None]
         goldc = np.array(stock_metal, 'f4') / 255; silv = np.array([0.88, 0.88, 0.90], 'f4')
-        tgt = np.where((sat < 0.18)[..., None], silv, goldc) * shade
+        # silver = unsaturated metal that is NOT photo glare: glare in the 2K23 gold photo is bright and desaturated (v > .8),
+        # which turned into white blotches on the gold (v14/v15, seen with the real arena IBL in gamelook). Majority-filter the
+        # silver mask so it follows real silver parts (banners, medallion), not specks.
+        silver = (sat < 0.18) & (mx < 0.8)
+        silver = np.asarray(Image.fromarray((silver * 255).astype('u1')).filter(ImageFilter.ModeFilter(9)), 'u1') > 127
+        tgt = np.where(silver[..., None], silv, goldc) * shade
         col[..., :3] = np.where(met[..., None], np.clip(tgt, 0, 1) * 255, col[..., :3]).astype('u1')
     ENAMEL = None
     if stock_enamel:
@@ -348,22 +353,34 @@ def pillow_normals(M, textures, strength):
     mv = met[v, u]
     fa = 1 if np.abs(nn[mv, 1]).mean() >= np.abs(nn[mv, 2]).mean() else 2   # main prop faces +y, cutscene prop +z (stored)
     sg = np.sign(nn[mv, fa].sum()) or 1.0; va = 3 - fa                        # vertical axis = the other of y/z
-    front = nn[:, fa] * sg > 0.7                           # all front-facing (plates incl. enamel; strap skipped below)
+    platetex = (UV[:, 1] % 1) >= 0.46                     # plate/keeper photos live in the lower part of the atlas (strap above)
+    front = (nn[:, fa] * sg > 0.7) & platetex             # front-facing plate geometry only (not the strap)
     if not front.any(): return M, 0
-    # plates = connected pieces of the front metal surface (mesh connectivity), so neighbouring keepers stay separate
-    par = np.arange(len(P))
-    def find(i):
-        while par[i] != i: par[i] = par[par[i]]; i = par[i]
-        return i
-    for t in M['tris']:
-        if front[t].all():
-            r0 = find(t[0])
-            for k in t[1:]:
-                rk = find(k)
-                if rk != r0: par[rk] = r0
-    roots = np.array([find(i) for i in range(len(P))])
+    # plates along x: 1 cm bins of front plate geometry; the main plate is the run around x=0 that is much taller than the strap;
+    # keepers are the remaining runs, split where the profile dips (thin bridges) or is empty
+    X = P[:, 0]; Zv = P[:, va]; xb = np.floor(X).astype(int); bins = np.arange(int(X[front].min()) - 1, int(X[front].max()) + 2)
+    ext = np.zeros(len(bins)); cnt = np.zeros(len(bins), int)
+    for k, xv in enumerate(bins):
+        sb = front & (xb == xv); cnt[k] = sb.sum()
+        if sb.any(): ext[k] = Zv[sb].max() - Zv[sb].min()
+    lab = np.zeros(len(bins), int); cur = 0; tall = ext >= 0.55 * ext.max()
+    k0 = int(np.argmin(np.abs(bins)))
+    lo_k = k0
+    while lo_k > 0 and tall[lo_k - 1]: lo_k -= 1
+    hi_k = k0
+    while hi_k < len(bins) - 1 and tall[hi_k + 1]: hi_k += 1
+    cur = 1; lab[lo_k:hi_k + 1] = cur
+    dip = (cnt < 6) | (ext < 0.45 * np.median(ext[cnt >= 6]))
+    for side in (range(lo_k - 1, -1, -1), range(hi_k + 1, len(bins))):
+        open_seg = False
+        for k in side:
+            if dip[k]: open_seg = False; continue
+            if not open_seg: cur += 1; open_seg = True
+            lab[k] = cur
+    roots = np.full(len(P), -1); idx = np.clip(xb - bins[0], 0, len(bins) - 1); roots[front] = lab[idx[front]]
     n_pl = 0
     for r in np.unique(roots[front]):
+        if r <= 0: continue
         sel = front & (roots == r)
         if sel.sum() < 12: continue
         lo, hi = P[sel].min(0), P[sel].max(0); c = (lo + hi) / 2

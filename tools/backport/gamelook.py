@@ -101,7 +101,52 @@ def gbuffer(pac, W, H, tilt_deg=18, margin=0.04):
         G['t'][win][m] = tg; G['b'][win][m] = bt
     return G, cov, tex
 
+IBL = None   # (spec_mips[9,H,W,3], irr[H,W,3]) from arenaibl.py; when set, shade() uses the game's split-sum IBL
+def ibl_lookup(maps, dirs, lod=None):
+    # prop frame: x right, z up, -y toward camera  ->  cube frame: x right, y up, z = +y_prop rotated by YAW
+    x, y, z = dirs[..., 0], dirs[..., 1], dirs[..., 2]
+    c, s_ = np.cos(YAW), np.sin(YAW); cx = c * x + s_ * y; cz = -s_ * x + c * y
+    phi = np.arctan2(cx, cz); th = np.arcsin(np.clip(z, -1, 1)); H, W = maps.shape[-3:-1]
+    ui = ((phi + np.pi) / (2 * np.pi) * W).astype(int) % W; vi = np.clip(((0.5 - th / np.pi) * H).astype(int), 0, H - 1)
+    if lod is None: return maps[vi, ui]
+    l0 = np.clip(np.floor(lod).astype(int), 0, len(maps) - 1); l1 = np.clip(l0 + 1, 0, len(maps) - 1); f = (lod - l0)[..., None]
+    return maps[l0, vi, ui] * (1 - f) + maps[l1, vi, ui] * f
+def env_brdf(ndv, rough):   # Karis' analytic fit of the split-sum LUT (the game samples g_texEnvBRDF at (ndv, rough))
+    c0 = np.array([-1, -0.0275, -0.572, 0.022]); c1 = np.array([1, 0.0425, 1.04, -0.04])
+    r = rough[..., None] * c0 + c1; a004 = np.minimum(r[..., 0] ** 2, np.exp2(-9.28 * ndv)) * r[..., 0] + r[..., 1]
+    return a004 * -1.04 + r[..., 2], a004 * 1.04 + r[..., 3]
+YAW = 0.0; BELTCORR = (2.0, 0.2, 1.0, 0.0)   # (SpcMul, SpcMin, IrrMul, IrrMin) from todo_wwe19_champion_belt_too_dark; None = off
+
 def shade(G, cov, tex, nsign=(1, 1), expo=1.0):
+    if IBL is not None: return shade_ibl(G, cov, tex, nsign, expo)
+    return shade_synth(G, cov, tex, nsign, expo)
+
+def shade_ibl(G, cov, tex, nsign=(1, 1), expo=1.0):
+    """Game's forward IBL path (yPBR_RTCS_Belt PS, decoded 2026-11-14): base sRGB->linear (^2.2); diffuse = base*(1-metal) *
+    irradiance(N); F0 = lerp(0.04, base, metal); spec = prefilter(R, lod = rough*6) * (F0*A + B); belt correction multiplies
+    specular by SpcMul with floor SpcMin and irradiance by IrrMul (floor IrrMin). Direct lights are not modelled."""
+    uv = G['uv'][cov]
+    base = bs.sample(tex['belt'], uv)[:, :3] ** 2.2
+    pm = bs.sample(tex['belt_p'], uv); metal = pm[:, 0:1]; rough = np.clip(pm[:, 1], 0.0, 1)
+    nt = bs.sample(tex['belt_n'], uv); tx = (nt[:, 0] * 2 - 1) * nsign[0]; ty = (nt[:, 1] * 2 - 1) * nsign[1]
+    tz = np.sqrt(np.clip(1 - tx ** 2 - ty ** 2, 0, 1))
+    n = G['n'][cov]; n /= np.linalg.norm(n, axis=1, keepdims=True) + 1e-9
+    t = G['t'][cov]; t = t - n * (t * n).sum(1, keepdims=True); t /= np.linalg.norm(t, axis=1, keepdims=True) + 1e-9
+    b = G['b'][cov]; hand = np.sign((np.cross(n, t) * b).sum(1, keepdims=True)); bb = np.cross(n, t) * hand
+    nn = t * tx[:, None] + bb * ty[:, None] + n * tz[:, None]; nn /= np.linalg.norm(nn, axis=1, keepdims=True) + 1e-9
+    V = np.array([0, -1.0, 0]); ndv = np.clip((nn * V).sum(1), 1e-3, 1); R = 2 * ndv[:, None] * nn - V
+    spec_maps, irr_map = IBL
+    pre = ibl_lookup(spec_maps, R, rough * 6); irr = ibl_lookup(irr_map, nn)
+    if BELTCORR is not None:
+        sm, smin, im, imin = BELTCORR
+        pre = np.maximum(pre * sm, smin); irr = np.maximum(irr * im, imin)
+    A, B = env_brdf(ndv, rough); F0 = 0.04 * (1 - metal) + base * metal
+    c = (base * (1 - metal) * irr + pre * (F0 * A[:, None] + B[:, None])) * expo
+    c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14)
+    out = np.zeros(G['uv'].shape[:2] + (3,)); out[cov] = np.clip(c, 0, 1) ** (1 / 2.2)
+    return out
+
+def shade_synth(G, cov, tex, nsign=(1, 1), expo=1.0):
     uv = G['uv'][cov]
     base = bs.sample(tex['belt'], uv)[:, :3] ** 2.2                             # sRGB -> linear
     pm = bs.sample(tex['belt_p'], uv); metal = pm[:, 0:1]; rough = np.clip(pm[:, 1:2], 0.03, 1)
@@ -134,7 +179,12 @@ IRRM = [np.stack([np.asarray(Image.fromarray(np.clip(ENV[..., k] / 16 * 255, 0, 
 def main():
     a = argparse.ArgumentParser(); a.add_argument('out'); a.add_argument('pacs', nargs='+'); a.add_argument('--w', type=int, default=900)
     a.add_argument('--cols', type=int, default=2); a.add_argument('--tilt', type=float, default=18); a.add_argument('--nsign', default='1,1')
-    a.add_argument('--expo', type=float, default=1.0); a = a.parse_args()
+    a.add_argument('--expo', type=float, default=1.0); a.add_argument('--ibl'); a.add_argument('--yaw', type=float, default=0)
+    a.add_argument('--nocorr', action='store_true'); a = a.parse_args()
+    global IBL, YAW, BELTCORR
+    if a.ibl: z = np.load(a.ibl); IBL = (z['spec'], z['irr'])
+    YAW = np.radians(a.yaw)
+    if a.nocorr: BELTCORR = None
     ns = tuple(int(x) for x in a.nsign.split(',')); W = a.w; H = W // 2
     tiles = []
     for spec in a.pacs:

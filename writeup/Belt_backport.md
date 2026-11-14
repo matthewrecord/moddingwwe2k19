@@ -492,3 +492,21 @@ Installed `pac/misc/parameter/todo/todo_wwe19_champion_belt_too_dark.pac` = a638
 (stock d04c87c49c5e3cb5a80024e3504dfa73, backed up in `backup_originals`).
 Effect: all belts look in title-match and winner scenes the way they already look in entrances. It's a global change, but it is Yuke's
 own correction, extended to the scenes where it was off.
+
+## 37. Real arena lighting in the emulator; v16 (2026-11-14)
+- `tools/backport/arenaibl.py`: arena IBL pacs (`pac/arena/ibl/ariblNNNNN.pac`) = SHDC → Oodle (via `oodl.py`/pyooz) → two BC6H
+  cube arrays (DX10 fmt 95, cube flag): 64² irradiance and 256² prefiltered specular (9 mips), 35 cubes, plus a JSON probe layout
+  (IBL_12 = the ring probe, at (0,-300,0) cm). Written as equirect npz.
+  - **Limitation:** texture2ddecoder/Pillow decode BC6H to clamped 8-bit, so HDR above 1.0 is lost; 30% of mip0 is clipped,
+    mostly the canvas. A float BC6H decoder was not available: fetching the bcdec source was blocked in this environment.
+- `gamelook.py --ibl NPZ [--yaw DEG] [--nocorr]` uses the decoded lighting path:
+  - base^2.2; diffuse = base·(1−metal)·irradiance(N); F0 = lerp(0.04, base, metal).
+  - spec = prefilter(R, lod = rough·6)·(F0·A + B), with A/B from Karis' EnvBRDF fit.
+  - Belt correction ×2 specular (floor 0.2) unless `--nocorr`.
+- With the real ring probe, stock IC vs v15 showed the remaining faults clearly:
+  1. **White blotches on the gold:** the photo's desaturated glare had been classified as silver. Silver now = sat < .18 **and** v < .8,
+     mode-filtered (9 px).
+  2. **Patchy shading:** each of ~21 mesh shells had its own dome. Plates are now found from the x-profile of front plate geometry
+     (the main plate is the tall run around x = 0; keepers are the runs between dips). That gives 9 plates, one dome each, on both props.
+- **v16** = v15 options + these two fixes. No warnings. Installed: 2905 = see handoff; comparison under real arena light:
+  `writeup/img/aew_v16_vs_IC_real_arena_light.png`.
