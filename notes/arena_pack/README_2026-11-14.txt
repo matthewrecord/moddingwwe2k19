@@ -1,0 +1,66 @@
+ARENA PACK (moddingwwe2k19) - 2026-11-14
+=========================================
+Everything from the arena rebuild (Nov 2026) as one drag-and-drop folder:
+387 files (178 new, 209 replacements), 2.0 GB. MANIFEST.md5 lists every file with its MD5.
+
+REQUIREMENTS (the base this was built and tested on)
+- Clean WWE 2K19 (Steam).
+- Modding Militia "Arena Essential Pack" (81 arenas), installed through Genesis,
+  including "WWE 2K19 Unpacked Arena Graphics" and "SuperString".
+- Install this pack BEFORE any other mod that edits the arena tables (see "Whole files" below).
+
+INSTALL
+1. Copy the "pac" and "mods" folders from here into the game folder
+   (...\steamapps\common\WWE 2K19\). Overwrite when asked.
+2. Rebuild the chunk file (chunk0.def) the way you normally do, so the 178 new files get indexed.
+3. Start the game. Check: Exhibition > Select Arena.
+Do not copy MANIFEST.md5 or this README into the game folder.
+Keep nothing else (backups, work folders) inside the game folder: a chunk rebuild indexes everything there.
+
+ARENAS (slot - arena - replaces)
+  96  RAW                         Great Balls of Fire
+  53  SMACKDOWN (SmackDown 21)    No Mercy '16
+   5  TOKYO DOME                  Battleground '13
+ 107  AEW DYNAMITE '20            No Way Out '01
+ 112  AEW REVOLUTION              Backlash '03
+ 117  AEW DARK                    Armageddon '02
+ 118  AEW ALL OUT                 Bad Blood '04
+ 119  AEW DOUBLE OR NOTHING       Vengeance '01
+ 123  ALL IN                      WrestleMania 13
+ 124  ROYAL RUMBLE (Retro)        In Your House '97
+ 125  WRESTLEMANIA 27             D-Generation X
+ 127  NXT 2.0                     Unforgiven '98
+ 128  NXT WHITE & GOLD            Over the Edge '98
+ 130  WRESTLEMANIA 35             Rock Bottom '98
+ 132  WRESTLEMANIA 38             WrestleMania 15
+ 133  AEW FULL GEAR               Backlash '00
+ 134  RING OF HONOR '05           King of the Ring '99
+ 135  ROYAL RUMBLE 2020           Fully Loaded '99
+ 138  ROH DEATH BEFORE DISHONOR   Backlash '01
+ 139  AEW RAMPAGE                 Armageddon '99
+ 143  SUMMERSLAM '09              Night of Champions '09
+ 149  AEW ROAD RAGER              Armageddon '03
+ 158  AEW DYNAMITE '22            Over the Limit '11
+ 159  AEW GRAND SLAM              Vengeance '11
+ 160  SUMMERSLAM '22              Payback '14
+
+WHOLE FILES (these replace the pack's copies; they are the pack's files plus our rows/names)
+  pac\root\misc04_arena.pac, pac\root\misc01_start.pac, pac\prop\propdata\initposition.pac,
+  pac\misc\parameter\light\prm_ar_lg_color.pac,
+  mods\SuperString\pac\string\win\string_win.pac and mods\SuperString\string_win.pac
+  (the second is an identical copy on purpose: the game sometimes reads the stray one).
+  The string files differ from the pack only in the 25 arena names above.
+
+SHARED CHANGES WORTH KNOWING
+- Crowd 3 = AEW crowd shirts (crowd 3 was unused by any arena before).
+- Rope 7 = AEW rope. All AEW arenas use misc01 "Live" 7 (no WWE "W LIVE" bug).
+- Battleground '15's "ppv_logo" file (141 -Battleground '15.pac) carries the NJPW crest: the pack's
+  file labels for slots 5 and 141 are swapped, and this is the one Tokyo Dome reads.
+
+KNOWN GAPS
+- Tokyo Dome: no NJPW locator/nameplate/match result yet; its match card is the shared generic card (shows names).
+- AEW x NJPW Forbidden Door (slot 4) not included: needs the 2K15-2K18 Arena Port and Titavius'
+  "AEW Dynamite - LA Forum '22" entrance pieces.
+- WrestleMania 31 was tried in 140 and removed (the original stays in slot 105).
+
+Full history, settings rows and tools: github.com/matthewrecord/moddingwwe2k19 (writeup/Arena_inventory.md).

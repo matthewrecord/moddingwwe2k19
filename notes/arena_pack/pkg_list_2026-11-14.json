@@ -1,0 +1,645 @@
+{
+"include": [
+"mods/SuperString/string_win.pac",
+"mods/SuperString/pac/string/win/string_win.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/107 - NO WAY OUT '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/112 - BACKLASH '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/117 - ARMAGEDDON '02.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/118 - BAD BLOOD '04.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/119 - VENGEANCE '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/124 - IN YOUR HOUSE '97.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/125 - D-GENERATION X.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/127 - UNFORGIVEN '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/128 - OVER THE EDGE '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/130 - ROCK BOTTOM '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/132 - WRESTLEMANIA 15.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/133 - BACKLASH '00.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/138 - BACKLASH '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/139 - ARMAGEDDON '99.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/149 - ARMAGEDDON '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/158 - OVER THE LIMIT '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/159 - VENGEANCE '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/160 - PAYBACK '14.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/107 - NO WAY OUT '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/112 - BACKLASH '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/117 - ARMAGEDDON '02.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/118 - BAD BLOOD '04.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/119 - VENGEANCE '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/124 - IN YOUR HOUSE '97.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/125 - D-GENERATION X.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/127 - UNFORGIVEN '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/128 - OVER THE EDGE '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/130 - ROCK BOTTOM '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/132 - WRESTLEMANIA 15.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/133 - BACKLASH '00.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/138 - BACKLASH '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/139 - ARMAGEDDON '99.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/149 - ARMAGEDDON '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/158 - OVER THE LIMIT '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/159 - VENGEANCE '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/107 - NO WAY OUT '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/112 - BACKLASH '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/117 - ARMAGEDDON '02.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/118 - BAD BLOOD '04.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/119 - VENGEANCE '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/124 - IN YOUR HOUSE '97.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/125 - D-GENERATION X.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/127 - UNFORGIVEN '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/128 - OVER THE EDGE '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/130 - ROCK BOTTOM '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/132 - WRESTLEMANIA 15.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/133 - BACKLASH '00.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/138 - BACKLASH '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/139 - ARMAGEDDON '99.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/143 - NIGHT OF CHAMPIONS '09.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/149 - ARMAGEDDON '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/158 - OVER THE LIMIT '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/159 - VENGEANCE '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/160 - PAYBACK '14.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/107 - NO WAY OUT '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/112 - BACKLASH '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/117 - ARMAGEDDON '02.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/118 - BAD BLOOD '04.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/119 - VENGEANCE '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/124 - IN YOUR HOUSE '97.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/125 - D-GENERATION X.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/127 - UNFORGIVEN '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/128 - OVER THE EDGE '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/130 - ROCK BOTTOM '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/132 - WRESTLEMANIA 15.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/133 - BACKLASH '00.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/138 - BACKLASH '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/139 - ARMAGEDDON '99.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/149 - ARMAGEDDON '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/158 - OVER THE LIMIT '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/159 - VENGEANCE '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/107 - No Way Out '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/112 - Backlash '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/117 - AEW Dark.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/117- Armageddon '02.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/118 - Bad Blood '04.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/119 - Vengence '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/123 - Wrestlemania 13.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/124 - In Your House Return Of Taker.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/125 - D-Generation X.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/127 - Unforgiven '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/128 - Over The Edge '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/130 - Rock Bottom '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/132 - Wrestlemania 15.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/133 - Backlash '00.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/134 - King Of The Ring '99.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/138 - Backlash '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/139 - Armageddon '99.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/141 -Battleground '15.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/149 - Armageddon '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/158 - Over The Limit '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/159 - Vengence '11.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/96 - Great Balls Of Fire.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/107 - NO WAY OUT '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/112 - BACKLASH '03.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/117 - ARMAGEDDON '02.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/118 - BAD BLOOD '04.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/119 - VENGEANCE '01.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/124 - IN YOUR HOUSE '97.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/125 - D-GENERATION X.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/127 - UNFORGIVEN '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/128 - OVER THE EDGE '98.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/132 - WRESTLEMANIA 15.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/133 - BACKLASH '00.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/139 - ARMAGEDDON '99.pac",
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/149 - ARMAGEDDON '03.pac",
+"pac/arena/apron/arapron00007.pac",
+"pac/arena/apron/arapron00042.pac",
+"pac/arena/apron/arapron00075.pac",
+"pac/arena/apron/arapron00121.pac",
+"pac/arena/apron/arapron00122.pac",
+"pac/arena/apron/arapron00123.pac",
+"pac/arena/apron/arapron00126.pac",
+"pac/arena/apron/arapron00127.pac",
+"pac/arena/apron/arapron00128.pac",
+"pac/arena/apron/arapron00129.pac",
+"pac/arena/apron/arapron00134.pac",
+"pac/arena/apron/arapron00135.pac",
+"pac/arena/apron/arapron00136.pac",
+"pac/arena/apron/arapron00137.pac",
+"pac/arena/apron/arapron00138.pac",
+"pac/arena/apron/arapron00152.pac",
+"pac/arena/apron/arapron00173.pac",
+"pac/arena/apron/arapron00175.pac",
+"pac/arena/apron/arapron00184.pac",
+"pac/arena/apron/arapron00185.pac",
+"pac/arena/apron/arapron00195.pac",
+"pac/arena/apron/arapron00196.pac",
+"pac/arena/apron/arapron00199.pac",
+"pac/arena/apron/arapron00200.pac",
+"pac/arena/barricade/arbarricade00006.pac",
+"pac/arena/barricade/arbarricade00025.pac",
+"pac/arena/barricade/arbarricade00026.pac",
+"pac/arena/barricade/arbarricade00027.pac",
+"pac/arena/barricade/arbarricade00028.pac",
+"pac/arena/barricade/arbarricade00029.pac",
+"pac/arena/barricade/arbarricade00030.pac",
+"pac/arena/barricade/arbarricade00031.pac",
+"pac/arena/barricade/arbarricade00041.pac",
+"pac/arena/barricade/arbarricade00055.pac",
+"pac/arena/barricade/arbarricade00065.pac",
+"pac/arena/barricade/arbarricade00066.pac",
+"pac/arena/ceilinglight/arceilinglight00004.pac",
+"pac/arena/ceilinglight/arceilinglight00020.pac",
+"pac/arena/ceilinglight/arceilinglight00054.pac",
+"pac/arena/ceilinglight/arceilinglight00069.pac",
+"pac/arena/ceilinglight/arceilinglight00073.pac",
+"pac/arena/ceilinglight/arceilinglight00075.pac",
+"pac/arena/ceilinglight/arceilinglight00092.pac",
+"pac/arena/commentaryst/arcommentaryst00007.pac",
+"pac/arena/commentaryst/arcommentaryst00038.pac",
+"pac/arena/commentaryst/arcommentaryst00059.pac",
+"pac/arena/commentaryst/arcommentaryst00075.pac",
+"pac/arena/commentaryst/arcommentaryst00076.pac",
+"pac/arena/commentaryst/arcommentaryst00082.pac",
+"pac/arena/commentaryst/arcommentaryst00083.pac",
+"pac/arena/commentaryst/arcommentaryst00089.pac",
+"pac/arena/cornerpost/arcornerpost00007.pac",
+"pac/arena/cornerpost/arcornerpost00017.pac",
+"pac/arena/cornerpost/arcornerpost00023.pac",
+"pac/arena/cornerpost/arcornerpost00024.pac",
+"pac/arena/cornerpost/arcornerpost00025.pac",
+"pac/arena/cornerpost/arcornerpost00030.pac",
+"pac/arena/cornerpost/arcornerpost00035.pac",
+"pac/arena/cornerpost/arcornerpost00039.pac",
+"pac/arena/cornerpost/arcornerpost00040.pac",
+"pac/arena/cornerpost/arcornerpost00041.pac",
+"pac/arena/cornerpost/arcornerpostcm00002.pac",
+"pac/arena/cornerpost/arcornerpostcm00003.pac",
+"pac/arena/crowd/arcrowd00003.def",
+"pac/arena/crowd/arcrowd00003.pac",
+"pac/arena/crowd/arcrowd00010.pac",
+"pac/arena/entrance/arentrance00005.pac",
+"pac/arena/entrance/arentrance00017.pac",
+"pac/arena/entrance/arentrance00053.pac",
+"pac/arena/entrance/arentrance00096.pac",
+"pac/arena/entrance/arentrance00107.pac",
+"pac/arena/entrance/arentrance00112.pac",
+"pac/arena/entrance/arentrance00117.pac",
+"pac/arena/entrance/arentrance00118.pac",
+"pac/arena/entrance/arentrance00119.pac",
+"pac/arena/entrance/arentrance00123.pac",
+"pac/arena/entrance/arentrance00124.pac",
+"pac/arena/entrance/arentrance00125.pac",
+"pac/arena/entrance/arentrance00127.pac",
+"pac/arena/entrance/arentrance00128.pac",
+"pac/arena/entrance/arentrance00130.pac",
+"pac/arena/entrance/arentrance00132.pac",
+"pac/arena/entrance/arentrance00133.pac",
+"pac/arena/entrance/arentrance00134.pac",
+"pac/arena/entrance/arentrance00135.pac",
+"pac/arena/entrance/arentrance00138.pac",
+"pac/arena/entrance/arentrance00139.pac",
+"pac/arena/entrance/arentrance00143.pac",
+"pac/arena/entrance/arentrance00149.pac",
+"pac/arena/entrance/arentrance00158.pac",
+"pac/arena/entrance/arentrance00159.pac",
+"pac/arena/entrance/arentrance00160.pac",
+"pac/arena/fence/arfence00029.pac",
+"pac/arena/floor/arfloor00001.pac",
+"pac/arena/floor/arfloor00003.pac",
+"pac/arena/floor/arfloor00004.pac",
+"pac/arena/floor/arfloor00005.pac",
+"pac/arena/floor/arfloor00007.pac",
+"pac/arena/floor/arfloor00008.pac",
+"pac/arena/floor/arfloor00017.pac",
+"pac/arena/floor/arfloor00019.pac",
+"pac/arena/floormattress/arfloormattress00015.pac",
+"pac/arena/header/arheader00065.pac",
+"pac/arena/ibl/aribl00034.pac",
+"pac/arena/ibl/aribl00088.pac",
+"pac/arena/ibl/aribl00089.pac",
+"pac/arena/ledcornerpost/arledcornerpost00029.pac",
+"pac/arena/ledcornerpost/arledcornerpost00032.pac",
+"pac/arena/ringmat/arringmat00002.pac",
+"pac/arena/ringmat/arringmat00016.pac",
+"pac/arena/ringmat/arringmat00018.pac",
+"pac/arena/ringmat/arringmat00019.pac",
+"pac/arena/ringmat/arringmat00033.pac",
+"pac/arena/rope/arrope00003.pac",
+"pac/arena/rope/arrope00007.pac",
+"pac/arena/rope/arropecm00002.pac",
+"pac/arena/spotlight/arspotlight00002.pac",
+"pac/arena/spotlight/arspotlight00020.pac",
+"pac/arena/spotlight/arspotlight00050.pac",
+"pac/arena/spotlight/arspotlight00051.pac",
+"pac/arena/spotlight/arspotlight00091.pac",
+"pac/arena/stadium/arstadium00001.pac",
+"pac/arena/stadium/arstadium00029.pac",
+"pac/arena/stadium/arstadium00047.pac",
+"pac/arena/stadium/arstadium00048.pac",
+"pac/arena/stadium/arstadium00049.pac",
+"pac/arena/stadium/arstadium00053.pac",
+"pac/arena/stadium/arstadium00054.pac",
+"pac/arena/stadium/arstadium00055.pac",
+"pac/arena/stadium/arstadium00058.pac",
+"pac/arena/stadium/arstadium00072.pac",
+"pac/arena/stadium/arstadium00074.pac",
+"pac/arena/stadium/arstadium00077.pac",
+"pac/arena/turnbuckle/arturnbuckle00013.pac",
+"pac/arena/turnbuckle/arturnbuckle00016.pac",
+"pac/arena/turnbuckle/arturnbuckle00017.pac",
+"pac/arena/turnbuckle/arturnbuckle00018.pac",
+"pac/arena/turnbuckle/arturnbuckle00019.pac",
+"pac/arena/turnbuckle/arturnbuckle00020.pac",
+"pac/arena/turnbuckle/arturnbuckle00021.pac",
+"pac/arena/turnbuckle/arturnbuckle00022.pac",
+"pac/arena/turnbuckle/arturnbuckle00030.pac",
+"pac/arena/turnbuckle/arturnbuckle00046.pac",
+"pac/arena/turnbuckle/arturnbuckle00051.pac",
+"pac/arena/turnbuckle/arturnbuckle00067.pac",
+"pac/arena/turnbuckle/arturnbucklecm00002.pac",
+"pac/evt/evt_light.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_096_gbof_2017_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_107_nowayout_2001_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_112_back_2003_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_117_armageddon_2002_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_118_badblood_2004_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_119_vengeance_2001_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_123_wm13_1997_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_124_iyh_1997_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_125_dgenx_1997_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_127_unforgiven_1998_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_128_overedge_1998_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_130_rockbottom_1998_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_132_wm15_1999_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_133_back_2000_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_138_back_2001_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_139_armageddon_1999_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_143_noc_2009_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_149_armageddon_2003_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_158_overlimit_2011_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_159_vengeance_2011_win.pac",
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_160_payback_2014_win.pac",
+"pac/misc/parameter/light/prm_ar_lg_color.pac",
+"pac/mov/ar_apron/0000130.pac",
+"pac/mov/ar_apron/0000143.pac",
+"pac/mov/ar_apron/0000158.pac",
+"pac/mov/ar_apron/0000160.pac",
+"pac/mov/ar_apron/000053.pac",
+"pac/mov/ar_apron/000096.pac",
+"pac/mov/ar_apron/000107.pac",
+"pac/mov/ar_apron/000112.pac",
+"pac/mov/ar_apron/000127.pac",
+"pac/mov/ar_apron/000128.pac",
+"pac/mov/ar_apron/000132.pac",
+"pac/mov/ar_apron/000133.pac",
+"pac/mov/ar_apron/000135.pac",
+"pac/mov/ar_mini/000005.pac",
+"pac/mov/ar_mini/0000107.pac",
+"pac/mov/ar_mini/0000112.pac",
+"pac/mov/ar_mini/0000118.pac",
+"pac/mov/ar_mini/0000119.pac",
+"pac/mov/ar_mini/0000143.pac",
+"pac/mov/ar_mini/0000149.pac",
+"pac/mov/ar_mini/0000158.pac",
+"pac/mov/ar_mini/0000160.pac",
+"pac/mov/ar_mini/000053.pac",
+"pac/mov/ar_mini/000096.pac",
+"pac/mov/ar_mini/000117.pac",
+"pac/mov/ar_mini/000123.pac",
+"pac/mov/ar_mini/000124.pac",
+"pac/mov/ar_mini/000127.pac",
+"pac/mov/ar_mini/000128.pac",
+"pac/mov/ar_mini/000130.pac",
+"pac/mov/ar_mini/000132.pac",
+"pac/mov/ar_mini/000133.pac",
+"pac/mov/ar_mini/000135.pac",
+"pac/mov/ar_mini/000139.pac",
+"pac/mov/ar_ramp/000053.pac",
+"pac/mov/ar_ramp/000096.pac",
+"pac/mov/ar_ramp/000107.pac",
+"pac/mov/ar_ramp/000112.pac",
+"pac/mov/ar_ramp/000127.pac",
+"pac/mov/ar_ramp/000128.pac",
+"pac/mov/ar_ramp/000130.pac",
+"pac/mov/ar_ramp/000132.pac",
+"pac/mov/ar_ramp/000133.pac",
+"pac/mov/ar_ramp/000159.pac",
+"pac/mov/ar_wall/000005.pac",
+"pac/mov/ar_wall/0000112.pac",
+"pac/mov/ar_wall/0000117.pac",
+"pac/mov/ar_wall/0000118.pac",
+"pac/mov/ar_wall/0000143.pac",
+"pac/mov/ar_wall/0000149.pac",
+"pac/mov/ar_wall/0000158.pac",
+"pac/mov/ar_wall/0000159.pac",
+"pac/mov/ar_wall/0000160.pac",
+"pac/mov/ar_wall/000053.pac",
+"pac/mov/ar_wall/000096.pac",
+"pac/mov/ar_wall/000107.pac",
+"pac/mov/ar_wall/000119.pac",
+"pac/mov/ar_wall/000123.pac",
+"pac/mov/ar_wall/000124.pac",
+"pac/mov/ar_wall/000125.pac",
+"pac/mov/ar_wall/000127.pac",
+"pac/mov/ar_wall/000128.pac",
+"pac/mov/ar_wall/000130.pac",
+"pac/mov/ar_wall/000132.pac",
+"pac/mov/ar_wall/000133.pac",
+"pac/mov/ar_wall/000135.pac",
+"pac/mov/ar_wall/000139.pac",
+"pac/mov/transition/000096.pac",
+"pac/mov/transition/000107.pac",
+"pac/mov/transition/000112.pac",
+"pac/mov/transition/000117.pac",
+"pac/mov/transition/000118.pac",
+"pac/mov/transition/000119.pac",
+"pac/mov/transition/000124.pac",
+"pac/mov/transition/000125.pac",
+"pac/mov/transition/000127.pac",
+"pac/mov/transition/000128.pac",
+"pac/mov/transition/000130.pac",
+"pac/mov/transition/000132.pac",
+"pac/mov/transition/000133.pac",
+"pac/mov/transition/000139.pac",
+"pac/mov/transition/000143.pac",
+"pac/mov/transition/000149.pac",
+"pac/mov/transition/000158.pac",
+"pac/mov/transition/000159.pac",
+"pac/mov/transition/000160.pac",
+"pac/mov/transition_replay/000096.pac",
+"pac/mov/transition_replay/000107.pac",
+"pac/mov/transition_replay/000112.pac",
+"pac/mov/transition_replay/000117.pac",
+"pac/mov/transition_replay/000118.pac",
+"pac/mov/transition_replay/000119.pac",
+"pac/mov/transition_replay/000124.pac",
+"pac/mov/transition_replay/000125.pac",
+"pac/mov/transition_replay/000127.pac",
+"pac/mov/transition_replay/000128.pac",
+"pac/mov/transition_replay/000130.pac",
+"pac/mov/transition_replay/000132.pac",
+"pac/mov/transition_replay/000133.pac",
+"pac/mov/transition_replay/000139.pac",
+"pac/mov/transition_replay/000141.pac",
+"pac/mov/transition_replay/000143.pac",
+"pac/mov/transition_replay/000149.pac",
+"pac/mov/transition_replay/000158.pac",
+"pac/mov/transition_replay/000159.pac",
+"pac/mov/transition_replay/000160.pac",
+"pac/prop/0158.pac",
+"pac/prop/propdata/initposition.pac",
+"pac/root/misc01_start.pac",
+"pac/root/misc04_arena.pac"
+],
+"skip": [
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/141 - BATTLEGROUND '15.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/153 - SURVIVOR SERIES '11.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/locator/96 - GREAT BALLS OF FIRE.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/141 - BATTLEGROUND '15.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/153 - SURVIVOR SERIES '11.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/match_result/96 - GREAT BALLS OF FIRE.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/141 - BATTLEGROUND '15.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/153 - SURVIVOR SERIES '11.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/anime/nameplate/96 - GREAT BALLS OF FIRE.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/141 - BATTLEGROUND '15.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/153 - SURVIVOR SERIES '11.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/copyright/96 - GREAT BALLS OF FIRE.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/ppv_logo/5 - Battleground '13.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/141 - BATTLEGROUND '15.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/153 - SURVIVOR SERIES '11.pac",
+"same as pristine"
+],
+[
+"mods/WWE 2K19 Unpacked Arena Graphics/pac/menu/win/Assets/wwe19_singleread/texture/replay/96 - GREAT BALLS OF FIRE.pac",
+"same as pristine"
+],
+[
+"pac/arena/apron/arapron00124.pac",
+"new part, unused"
+],
+[
+"pac/arena/barricade/arbarricade00022.pac",
+"new part, unused"
+],
+[
+"pac/arena/ceilinglight/arceilinglight00022.pac",
+"new part, unused"
+],
+[
+"pac/arena/ceilinglight/arceilinglight00048.pac",
+"new part, unused"
+],
+[
+"pac/arena/commentaryst/arcommentaryst00077.pac",
+"new part, unused"
+],
+[
+"pac/arena/cornerpost/arcornerpost00037.pac",
+"new part, unused"
+],
+[
+"pac/arena/crowd/arcrowd00015.def",
+"new part, unused"
+],
+[
+"pac/arena/crowd/arcrowd00015.pac",
+"new part, unused"
+],
+[
+"pac/arena/entrance/arentrance00140.pac",
+"same as pristine"
+],
+[
+"pac/arena/entrance/arentrance00141.pac",
+"same as pristine"
+],
+[
+"pac/arena/entrance/arentrance00153.pac",
+"same as pristine"
+],
+[
+"pac/arena/floor/arfloor00020.pac",
+"new part, unused"
+],
+[
+"pac/arena/floor/arfloor00021.pac",
+"new part, unused"
+],
+[
+"pac/arena/floor/arfloor00022.pac",
+"new part, unused"
+],
+[
+"pac/arena/ibl/aribl00076.pac",
+"new part, unused"
+],
+[
+"pac/arena/ibl/aribl00092.pac",
+"new part, unused"
+],
+[
+"pac/arena/ringmat/arringmat00007.pac",
+"new part, unused"
+],
+[
+"pac/arena/ringmat/arringmat00017.pac",
+"new part, unused"
+],
+[
+"pac/arena/spotlight/arspotlight00048.pac",
+"new part, unused"
+],
+[
+"pac/arena/stadium/arstadium00007.pac",
+"new part, unused"
+],
+[
+"pac/arena/stadium/arstadium00056.pac",
+"new part, unused"
+],
+[
+"pac/arena/turnbuckle/arturnbuckle00015.pac",
+"new part, unused"
+],
+[
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_100_starrcade_1983_win.pac",
+"same as pristine"
+],
+[
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_141_battleground_2015_win.pac",
+"same as pristine"
+],
+[
+"pac/menu/win/Assets/wwe19_anime/match_up/ltag_153_survivor_2011_win.pac",
+"same as pristine"
+],
+[
+"pac/menu/win/Assets/wwe19_singleread/anime/locator/140 - new.pac",
+"new file for a stock slot"
+],
+[
+"pac/menu/win/Assets/wwe19_singleread/anime/match_result/140 - new.pac",
+"new file for a stock slot"
+],
+[
+"pac/menu/win/Assets/wwe19_singleread/anime/nameplate/140 - new.pac",
+"new file for a stock slot"
+],
+[
+"pac/menu/win/Assets/wwe19_singleread/texture/copyright/140 - new.pac",
+"new file for a stock slot"
+],
+[
+"pac/menu/win/Assets/wwe19_singleread/texture/replay/140 - new.pac",
+"new file for a stock slot"
+],
+[
+"pac/mov/ar_apron/0000141.pac",
+"same as pristine"
+],
+[
+"pac/mov/ar_apron/0000153.pac",
+"same as pristine"
+],
+[
+"pac/mov/ar_apron/000017.pac",
+"new file for a stock slot"
+],
+[
+"pac/mov/ar_apron/000140.pac",
+"new file for a stock slot"
+],
+[
+"pac/mov/ar_mini/0000140.pac",
+"same as pristine"
+],
+[
+"pac/mov/ar_mini/0000141.pac",
+"same as pristine"
+],
+[
+"pac/mov/ar_mini/0000153.pac",
+"same as pristine"
+],
+[
+"pac/mov/ar_mini/000017.pac",
+"new file for a stock slot"
+],
+[
+"pac/mov/ar_wall/0000140.pac",
+"same as pristine"
+],
+[
+"pac/mov/ar_wall/0000141.pac",
+"same as pristine"
+],
+[
+"pac/mov/ar_wall/0000153.pac",
+"same as pristine"
+],
+[
+"pac/mov/ar_wall/000017.pac",
+"new file for a stock slot"
+],
+[
+"pac/mov/transition/000140.pac",
+"new file for a stock slot"
+],
+[
+"pac/mov/transition/000141.pac",
+"same as pristine"
+],
+[
+"pac/mov/transition/000153.pac",
+"same as pristine"
+],
+[
+"pac/mov/transition_replay/000140.pac",
+"new file for a stock slot"
+],
+[
+"pac/mov/transition_replay/000153.pac",
+"new file for a stock slot"
+]
+]
+}
