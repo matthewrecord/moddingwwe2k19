@@ -11,3 +11,10 @@ v1: scans memory every 1-2 s for the test BGM entries (`id*1000`, `0xFFFF0000|id
 disappears with context, then arms in-process hardware watchpoints (DR0-DR3 set on every thread, vectored exception
 handler) on the raw 109 entry (value and label), the raw 500 and raw 807 values, and logs each new reading/writing
 instruction with candidate return addresses (offsets from the exe base).
+
+## filetrace (2026-11-14): `dinput8_filetrace.c`
+Same proxy approach, for load hangs. Hooks the exe's imports CreateFileA/W, ReadFile, ReadFileEx, CloseHandle; logs opens/reads
+of `.pac/.def/.arc` and anything with `prop`/`belt` in the path (create `TRACE_ALL` next to the exe for every file), first-chance
+exceptions (first 200), and when there's no file I/O for 8 s samples every thread's RIP 5x with exe-relative return addresses.
+Log `wwe2k19_filetrace_<tick>.log` next to the exe.
+Build: `apt-get install gcc-mingw-w64-x86-64`; `x86_64-w64-mingw32-gcc -O2 -shared -o dinput8.dll dinput8_filetrace.c dinput8.def -static-libgcc`.
