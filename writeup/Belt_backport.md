@@ -265,3 +265,16 @@ Matthew: the AEW/IWGP title has no title-match intro animation. Findings:
   (evt pacs = HSPC -> BPE (`tools/audio/bpe.py`): file 0 '0FOP' event, file 1 SHDC assets). The two matches differed in
   wrestler AND title, so title vs wrestler is not separated (my error: two variables). Control needed: same wrestler,
   US title vs AEW title.
+
+### 24. Same-wrestler control (2026-11-14, log `wwe2k19_filetrace_44758203.log`)
+
+Big Show entered (evt 00125) both times; only the title changed.
+
+| Match | Belt props | Sequence steps hit | Title-belt scene | Video lookup |
+|---|---|---|---|---|
+| WWE US title | 2003 / 5003 | 1, then **8** | evt 29000 loaded | key=5, field=1 → found, **500500** |
+| AEW US title (slot 23) | 2905 / 5038 | 1 only | never loaded | never called |
+
+**Proven:** the wrestler isn't the variable. For title 23, sequence step 8 (the title-belt scene, which also looks up the video) is never queued at all. The video file and the DB lookup aren't the blocker. Whatever builds the intro sequence decides per title whether to add step 8.
+**Also learned:** the lookup key for the US title is 5, not its slot number. It's a separate per-title video/scene index, so title 23 probably has no entry, or a flag that's off.
+**Next:** find the code that queues step 8 (the writer of `[step+4]=8`), and see which per-title field it tests.
