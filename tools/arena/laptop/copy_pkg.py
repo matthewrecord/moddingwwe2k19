@@ -8,5 +8,5 @@ for r in L:
     d=out+'/'+r
     if os.path.exists(d) and os.path.getsize(d)==os.path.getsize(G+r) and same(d,G+r): continue
     if time.time()-t0>140: print('PAUSE, remaining', sum(1 for x in L if not(os.path.exists(out+'/'+x) and os.path.getsize(out+'/'+x)==os.path.getsize(G+x)))); sys.exit(0)
-    os.makedirs(os.path.dirname(d),exist_ok=True); shutil.copyfile(G+r,d)  # copyfile gives d a fresh mtime >= source; n+=1
+    os.makedirs(os.path.dirname(d),exist_ok=True); shutil.copyfile(G+r,d); n+=1
 print('copied',n,'all present')

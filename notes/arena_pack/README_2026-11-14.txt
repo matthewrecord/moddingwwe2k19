@@ -1,7 +1,7 @@
 ARENA PACK (moddingwwe2k19) - 2026-11-14
 =========================================
 Everything from the arena rebuild (Nov 2026) as one drag-and-drop folder:
-403 files (181 new, 222 replacements), 2.0 GB. MANIFEST.md5 lists every file with its MD5.
+434 files (188 new, 246 replacements), 2.0 GB. MANIFEST.md5 lists every file with its MD5.
 
 REQUIREMENTS (the base this was built and tested on)
 - Clean WWE 2K19 (Steam).
@@ -41,8 +41,10 @@ ARENAS (slot - arena - replaces; 104/115 keep their own arena, new stage)
  135  ROYAL RUMBLE 2020           Fully Loaded '99
  138  ROH DEATH BEFORE DISHONOR   Backlash '01
  139  AEW RAMPAGE                 Armageddon '99
+ 141  RAW '20 (Raw 20 PPV Stage V2; stadium 57, IBL 90)   Battleground '15
  143  SUMMERSLAM '09              Night of Champions '09
  149  AEW ROAD RAGER              Armageddon '03
+ 153  SMACKDOWN '20 (SD 20 PPV Stage V2; stadium 59, IBL 91) Survivor Series '11
  158  AEW DYNAMITE '22            Over the Limit '11
  159  AEW GRAND SLAM              Vengeance '11
  160  SUMMERSLAM '22              Payback '14
@@ -54,13 +56,13 @@ WHOLE FILES (these replace the pack's copies; they are the pack's files plus our
   (the second is an identical copy on purpose: the game sometimes reads the stray one).
   The string files differ from the pack only in the 25 arena names above.
 
-MATCH CARDS: every arena above except RAW (96) and SMACKDOWN (53) shows no wrestler names.
+MATCH CARDS: every arena above except the Raw/SmackDown ones (96, 53, 141, 153) shows no wrestler names.
 
 SHARED CHANGES WORTH KNOWING
 - Crowd 3 = AEW crowd shirts (crowd 3 was unused by any arena before).
 - Rope 7 = AEW rope. All AEW arenas use misc01 "Live" 7 (no WWE "W LIVE" bug).
-- Battleground '15's "ppv_logo" file (141 -Battleground '15.pac) carries the NJPW crest: the pack's
-  file labels for slots 5 and 141 are swapped, and this is the one Tokyo Dome reads.
+- ppv_logo labels for slots 5 and 141 are swapped in the 81-arena pack: "141 -Battleground '15.pac" is read by
+  slot 5 (carries Tokyo Dome's NJPW crest) and "5 - Battleground '13.pac" by slot 141 (carries the Raw logo).
 
 NOTES
 - SummerSlam '22: the creator's crowd-seat values (-2) hang this game; the row uses -1 and adds barricade 16 /
