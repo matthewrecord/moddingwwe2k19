@@ -161,3 +161,4 @@ Branch: `claude/belt-<name>`. Back up every game file before touching it (copy i
   is metal. Check that `--stock-enamel` keeps every colour before using it.
 - Pick replacement slots from `notes/replaceable_titles.md`.
 - The menu picture renders best from a gamelook IBL render, keyed out and passed to `belt_menu.py --image`.
+- Run `clipcheck.py out.pac` on every new belt. Any strap triangle in front of a plate means it will clip in game; fix with `--plate-lift`.
