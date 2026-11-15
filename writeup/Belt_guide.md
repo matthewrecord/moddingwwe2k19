@@ -154,3 +154,10 @@ Branch: `claude/belt-<name>`. Back up every game file before touching it (copy i
   - A cavity mask in `belt_p`.B, which the game ignores.
   
   These are the best "target look" references to emulate against.
+
+## 7. Notes from the second belt (2K22 source, All-Atlantic)
+- 2K22 `.mdl` files are supported. The tangents are rebuilt from the UVs automatically.
+- If the source albedo is already clean, flat gold (hand-made rather than photo-based), add `--clean` so that only gold
+  is metal. Check that `--stock-enamel` keeps every colour before using it.
+- Pick replacement slots from `notes/replaceable_titles.md`.
+- The menu picture renders best from a gamelook IBL render, keyed out and passed to `belt_menu.py --image`.

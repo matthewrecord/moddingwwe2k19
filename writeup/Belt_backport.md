@@ -553,3 +553,25 @@ The blue channel has not been checked in the shader (the decoded GLSL was lost w
 - Both also use the v17 flags (strap, metalize, stock-metal, strap-smooth, pillow 1.2, stock-enamel, banner-letters).
 - **Size:** ~3.9 MB, against 2.9–3.2 MB for the deluxe 2048 props, which load fine.
 - **Emulator:** the glare-white silver patches of v17 are gone. The plate reads as uniform gold with visible engraving, close to the deluxe look; v19a is slightly richer. Images: `img/v19_vs_deluxe.png`, `img/v19_zoom.png`.
+
+## 42. AEW All-Atlantic (Grix, 2K22) → Cena spinner US slot (title 37), 2026-11-15
+- Source: `Grix - All-Atlantic Championship.rar` (2K22 `Belts/137`; it also ships Grix's own 2K19 port for the Hardcore slot,
+  2005/5005, which was not used because Matthew asked for our recipe). Video: `AEW Title GFX/AEW All Atlantic Championship/bel_00XX_0_0.bk2`
+  (Bink 1 BIKi, 1920x1080, 335 frames at 30 fps), installed as `bel_0037_0_0.bk2`.
+- **2K22 .mdl differences** (fixed in `mdl.py` / `belt_port.py`):
+  - Version 0x20: chunks start at 0x20, not 0x24.
+  - BONE = u32 count + 28-byte records.
+  - Skinning comes from the BLENDINDICES/BLENDWEIGHTS vertex streams (no separate block).
+  - NORMAL is float.
+  - **TANGENT is a constant placeholder**, so tangents are derived from the UVs (`uv_tangents`). Checked on the 2K23 mod:
+    median cos 0.89 against the real tangents.
+- **Clean source:** Grix's albedo is already flat, stock-like gold, but his metal map marks the black inlays, logos and
+  flags as metal (~0.8). With `--metalize` they became gold. New `--clean` flag: only gold-hued texels are metal; the
+  rest of the plate is non-metal paint. `--stock-enamel/--banner-letters` lost the blue globe, so they were left off.
+- Build: `--metalize --clean --stock-metal 252,221,164 --leather-rough 0.4 --pillow 1.2`
+  (2911 45c2ce6b0f38e77b808295aa6004f605, 5044 6ec826465f03b920bded9f89ae3df66e).
+- **Table:** `37 503700 600 5044 2911 ...` (it was `37 0 0`).
+- **Name:** `titlename.py --index 31 --extra 602006`, "AEW All-Atlantic Championship".
+- **Menu:** entry 31 `037_united_states_cena`. A flat `beltshot` render looked beige, so the picture uses a gamelook
+  IBL render, keyed to alpha, with `--image --zoom 1.6`.
+- Known nit: the four round plate bolts catch a bright reflection in the emulator.
