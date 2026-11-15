@@ -510,3 +510,16 @@ own correction, extended to the scenes where it was off.
      (the main plate is the tall run around x = 0; keepers are the runs between dips). That gives 9 plates, one dome each, on both props.
 - **v16** = v15 options + these two fixes. No warnings. Installed: 2905 = see handoff; comparison under real arena light:
   `writeup/img/aew_v16_vs_IC_real_arena_light.png`.
+
+## 38. v17: polished silver letters on black banners (2026-11-14)
+Matthew asked for reflective metal on the banner letters only (IWGP / UNITED STATES / CHAMPION, plus the keepers' UNITED STATES CHAMPION), for contrast.
+- `belt_port.py --banner-letters`, classified on the ORIGINAL mod colours:
+  - Banner = plate texels where near-black (v < .20, unsaturated) covers more than 38% of a size/64 window. Letters are grey islands in it.
+  - Letters (v > .26, sat < .28, opened) → flat silver (228,228,234), metal, roughness ~0.07.
+  - Field → black (12,12,14), non-metal, roughness 0.35. At 0.12 the field mirrored the bright canvas and read teal-grey.
+  - The black atlas padding strip (v .46–.54) is excluded.
+- Fix to `--stock-enamel`: red now has to be within 7 px of white stripes/stars. The maroon leather behind the plate photo had
+  been turning into a bright red rim.
+- Physical limit seen with the real arena IBL: any glossy dielectric reflects ~4% of the bright canvas, so the lower
+  (downward-facing) banner reads dark grey rather than pure black. The game uses fixed F0 = 0.04, so this is the same as in game.
+- v17 = v16 + `--banner-letters`. No warnings. Installed: 2905 = see handoff; comparison: `writeup/img/aew_IC_v16_v17_real_arena_light.png`.

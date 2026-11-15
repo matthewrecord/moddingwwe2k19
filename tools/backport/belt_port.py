@@ -123,7 +123,7 @@ def color_grade(rgb, rules=GRADE_REF, strength=1.0):
     out = hsv2rgb(hn % 360, np.clip(sn, 0, 1), np.clip(vn, 0, 1))
     return np.clip(out * 255 + 0.5, 0, 255).astype('u1')
 
-def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0, grade=0.0, stock_metal=None, leather_rough=None, stock_enamel=False):
+def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0, grade=0.0, stock_metal=None, leather_rough=None, stock_enamel=False, banner_letters=False):
     def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
     col = L('belt_color.DDS').copy(); col[..., 3] = 255; ORIG = col[..., :3].copy()
     if hue is not None: col[..., :3] = gold_hue(col[..., :3], hue)
@@ -190,6 +190,9 @@ def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=Fals
         hh = np.where(mx == r, ((g - b) / d) % 6, np.where(mx == g, (b - r) / d + 2, (r - g) / d + 4)) * 60
         plate = np.zeros(mx.shape, bool); plate[int(0.46 * size):, :] = True
         red = plate & ((hh > 330) | (hh < 12)) & (sat0 > 0.35) & (mx > 0.12)
+        # only red that sits next to white stripes / stars (the maroon leather behind the plate photo is not enamel)
+        whiteish = plate & (mx > 0.6) & (sat0 < 0.2)
+        red &= np.asarray(Image.fromarray((whiteish * 255).astype('u1')).filter(ImageFilter.MaxFilter(15)), 'f4') > 0
         blue = plate & (hh > 195) & (hh < 255) & (sat0 > 0.3) & (mx > 0.06)
         near = np.asarray(Image.fromarray(((red | blue) * 255).astype('u1')).filter(ImageFilter.MaxFilter(13)), 'f4') > 0
         white = plate & near & (sat0 < 0.2) & (mx > 0.45) & ~red & ~blue
@@ -200,6 +203,30 @@ def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=Fals
             col[..., :3] = np.where(msk[..., None], np.clip(np.array(c, 'f4') * sh, 0, 255), col[..., :3]).astype('u1')
             M = np.where(msk, 0.0, M)
         ENAMEL = red | blue | white
+    BANNER = None
+    if banner_letters:
+        # Black banners with raised letters (IWGP / UNITED STATES / CHAMPION, keeper 'UNITED STATES CHAMPION'): in the mod photo the
+        # banner field is near-black and the letters are grey. Banner = closed region of near-black, unsaturated texels; inside it,
+        # letters (grey) -> polished silver metal, field -> glossy black enamel (non-metal). Classified on the ORIGINAL mod colours.
+        from PIL import Image, ImageFilter
+        from scipy import ndimage
+        a0 = ORIG.astype('f4') / 255; mx = a0.max(-1); mn = a0.min(-1); sat0 = (mx - mn) / np.maximum(mx, 1e-6)
+        plate = np.zeros(mx.shape, bool); plate[int(0.46 * size):, :] = True
+        dark = plate & (mx < 0.20) & (sat0 < 0.35)
+        # banner = where near-black dominates the neighbourhood (letters are islands inside it); gold/enamel areas have few dark texels
+        k = max(9, size // 64) | 1
+        frac = ndimage.uniform_filter(dark.astype('f4'), size=k)
+        band = plate & (frac > 0.38)
+        bg_region = np.zeros(mx.shape, bool); bg_region[int(0.46 * size):int(0.54 * size), :] = True
+        band &= ~bg_region
+        letters = band & (mx > 0.26) & (sat0 < 0.28)
+        letters = ndimage.binary_opening(letters, iterations=1)
+        band = band & (dark | letters)                      # field = the dark texels themselves, nothing else
+        field = band & ~letters
+        col[..., :3] = np.where(letters[..., None], np.array([228, 228, 234], 'f4'), col[..., :3]).astype('u1')
+        col[..., :3] = np.where(field[..., None], np.array([12, 12, 14], 'f4'), col[..., :3]).astype('u1')
+        M = np.where(letters, 255.0, np.where(field, 0.0, M))
+        BANNER = (letters, field)
     # 2K19 belt_n: BC5, R = same sign as 2K23, G inverted (measured on stock 2003 vs mod metal edges, writeup/Belt_backport.md)
     n = np.zeros(N.shape, 'u1'); n[..., 0] = N[..., 0]; n[..., 1] = 255 - N[..., 1]; n[..., 3] = 255
     # 2K19 belt_p: R = metalness, G = roughness in the stock range (metal ~25, leather ~50), B = 255
@@ -207,6 +234,7 @@ def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=Fals
     if leather_rough is not None:   # stock leather roughness 0.18-0.6 (mean ~0.4); stock metal ~0.10 (byte 25)
         g = np.where(M > 127, 25 + 0.1 * (R - R.mean()), leather_rough * 255 + 0.15 * (R - R.mean()))
     if ENAMEL is not None: g = np.where(ENAMEL, 30.0, g)          # glossy enamel like stock (~0.12)
+    if BANNER is not None: g = np.where(BANNER[0], 18.0, np.where(BANNER[1], 90.0, g))   # mirror-polished letters; satin black field (0.35) so it reads black, not a canvas mirror
     p = np.stack([M, np.clip(g, 6, 160), np.full_like(M, 255), np.full_like(M, 255)], -1).astype('u1')
     return [('belt', dds(col, 'DXT1')), ('belt_n', dds(n, 'ATI2')), ('belt_p', dds(p, 'DXT1'))]
 
@@ -437,10 +465,10 @@ def quality(pac_bytes_path):
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--stock-enamel', action='store_true'); a.add_argument('--pillow', type=float, default=0.0, help='dome plate normals like stock (try 1.0)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--stock-enamel', action='store_true'); a.add_argument('--banner-letters', action='store_true'); a.add_argument('--pillow', type=float, default=0.0, help='dome plate normals like stock (try 1.0)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
-    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade, tuple(int(x) for x in a.stock_metal.split(',')) if a.stock_metal else None, a.leather_rough, a.stock_enamel); man = {}
+    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade, tuple(int(x) for x in a.stock_metal.split(',')) if a.stock_metal else None, a.leather_rough, a.stock_enamel, a.banner_letters); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts, a.pillow)
