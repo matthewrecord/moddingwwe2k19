@@ -23,3 +23,14 @@ Denuvo-protected. Not pursued.
 ## Better route for 2K26 characters
 Community 2K26 character mods ship as loose `.mdl`/`.mtls`/DDS files (same 2K22+ family `tools/backport/mdl.py`
 already reads; see `writeup/Backport.md`). Those need no `.cak` access.
+
+## Update (2026-11-15 night): AuroraForge reads 2K26; what a backport needs
+- AuroraForge NT100's CAK Foundry (GUI, run by Matthew/Claude via the screen) opens all 15 archives read-only:
+  410,348 files. Characters live at `Characters/<id>_<Name>/BaseModel/` and `Characters/<id>_<Name>/<attire>/`.
+- Community 2K26 mods (Downloads: Kenny Omega, Hangman Page, Dalton Castle, Christopher Daniels, "Jeff_Cobb_PWG2016"
+  which is actually JC Mateo 1456) share one layout: `baseModel.mcd` + `.mtls` + `Materials/*.jmtl` + `Textures/*.dds`
+  (body/head/eye/eyelash colour+nrm), and per attire `Attire.mcd` + `.mtls` + `.ycl` + `Materials/` + `Textures/`
+  (`_color`, `_nrm`, hair `_flow`/`_rai`).
+- Pipeline (`build_port.py`, Backport.md §23-26) already reads `.mcd` (2K25 MCD! wrapper). Needs: base + one attire
+  `.mcd`, their Textures, and `.hpl` (hide table) if present. Not needed: `.ycl` (cloth, dropped), Movies/, audio, UI.
+- Open: game textures show as type `tex!` in the archive; check whether they extract as plain DDS.
