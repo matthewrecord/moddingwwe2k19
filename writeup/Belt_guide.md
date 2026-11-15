@@ -26,8 +26,7 @@ python3 -I tools/backport/belt_port.py --mod <mod> --stock <backup_originals> --
   --strap 214,220,224 --metalize --stock-metal 252,221,164 --leather-rough 0.4 --strap-smooth 0.75 \
   --pillow 1.2 --stock-enamel --banner-letters
 ```
-v19 (Ultra-Deluxe-style: 2048 px, `--metal-rough 0.18 --nstrength 1.5 --cavity 1.0 --leather-rough 0.25`) is
-built and looks better in the emulator, but it is **not installed** and has not been tested in game.
+v19 (Ultra-Deluxe-style: 2048 px, `--metal-rough 0.18 --nstrength 1.5 --cavity 1.0 --leather-rough 0.25`) was tested in game on 2026-11-15; **Matthew preferred v17**, so v17 is installed.
 
 ---
 
