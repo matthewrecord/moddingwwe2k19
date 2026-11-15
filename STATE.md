@@ -5,6 +5,7 @@
 
 > Belt work: see `writeup/Belt_guide.md` (signed off 2026-11-15, handoff 019).
 
+- **2026-11-15 night: 17 2K26 characters extracted** for backporting (handoff 020, `writeup/Cak_2k26.md`).
 - **2026-11-09 (setup chat): repository scaffolded**, structured like `matthewrecord/botf-tools` (README, CLAUDE.md,
   GEMINI.md, STATE.md, WORKFLOW.md, `writeup/`, `handoff/`, `notes/`, `tools/`, `reference/`, branch `assets`).
   No mod work started. Nothing in the game folders has been changed.

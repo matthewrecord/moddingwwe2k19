@@ -34,3 +34,7 @@ already reads; see `writeup/Backport.md`). Those need no `.cak` access.
 - Pipeline (`build_port.py`, Backport.md §23-26) already reads `.mcd` (2K25 MCD! wrapper). Needs: base + one attire
   `.mcd`, their Textures, and `.hpl` (hide table) if present. Not needed: `.ycl` (cloth, dropped), Movies/, audio, UI.
 - Open: game textures show as type `tex!` in the archive; check whether they extract as plain DDS.
+
+## Extraction done (2026-11-15 night)
+17 of 19 requested wrestlers extracted (default model + default attire). Pagano and Royce Keys have no model in this
+copy. 2K26 `.mcd` = `MCD!` + chunks (`CTG!`, `MDL!`, `HPL!`); `mdlfmt.MDL` parses the MDL from tag+4. See handoff.
