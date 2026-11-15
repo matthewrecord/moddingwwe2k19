@@ -32,7 +32,7 @@ WrestleMania 31 and stays).
 | 135 | Fully Loaded '99 | Royal Rumble 2020 |
 | 138 | Backlash '01 | ROH Death Before Dishonor |
 | 139 | Armageddon '99 | AEW Rampage |
-| 140 | Payback '13 | Survivor Series '26 (copy of stock SS '17 slot 11, Matthew's mat + logos; handoff 020) |
+| 140 | Payback '13 | Survivor Series '26 (copy of stock SS '17 slot 11, Matthew's mat + logos, turnbuckle 15; handoff 020) |
 | 143 | Night of Champions '09 | SummerSlam '09 |
 | 149 | Armageddon '03 | AEW Road Rager |
 | 158 | Over the Limit '11 | AEW Dynamite '22 |
