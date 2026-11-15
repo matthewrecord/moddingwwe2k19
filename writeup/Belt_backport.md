@@ -528,3 +528,17 @@ Matthew asked for reflective metal on the banner letters only (IWGP / UNITED STA
 - **AO Belt Lighting Patch** edits only `todo_wwe19_champion_belt_too_dark.pac`: Belt_SpcMul 2.0 → 11.31 and SpcMin 0 → 1.75e-5. The four scene switches change from 0/1 to 0x80000000, and Always becomes 0x50000000, so the switches are bit flags, not booleans. It is a pure specular boost on the belt-correction path. In the emulator, ×11.3 mostly lifts the dark leather and straps to a greyish sheen; the gold barely changes, because gold reflections are already near clipping.
 - **Big Gold New** (2009/5009, World Heavyweight) keeps stock geometry, normal maps and material maps. It replaces only the base colour, which grows from 1024² to 4096² with engraving baked into the albedo (cavity darkening; p5/p95 luminance 110/202, against flat 204 in stock). Its gold is also more yellow (hue 47 vs 38, sat .52 vs .41).
 - Applied: `belt_port.py --cavity K` bakes crevice darkening from the integrated normal-map height (v18, K=0.7).
+
+## 40. Ultra Deluxe Championships vs stock (emulator side by side)
+Stock compared with the deluxe versions of IC 2002, Brahma 2905, Cruiserweight 2913 and WCW Tag 2915. The same pattern shows on every belt:
+
+| | stock | deluxe |
+|---|---|---|
+| texture size | 1024 | 2048 (all three maps) |
+| metal albedo detail (HF) | 1.6–3.7 | 3.4–9.3, with engraving lines and dark lettering painted in |
+| metal roughness | 0.093–0.098, flat | 0.17–0.19, varying with the relief |
+| leather roughness | 0.30–0.59 | 0.19–0.30 (glossier leather) |
+| normal tilt on metal | 0.08–0.16 | 0.14–0.24 (deeper relief) |
+| belt_p blue channel | 255 everywhere | a cavity / edge mask: white on raised metal and outlines, dark in recesses and on leather |
+
+The blue channel has not been checked in the shader (the decoded GLSL was lost with the environment and needs re-decoding). In the emulator, which ignores it, the deluxe belts already read richer. That comes from the painted engraving, the rougher metal with varying roughness, and the deeper normals.
