@@ -207,6 +207,7 @@ Spare: 160 (Payback '14).
 (152, 144); TLC '13 (146); Elimination Chamber '13 (147); Extreme Rules '11 (156); St. Valentine's Day Massacre
 (131); Judgment Day '04 (120). Keep: Capitol Punishment '11 (41), Money in the Bank '11 (148), Raw '11 (150),
 Smackdown '08 (157).
+> **Current status of this list (2026-11-14): see `notes/arena_slots.md`.** 141 (Raw '20) and 153 (SmackDown '20) are used; one of 154/145 remains (ask which Survivor Series to keep); 140 is free again.
 
 ## 00:50 Groundwork for the installer (read-only work on the clean install)
 - **misc04_arena.pac decoded** (`tools/arena/misc04_arena.py`): SHDC file 920 is a small archive (u32 count, 16-byte
