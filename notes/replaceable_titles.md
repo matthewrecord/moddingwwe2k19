@@ -5,7 +5,7 @@ Listed by Matthew on 2026-11-15. Use these slots first for new belts. Get the pr
 
 | Title | Title id | Main / cut prop | Menu entry | Status |
 |---|---|---|---|---|
-| John Cena U.S. Championship (Spinner) | 37 | 2911 / 5044 | 037_united_states_cena | **used: AEW All-Atlantic (2026-11-15)** |
+| John Cena U.S. Championship (Spinner) | 37 | 2911 / 5044 | 037_united_states_cena | **used: AEW International (All-Atlantic belt), 2026-11-15** |
 | ECW Championship '08-'10 (WWE) | 25 | 2305 / 5021 | 025_ecw_champ08_10 | free |
 | WCW nWo World Heavyweight Championship | 36 | 2910 / 5043 | 036_world_heavy_nwo | free |
 | WWE Intercontinental Championship '90 | 30 | 2923 / 5056 | 030_interconti90 | free |
