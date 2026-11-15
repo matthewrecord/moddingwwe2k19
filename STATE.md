@@ -1,5 +1,6 @@
 # Current state (one screen; read this first, then writeup/Status.md)
 
+> Adding a match-up screen (card) to an arena: `notes/matchup_screens.md`.
 > Arena work lives on branch `claude/slots50-gfx` (not merged yet). Arena slots Matthew allows to be overwritten (named unwanted + reserve list, current): `notes/arena_slots.md`.
 
 > Belt work: see `writeup/Belt_guide.md` (signed off 2026-11-15, handoff 019).
