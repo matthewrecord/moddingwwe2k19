@@ -523,3 +523,8 @@ Matthew asked for reflective metal on the banner letters only (IWGP / UNITED STA
 - Physical limit seen with the real arena IBL: any glossy dielectric reflects ~4% of the bright canvas, so the lower
   (downward-facing) banner reads dark grey rather than pure black. The game uses fixed F0 = 0.04, so this is the same as in game.
 - v17 = v16 + `--banner-letters`. No warnings. Installed: 2905 = see handoff; comparison: `writeup/img/aew_IC_v16_v17_real_arena_light.png`.
+
+## 39. Community mods: AO Belt Lighting Patch and Big Gold New
+- **AO Belt Lighting Patch** edits only `todo_wwe19_champion_belt_too_dark.pac`: Belt_SpcMul 2.0 → 11.31 and SpcMin 0 → 1.75e-5. The four scene switches change from 0/1 to 0x80000000, and Always becomes 0x50000000, so the switches are bit flags, not booleans. It is a pure specular boost on the belt-correction path. In the emulator, ×11.3 mostly lifts the dark leather and straps to a greyish sheen; the gold barely changes, because gold reflections are already near clipping.
+- **Big Gold New** (2009/5009, World Heavyweight) keeps stock geometry, normal maps and material maps. It replaces only the base colour, which grows from 1024² to 4096² with engraving baked into the albedo (cavity darkening; p5/p95 luminance 110/202, against flat 204 in stock). Its gold is also more yellow (hue 47 vs 38, sat .52 vs .41).
+- Applied: `belt_port.py --cavity K` bakes crevice darkening from the integrated normal-map height (v18, K=0.7).

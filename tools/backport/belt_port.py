@@ -123,7 +123,7 @@ def color_grade(rgb, rules=GRADE_REF, strength=1.0):
     out = hsv2rgb(hn % 360, np.clip(sn, 0, 1), np.clip(vn, 0, 1))
     return np.clip(out * 255 + 0.5, 0, 255).astype('u1')
 
-def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0, grade=0.0, stock_metal=None, leather_rough=None, stock_enamel=False, banner_letters=False):
+def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0, grade=0.0, stock_metal=None, leather_rough=None, stock_enamel=False, banner_letters=False, cavity=0.0):
     def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
     col = L('belt_color.DDS').copy(); col[..., 3] = 255; ORIG = col[..., :3].copy()
     if hue is not None: col[..., :3] = gold_hue(col[..., :3], hue)
@@ -227,6 +227,22 @@ def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=Fals
         col[..., :3] = np.where(field[..., None], np.array([12, 12, 14], 'f4'), col[..., :3]).astype('u1')
         M = np.where(letters, 255.0, np.where(field, 0.0, M))
         BANNER = (letters, field)
+    if cavity and stock_metal is not None:
+        # Engraving definition like the community 'Big Gold New' (2009) texture: flat bright gold fields, with the engraving's
+        # crevices darkened in the base colour (baked cavity/AO). Height is integrated from the mod normal map (FFT Poisson),
+        # cavity = height below its local (size/128) average; only metal texels are darkened, by up to `cavity` (0..1).
+        nx = N[..., 0].astype('f4') / 127.5 - 1; ny = -(N[..., 1].astype('f4') / 127.5 - 1)
+        H_, W_ = nx.shape; fy = np.fft.fftfreq(H_)[:, None]; fx = np.fft.fftfreq(W_)[None, :]
+        den = (2j * np.pi * fx) ** 2 + (2j * np.pi * fy) ** 2; den[0, 0] = 1
+        hgt = np.real(np.fft.ifft2((np.fft.fft2(-nx) * 2j * np.pi * fx + np.fft.fft2(-ny) * 2j * np.pi * fy) / den))
+        from PIL import Image, ImageFilter
+        def blur(a, r): 
+            lo_, hi_ = a.min(), a.max(); u8 = Image.fromarray(((a - lo_) / max(hi_ - lo_, 1e-6) * 255).astype('u1'))
+            return np.asarray(u8.filter(ImageFilter.GaussianBlur(r)), 'f4') / 255 * (hi_ - lo_) + lo_
+        cav = blur(hgt, size / 384) - hgt                       # > 0 in crevices (fine engraving lines)
+        cav = np.clip(cav / (np.percentile(cav[M > 127], 97) + 1e-6), 0, 1)
+        dark = 1 - cavity * cav * (M > 127)
+        col[..., :3] = np.clip(col[..., :3].astype('f4') * dark[..., None], 0, 255).astype('u1')
     # 2K19 belt_n: BC5, R = same sign as 2K23, G inverted (measured on stock 2003 vs mod metal edges, writeup/Belt_backport.md)
     n = np.zeros(N.shape, 'u1'); n[..., 0] = N[..., 0]; n[..., 1] = 255 - N[..., 1]; n[..., 3] = 255
     # 2K19 belt_p: R = metalness, G = roughness in the stock range (metal ~25, leather ~50), B = 255
@@ -465,10 +481,10 @@ def quality(pac_bytes_path):
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--stock-enamel', action='store_true'); a.add_argument('--banner-letters', action='store_true'); a.add_argument('--pillow', type=float, default=0.0, help='dome plate normals like stock (try 1.0)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--stock-enamel', action='store_true'); a.add_argument('--banner-letters', action='store_true'); a.add_argument('--cavity', type=float, default=0.0); a.add_argument('--pillow', type=float, default=0.0, help='dome plate normals like stock (try 1.0)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
-    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade, tuple(int(x) for x in a.stock_metal.split(',')) if a.stock_metal else None, a.leather_rough, a.stock_enamel, a.banner_letters); man = {}
+    tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade, tuple(int(x) for x in a.stock_metal.split(',')) if a.stock_metal else None, a.leather_rough, a.stock_enamel, a.banner_letters, a.cavity); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
         out, rep, info = port(os.path.join(a.stock, pid + '.pac'), mods[key], shift, tex, a.keep_nameplate, a.max_verts, a.pillow)

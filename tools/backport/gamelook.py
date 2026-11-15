@@ -180,10 +180,11 @@ def main():
     a = argparse.ArgumentParser(); a.add_argument('out'); a.add_argument('pacs', nargs='+'); a.add_argument('--w', type=int, default=900)
     a.add_argument('--cols', type=int, default=2); a.add_argument('--tilt', type=float, default=18); a.add_argument('--nsign', default='1,1')
     a.add_argument('--expo', type=float, default=1.0); a.add_argument('--ibl'); a.add_argument('--yaw', type=float, default=0)
-    a.add_argument('--nocorr', action='store_true'); a = a.parse_args()
+    a.add_argument('--nocorr', action='store_true'); a.add_argument('--spcmul', type=float, default=2.0); a = a.parse_args()
     global IBL, YAW, BELTCORR
     if a.ibl: z = np.load(a.ibl); IBL = (z['spec'], z['irr'])
     YAW = np.radians(a.yaw)
+    BELTCORR = (a.spcmul, 0.2, 1.0, 0.0)
     if a.nocorr: BELTCORR = None
     ns = tuple(int(x) for x in a.nsign.split(',')); W = a.w; H = W // 2
     tiles = []
