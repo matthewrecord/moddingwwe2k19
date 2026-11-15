@@ -127,7 +127,7 @@ Branch: `claude/belt-<name>`. Back up every game file before touching it (copy i
    - the desired strap colour and name.
 2. **Inspect:** `stockstats.py`-style numbers for the mod textures versus 2 or 3 stock belts: metal %, albedo flatness,
    roughness, normal tilt, enamel brightness. Expect a flat plate, grimy albedo and dark enamel.
-3. **Build:** start from the v17 flag set (section 1), plus `--cavity 0.7` and optionally the v19 deluxe flags.
+3. **Build:** start from the v17 flag set (section 1), the look Matthew chose in game. The deluxe flags (`--cavity`, `--metal-rough`, `--nstrength`, `--size 2048`) looked better in the emulator but worse in game for this belt, so treat them as optional. Adjust strap and hue to the reference. Check the manifest warnings (size, vertex count).
    Adjust strap/hue to the reference. Check the manifest warnings (size, vertex count).
 4. **Emulate:** `gamelook.py out.pac:new <stock IC>:IC <deluxe>:deluxe --ibl <arena.npz> --tilt -10`, at several yaws,
    and once with `--nocorr` (scenes without belt correction). Compare against stock and Ultra Deluxe until it
