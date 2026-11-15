@@ -1,5 +1,6 @@
 # Current state (one screen; read this first, then writeup/Status.md)
 
+> Adding a match-up screen (card) to an arena: `notes/matchup_screens.md`.
 > Arena slots Matthew allows to be overwritten (named unwanted + reserve list, current): `notes/arena_slots.md`.
 
 - **2026-11-14 final (handoff 019, latest): drag-and-drop Arena Pack final: 434 files, verified. Waiting on Matthew's tests (see handoff 019).**
