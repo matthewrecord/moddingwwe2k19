@@ -6,14 +6,21 @@ FMT={('R32_G32_B32','float'):('<f4',3),('R32_G32','float'):('<f4',2),('R32_G32_B
 class MDL:
     def __init__(s,path,verbose=False):
         b=s.b=open(path,'rb').read(); assert b[:4]==b'MDL!'
-        s.ch={}; o=0x24
+        s.ver,=struct.unpack_from('<I',b,4); s.ch={}; o=0x24 if s.ver>=0x25 else 0x20   # 2K22 = v0x20 (shorter header), 2K23 = v0x25
         while o+8<=len(b):
             t=b[o:o+4]; sz,=struct.unpack_from('<I',b,o+4); s.ch[t]=(o+8,sz); o+=8+sz
             if t==b'END!': break
         to,_=s.ch[b'TEXT']; n,=struct.unpack_from('<I',b,to)
         offs=struct.unpack_from('<%dI'%n,b,to+4); base=to+4+4*n
         s.S=[b[base+x:b.index(b'\0',base+x)].decode('latin1') for x in offs]
-        bo,_=s.ch[b'BONE']; nb,=struct.unpack_from('<I',b,bo+8); s.bones=[]
+        bo,_=s.ch[b'BONE']; s.bones=[]
+        if s.ver < 0x25:   # 2K22: u32 count, then 28-byte records (i16 name, i16 parent, 3f t, 3f r)
+            nb,=struct.unpack_from('<I',b,bo)
+            for i in range(nb):
+                r=bo+4+i*28; idx,par=struct.unpack_from('<hh',b,r)
+                s.bones.append(dict(name=s.S[idx],parent=par,t=struct.unpack_from('<3f',b,r+4),r=struct.unpack_from('<3f',b,r+16)))
+            nb=0
+        else: nb,=struct.unpack_from('<I',b,bo+8)
         for i in range(nb):
             r=bo+12+i*33; fl,idx,par=struct.unpack_from('<Ihh',b,r)
             s.bones.append(dict(name=s.S[idx],parent=par,t=struct.unpack_from('<3f',b,r+8),r=struct.unpack_from('<3f',b,r+20)))
@@ -32,6 +39,8 @@ class MDL:
             nbn,ninf=struct.unpack_from('<2H',b,o); o+=4; o+=(-o)%4
             st['BI']=np.frombuffer(b,'<u2',vc*ninf,o).reshape(vc,ninf); o+=vc*ninf*2
             st['BW']=np.frombuffer(b,'u1',vc*ninf,o).reshape(vc,ninf)/255.0; o+=vc*ninf
+            if ninf == 0 and 'BLENDINDICES' in st:   # 2K22: skinning lives in vertex streams (bone index == TEXT index)
+                st['BI'] = st['BLENDINDICES'].astype('<u2'); st['BW'] = st['BLENDWEIGHTS'] / 255.0
             e=b.index(b'ENDM',o); o=e+8
             s.meshes.append(dict(name=s.S[nameidx],vc=vc,bbox=bbox,streams=st))
             if verbose: print(m,s.S[nameidx],vc,list(st),ninf)
