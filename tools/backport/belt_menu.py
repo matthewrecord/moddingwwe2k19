@@ -7,16 +7,21 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import belt_port as bp, beltshot, etcpak
 from PIL import Image
 a = argparse.ArgumentParser(); [a.add_argument(k, required=True) for k in ('--menu', '--name', '--prop', '--out')]
-a.add_argument('--exposure', type=float, default=2.2); a.add_argument('--zoom', type=float, default=1.65); a.add_argument('--png'); a = a.parse_args()
+a.add_argument('--exposure', type=float, default=2.2); a.add_argument('--zoom', type=float, default=1.65); a.add_argument('--png'); a.add_argument('--image', help='RGBA cut-out photo to use instead of a render'); a = a.parse_args()
 P = bp.read_prop(a.menu); E = P['entries']
 names = [n.decode() for n in re.findall(rb'(\d{3}_[a-zA-Z0-9_]+)', E[0]['raw'])]
 dds_entries = [i for i, e in enumerate(E) if e['raw'][:4] == b'DDS ']
 k = dds_entries[names.index(a.name)]; old = E[k]['raw']; h, w = struct.unpack_from('<2I', old, 12)
 assert struct.unpack_from('<I', old, 128)[0] == 98 and len(old) == 148 + w * h, 'expected BC7 DX10, no mips'
-ss = 3; Z = a.zoom; col, cov = beltshot.render(a.prop, int(w * ss * Z), int(h * ss * Z), margin=0.02)
-cy, cx = col.shape[0] // 2, col.shape[1] // 2; hh, hw = h * ss // 2, w * ss // 2      # stock framing: plate fills, strap ends cut
-col = col[cy - hh:cy + hh, cx - hw:cx + hw]; cov = cov[cy - hh:cy + hh, cx - hw:cx + hw]
-img = Image.fromarray((np.dstack([np.clip(col * a.exposure, 0, 1), cov]) * 255).astype('u1'), 'RGBA').resize((w, h), Image.LANCZOS)
+if a.image:   # photo cut-out: crop to its alpha, scale so the belt is zoom x the frame width, centre (strap ends cut like stock)
+    ph = Image.open(a.image).convert('RGBA'); ph = ph.crop(ph.getchannel('A').point(lambda v: 255 * (v > 20)).getbbox())
+    s_ = w * a.zoom / ph.width; ph = ph.resize((max(1, int(ph.width * s_)), max(1, int(ph.height * s_))), Image.LANCZOS)
+    img = Image.new('RGBA', (w, h)); img.paste(ph, ((w - ph.width) // 2, (h - ph.height) // 2), ph)
+ss = 3; Z = a.zoom
+if not a.image: col, cov = beltshot.render(a.prop, int(w * ss * Z), int(h * ss * Z), margin=0.02)
+if not a.image: cy, cx = col.shape[0] // 2, col.shape[1] // 2; hh, hw = h * ss // 2, w * ss // 2      # stock framing: plate fills, strap ends cut
+if not a.image: col = col[cy - hh:cy + hh, cx - hw:cx + hw]; cov = cov[cy - hh:cy + hh, cx - hw:cx + hw]
+if not a.image: img = Image.fromarray((np.dstack([np.clip(col * a.exposure, 0, 1), cov]) * 255).astype('u1'), 'RGBA').resize((w, h), Image.LANCZOS)
 rgba = np.asarray(img).copy(); rgba[..., :3] = (rgba[..., :3].astype('f4') * (rgba[..., 3:] / 255)).astype('u1')  # black bg like stock
 if a.png: Image.fromarray(rgba).save(a.png)
 data = etcpak.compress_bc7(np.ascontiguousarray(rgba).tobytes(), w, h)
