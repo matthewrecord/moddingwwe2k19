@@ -542,3 +542,14 @@ Stock compared with the deluxe versions of IC 2002, Brahma 2905, Cruiserweight 2
 | belt_p blue channel | 255 everywhere | a cavity / edge mask: white on raised metal and outlines, dark in recesses and on leather |
 
 The blue channel has not been checked in the shader (the decoded GLSL was lost with the environment and needs re-decoding). In the emulator, which ignores it, the deluxe belts already read richer. That comes from the painted engraving, the rougher metal with varying roughness, and the deeper normals.
+
+## 41. v19: Ultra Deluxe principles
+- **Shader check:** re-decoded the belt G-buffer PS (`/tmp/sh/b1,b9.glsl`). `g_texMtlRgh` is sampled as `.xy` only, so the deluxe blue-channel mask is **ignored by the game**. Dropped.
+- New `belt_port.py` options:
+  - `--metal-rough R`: metal roughness R·(0.75 + 0.6·cavity), rougher in recesses.
+  - `--nstrength K`: scales the normal-map tilt.
+- **v19a:** `--size 2048 --metal-rough 0.18 --nstrength 1.5 --leather-rough 0.25 --cavity 1.0`.
+- **v19b:** `--size 2048 --metal-rough 0.14 --nstrength 1.3 --leather-rough 0.28 --cavity 0.85`.
+- Both also use the v17 flags (strap, metalize, stock-metal, strap-smooth, pillow 1.2, stock-enamel, banner-letters).
+- **Size:** ~3.9 MB, against 2.9–3.2 MB for the deluxe 2048 props, which load fine.
+- **Emulator:** the glare-white silver patches of v17 are gone. The plate reads as uniform gold with visible engraving, close to the deluxe look; v19a is slightly richer. Images: `img/v19_vs_deluxe.png`, `img/v19_zoom.png`.
