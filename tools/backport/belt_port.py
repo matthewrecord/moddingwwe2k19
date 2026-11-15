@@ -123,6 +123,7 @@ def color_grade(rgb, rules=GRADE_REF, strength=1.0):
     out = hsv2rgb(hn % 360, np.clip(sn, 0, 1), np.clip(vn, 0, 1))
     return np.clip(out * 255 + 0.5, 0, 255).astype('u1')
 
+PLATE_LIFT = 0.0
 def build_textures(tex_dir, size, strap=None, gloss=1.0, hue=None, metalize=False, strap_smooth=0.0, grade=0.0, stock_metal=None, leather_rough=None, stock_enamel=False, banner_letters=False, cavity=0.0, metal_rough=None, nstrength=1.0, clean=False):
     def L(n): return texconv.resize(load_dds(os.path.join(tex_dir, n)), size, size)
     col = L('belt_color.DDS').copy(); col[..., 3] = 255; ORIG = col[..., :3].copy()
@@ -464,6 +465,9 @@ def port(stock_path, mdl_path, shift, textures, keep_nameplate=False, max_verts=
     if shift is None: shift = auto_shift(j, mdl_path); info['shift'] = [round(float(x), 2) for x in shift]
     M = split_long(decimate(unwrap_uv(mod_mesh(mdl_path, shift)), max_verts))
     if pillow: M, info['pillow_plates'] = pillow_normals(M, textures, pillow)
+    if PLATE_LIFT:   # 2K22 Grix All-Atlantic: strap front sits level with the plate fronts -> strap shows through plates
+        pl = M['UV'][:, 1] >= 0.46; mn = M['N'][pl].mean(0); ax = int(np.argmax(np.abs(mn)))   # stored normals point into the belt
+        M = dict(M); M['P'] = M['P'].copy(); M['P'][pl, ax] -= np.sign(mn[ax]) * PLATE_LIFT; info['plate_lift'] = [ax, PLATE_LIFT]
     I, W, miss = skin(M, j, j.objs[0]['ninf'])
     info['winding_agree'] = round(float(put_object(model, j, M, I, W)), 3)
     rep[main_i] = model.build(); info.update(vc=len(M['P']), tris=len(M['tris']), unmapped_bones=sorted(x for x in miss if x))
@@ -500,9 +504,10 @@ def quality(pac_bytes_path):
 def main():
     a = argparse.ArgumentParser(); a.add_argument('--mod', required=True); a.add_argument('--stock', required=True)
     a.add_argument('--main', default='2003'); a.add_argument('--cut', default='5003'); a.add_argument('--out', required=True)
-    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--stock-enamel', action='store_true'); a.add_argument('--banner-letters', action='store_true'); a.add_argument('--cavity', type=float, default=0.0); a.add_argument('--metal-rough', type=float, default=None); a.add_argument('--nstrength', type=float, default=1.0); a.add_argument('--clean', action='store_true', help='clean flat-colour source: only gold texels are metal'); a.add_argument('--pillow', type=float, default=0.0, help='dome plate normals like stock (try 1.0)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
+    a.add_argument('--size', type=int, default=1024); a.add_argument('--keep-nameplate', action='store_true'); a.add_argument('--max-verts', type=int, default=6000); a.add_argument('--strap', default=None, help='R,G,B for the strap front, e.g. 235,232,225'); a.add_argument('--gloss', type=float, default=1.0); a.add_argument('--gold-hue', type=float, default=None); a.add_argument('--metalize', action='store_true'); a.add_argument('--grade', type=float, default=0.0, help='0..1 colour grade toward the reference photo (copper gold, magenta-red, vivid blue)'); a.add_argument('--stock-enamel', action='store_true'); a.add_argument('--banner-letters', action='store_true'); a.add_argument('--cavity', type=float, default=0.0); a.add_argument('--metal-rough', type=float, default=None); a.add_argument('--nstrength', type=float, default=1.0); a.add_argument('--plate-lift', type=float, default=0.0, help='cm to move plates out in front of the strap'); a.add_argument('--clean', action='store_true', help='clean flat-colour source: only gold texels are metal'); a.add_argument('--pillow', type=float, default=0.0, help='dome plate normals like stock (try 1.0)'); a.add_argument('--stock-metal', default=None, help='R,G,B flat metal albedo like stock belts (stock gold 252,221,164)'); a.add_argument('--leather-rough', type=float, default=None); a.add_argument('--strap-smooth', type=float, default=0.0, help='0..1: reduce strap leather grain (colour, bumps, sheen)')
     a = a.parse_args(); os.makedirs(a.out, exist_ok=True)
     mods = {f.split('_')[-1][:-4].lower(): os.path.join(a.mod, f) for f in os.listdir(a.mod) if f.lower().endswith('.mdl')}
+    global PLATE_LIFT; PLATE_LIFT = a.plate_lift
     tex = build_textures(os.path.join(a.mod, 'Textures'), a.size, tuple(int(x) for x in a.strap.split(',')) if a.strap else None, a.gloss, a.gold_hue, a.metalize, a.strap_smooth, a.grade, tuple(int(x) for x in a.stock_metal.split(',')) if a.stock_metal else None, a.leather_rough, a.stock_enamel, a.banner_letters, a.cavity, a.metal_rough, a.nstrength, a.clean); man = {}
     # offsets: align the mod rest layout to the stock one (per-bone cluster centroids, writeup/Belt_backport.md)
     for pid, key, shift in ((a.main, 'default', None), (a.cut, 'cutscene', None)):
