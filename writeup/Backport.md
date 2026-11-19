@@ -562,3 +562,17 @@ Flash Morgan Webster (2K25) v4: Matthew says it "looks fantastic". The pipeline 
 - **Pinholes** come from tiny holes in the source mesh; `cap_small_holes` closes them.
 - **Ring and entrance attire** are two configs; `emd` writes the slot name (attire 02 and 04).
 - **`eyepatch.py`** fixes the eyes of an already-built pac (old 2K20-port Keith: 4.4° wall-eyed → 0°).
+
+## 27. 2K26 sources: first port, JeVon Evans (2026-11-19)
+Sources come from Matthew's own 2K26 copy (handoff 020, `writeup/Cak_2k26.md` on `claude/2k26-cak`).
+- **Container:** `.mcd` = `MCD!` + chunks. The MDL file starts 4 bytes into the `MDL!MDL!` tag pair, after a `CTG!` chunk in base models. MDL version is 0x2f.
+  LOD0 matches 2K25; LOD1+ index records differ (not decoded, not needed).
+- **Hide lists:** `HPL!` is embedded in the attire `.mcd`, with several lists per mesh per LOD. **Its indices don't fit the character's
+  own M_Body.** They cover the arms, hands and feet too, so they most likely address the game's generic CAW body. They are unusable for a port.
+  The builder now hides skin geometrically (`hide='geom'`): an outward normal ray from the body hits a cover mesh within 8 cm.
+  Use the stored NORMAL stream: normals computed from 2K26 winding point inward.
+- **Textures:** unchanged from 2K24 (`_color`, `_nrm`, hair `_rai`), DXT1/DXT5.
+- Small builder fixes: unweighted source attire vertices take the nearest weighted skin. Per-config `eye_straighten_deg`
+  (Jevon's 1.7° convergence sat under the 2° default). New gate `jawtest.py`. `facecheck.py` takes `FC_TEX`/`FC_MDL`.
+- JeVon Evans v1 passes every gate; awaiting the in-game check (`notes/builds/backport_test9_jevon.md`).
+- Masks (Iguana, Psycho Clown, Flammer, La Parka): study the existing Penta/Fenix/Mistico ports in 2K19 before building them.

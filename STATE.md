@@ -81,3 +81,8 @@ Validated in game: Flash v4 (pending re-check), Briscoe v4, **Toni Storm v3 (fir
 
 ## 2026-11-13 (15:50) backport: handoff 017
 Keith Lee v3 delivered: ring `ch50602` and entrance `ch50604`, pinholes capped. The old 2K20 Keith's eyes are patched with the new `eyepatch.py`. Both await Matthew's check. Every tool and gate is documented in `tools/backport/README.md` (module map, per-character recipe, patching existing pacs). Branch `claude/backport-tool`. Next: verdicts, then merge, then the app. **Read `handoff/017` first.**
+
+## 2026-11-19 backport (branch claude/2k26-port)
+2K26 ports started. **JeVon Evans v1 delivered** (Downloads\jevon_v1_ch50602.pac; all gates pass, awaiting in-game check).
+2K26 attire HPL! does not index the character body -> geometric hide (`hide='geom'`). Briscoe v4 copied to Downloads (built 11-13, never delivered).
+Next: Rhea (female template), then the other 15 (`writeup/Backport.md` §27).
