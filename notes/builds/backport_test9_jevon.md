@@ -26,3 +26,15 @@ jaw (new `jawtest.py`): no spikes. Renders: `notes/builds/renders/jevon/`.
 
 ## Open
 Awaiting in-game check. Watch: the shirt/tights hide edges (geom hide), dreads clipping the shoulders (rigid hair), the chain.
+
+## v1 in game (2026-11-19): no crash. Slimy/speckled surface, rigid dreads, loose-looking knees → v2
+- **Speckle (all 2K26 ports):** the extracted `_nrm` maps are **BC7 data under a DXT5 header**; decoded as DXT5 they are noise,
+  which became noisy normals + gloss. `texconv.load` now detects a noisy DXT5 decode and re-decodes as BC7. 2K26 `_nrm` is a pure
+  tangent normal (B = z, no gloss/metal), so `load_pair` sets the 2K24-style gloss channel to a constant 124 (median of Kyle's) and metal 0.
+- **Dreads:** 2K19 moving hair = a hair model with its own skeleton (J_Head + 295 `Hair_b*` bones) driven by the **0x2580** sim block
+  (Roman 432 KB, Seth 564 KB; Andrade/Fletcher only 2 KB). `hair_physics='ch36902'` (Seth Rollins: closest hair volume, nn median 1.0 cm):
+  his hair JBOY becomes the 0x2715 template (obj1 `yDefault` = physics proxy, kept), his 0x2580 replaces ours, and each dread vertex
+  copies the skin of the nearest Seth hair vertex (260 bones used, J_Head 47%). Can't be simulated on the bench: in-game check needed.
+- **Knees:** the kneepads now take the 2K19 body donor's weights (`donor_weights`), not 2K26's helper-bone mix (H_Hip_L_OS1 9% at the knee).
+  Tights and shoes stay on source weights (on donor weights they tore behind the knee in the squat).
+Delivered `jevon_v2_ch50602.pac`. Gates pass.

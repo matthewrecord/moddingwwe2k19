@@ -1,7 +1,24 @@
 """2K24 material textures -> 2K19 DXT5 set (<mat>, <mat>_mr, <mat>_n) by his rules, and the texture-pack writer."""
 import io,struct,numpy as np,etcpak
 from PIL import Image
-def load(path): return np.asarray(Image.open(path).convert('RGBA'))
+def load(path):
+    a=np.asarray(Image.open(path).convert('RGBA'))
+    if path.lower().endswith('.dds'):
+        b=open(path,'rb').read(84+4)
+        if b[84:88]==b'DXT5' and noisy(a):   # 2K26 extraction: BC7 data under a DXT5 header (normal maps) -> decodes as noise
+            a=load_bc7(path)
+    return a
+def is_bc7_in_dxt5(path):
+    b=open(path,'rb').read(88)
+    return b[84:88]==b'DXT5' and noisy(np.asarray(Image.open(path).convert('RGBA')))
+def noisy(a):
+    s=a[::4,::4,:3].astype(np.int16); return float(np.abs(np.diff(s,axis=1)).mean())>35
+def load_bc7(path):
+    import texture2ddecoder
+    b=open(path,'rb').read(); h,w=struct.unpack_from('<2I',b,12)
+    a=np.frombuffer(texture2ddecoder.decode_bc7(b[128:128+w*h],w,h),'u1').reshape(h,w,4)[...,[2,1,0,3]].copy()
+    if a[...,3].max()==0: a[...,3]=255
+    return a
 def resize(a,w,h):
     """per-channel resize: PIL resizes RGBA premultiplied, which zeroes RGB wherever alpha is 0 (2K24/25 _nrm maps!)"""
     if a.shape[1]==w and a.shape[0]==h: return a

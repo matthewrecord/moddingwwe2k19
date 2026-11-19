@@ -27,3 +27,8 @@ vergence -0.3°, poke 1-2 verts (identical without the mask step, so it comes fr
 
 ## Watch in game
 Wig/mask alpha edges, the mask's mouth area during promos, fringe gaps on the jacket.
+
+## v1 in game: no crash; speckled surface (BC7 normal fix, see test 9 v2); jacket is entrance-only → v2
+- `psycho_clown_ring` (`psycho_clown_v2_ch50602.pac`): no jacket; the shirt is the top layer.
+- `psycho_clown_entrance` (`psycho_clown_v2_ch50604.pac`): with the jacket.
+Gates pass for both (maskpoke 0).

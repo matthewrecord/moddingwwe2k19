@@ -26,14 +26,17 @@ def open_model(path,cache):
 def mats(C,N,skin=False,kyle_nrm=None):
     """color/nrm arrays -> 2K19 (<mat>, _mr, _n) DXT5 by the 2K24 rules; optional blue-channel match to Kyle"""
     N=N.copy()
-    if kyle_nrm is not None: N[...,2]=hist_match(N[...,2],texconv.load(kyle_nrm)[...,2])
+    if kyle_nrm is not None and N[...,2].std()>1: N[...,2]=hist_match(N[...,2],texconv.load(kyle_nrm)[...,2])   # constant (2K26) gloss: keep, rank-matching a flat channel makes noise
     N=N.astype(np.int32); col=C.copy(); col[...,3]=255
     n=np.stack([255-N[...,0],255-N[...,1],np.full(N.shape[:2],255),np.full(N.shape[:2],255)],-1).astype('u1')
     mr=np.stack([np.zeros(N.shape[:2],int) if skin else N[...,3],N[...,2],255-N[...,2],np.full(N.shape[:2],255)],-1).astype('u1')
     return {'':texconv.dds_dxt5(col),'_mr':texconv.dds_dxt5(mr),'_n':texconv.dds_dxt5(n)}
+NRM2K26_GLOSS=124   # median of the 2K24 _nrm blue (gloss) channel (Kyle body)
 def load_pair(tdir,stem,cap=2048):
     c=texconv.load(ci(f'{tdir}/{stem}_color.dds')); np_=ci(f'{tdir}/{stem}_nrm.dds')
     n=texconv.load(np_) if np_ else np.dstack([np.full(c.shape[:2],128,'u1')]*2+[np.full(c.shape[:2],128,'u1'),np.zeros(c.shape[:2],'u1')])
+    if np_ and texconv.is_bc7_in_dxt5(np_):   # 2K26: pure tangent normal (B = z, no gloss/metal) -> neutral 2K24-style gloss, no metal
+        n=n.copy(); n[...,2]=NRM2K26_GLOSS; n[...,3]=0
     w,h=texconv.target_size(c.shape[1],c.shape[0],cap); return texconv.resize(c,w,h),texconv.resize(n,w,h)
 def atlas(tdir,stems,size=2048):
     """2x2 atlas (tile i at col i%2,row i//2); returns color, nrm arrays and per-stem (col,row)"""
@@ -347,7 +350,13 @@ def build(cfg,outpath,PROP=None):
     # ---------------- hair slots (one or more meshes; several textures -> 2x2 rai atlas) ----------------
     hairtex={}
     for fid,base in TP['hair'].items():
-        jh=jboy.JBOY(B[fid]); mh=jbuild.Model(jh); spec=cfg['hair'].get(fid)
+        hp_=cfg.get('hair_physics') if fid==0x2715 else None   # (stock pac id): its hair model (Hair_b physics bones) + 0x2580 sim block
+        if hp_:
+            Hd=[d for _,d in oodl.blocks(open(U+hp_+'.pac','rb').read()) if d and d[:4]==b'JBOY' and jboy.JBOY(d).objs[0]['shader']=='yCS_hair' and any(b_['name'].startswith('Hair_b') for b_ in jboy.JBOY(d).bones)][0]
+            S80=[d for _,d in oodl.blocks(open(U+hp_+'.pac','rb').read()) if d and d[:8]==bytes.fromhex('0000000020000000')][0]
+            jh=jboy.JBOY(Hd); J[0x2580]=S80; info['hair_physics']=(hp_,len(S80))
+        else: jh=jboy.JBOY(B[fid])
+        mh=jbuild.Model(jh); spec=cfg['hair'].get(fid)
         if spec and isinstance(spec,tuple): spec=[spec]
         if spec:
             stems=list(dict.fromkeys(st for _,st in spec)); parts=[]; seen=[]
@@ -358,7 +367,14 @@ def build(cfg,outpath,PROP=None):
                     if len(stems)>1:
                         i_=stems.index(st); e=8/1024; G['uv']=(((np.clip(G['uv'].astype(float),0,1)*(1-2*e)+e)+[i_%2,i_//2])/2).astype('f4')
                     parts.append(G)
-            put(mh,0,jh,concat(parts) if len(parts)>1 else parts[0],donor,col=WHITE,hair=True); hairtex[base]=stems
+            Gh=concat(parts) if len(parts)>1 else parts[0]
+            if hp_:   # skin each strand vertex like the nearest physics-hair vertex (same palette: J_Head + Hair_b*)
+                ho=jh.objs[0]; sk=jcheck.raw_skin(jh,ho); _,nn=cKDTree(ho['pos']).query(Gh['pos'])
+                put(mh,0,jh,Gh,donor,col=WHITE,hair=True)
+                vc=len(Gh['pos']); tan=np.zeros((vc,3),'f4'); tan[0::2]=(0,1,0); tan[1::2]=(1,0,1)
+                jbuild.set_object(mh,0,Gh['pos'],Gh['nrm'].astype('f4'),np.tile(np.array(WHITE,'u1'),(vc,1)),Gh['uv'].astype('f4'),tan,sk['i'][nn].astype(int),sk['w'][nn].astype('f4'),jbuild.tris_to_strip(Gh['tris']))
+            else: put(mh,0,jh,Gh,donor,col=WHITE,hair=True)
+            hairtex[base]=stems
             info.setdefault('hair_verts',{})[hex(fid)]=sum(len(G['pos']) for G in parts)
         else:
             p=np.array([[0,-185,0],[0.001,-185,0],[0,-185.001,0]],'f4'); put(mh,0,jh,dict(pos=p,nrm=np.tile(np.array([0,0,1],'f4'),(3,1)),uv=np.zeros((3,2),'f4'),tris=np.array([[0,1,2]])),donor,col=WHITE,hair=True)
@@ -415,7 +431,7 @@ def build(cfg,outpath,PROP=None):
                     smp=np.concatenate([UV[T],UV[T].mean(1,keepdims=True)],1)
                     av=A[np.clip((smp[...,1]*h_).astype(int),0,h_-1),np.clip((smp[...,0]*w_).astype(int),0,w_-1)]
                     keep=av.max(1)>=128; info.setdefault('alpha_cut',{})[name]=int((msk&~keep).sum()); msk&=keep
-                G=mesh_obj(S,T,msk); put(ma,k_,ja,G,donor,weights=att_w(G,ja,[(S,np.unique(T[msk]))])); tex[texname]=load_pair(TA,stem)
+                G=mesh_obj(S,T,msk); put(ma,k_,ja,G,donor,weights=att_w(G,ja,None if name in cfg.get('donor_weights',()) else [(S,np.unique(T[msk]))])); tex[texname]=load_pair(TA,stem)   # donor_weights: 2K19 body skin (legs)
             else:   # ('atlas', [(mesh, stem), ...])
                 Cc,Nn,pos=atlas(TA,[st for _,st in spec[1]]); parts=[]; srcs=[(MA[n_][0],np.unique(MA[n_][1])) for n_,_ in spec[1]]
                 for name,st in spec[1]:
@@ -505,7 +521,7 @@ KEITH_RING=dict(KEITH,work='/home/claude/ext/kl',emd='00050602',cover=['M_Underw
 KEITH_ENT=dict(KEITH,work='/home/claude/ext/kl',emd='00050604')
 # ---- 2K26 sources (extracted with Aurora CAK Foundry; .mcd with embedded HPL!, hide table read from the attire .mcd) ----
 JE_='/home/claude/pairs/JE/1235_JeVon_Evans/'
-JEVON=dict(template='male',weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
+JEVON=dict(template='male',hair_physics='ch36902',donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
     base=JE_+'BaseModel/baseModel.mcd',attire_model=JE_+'1235_Default_Attire/1235_Attire.mcd',
     tex_base=JE_+'BaseModel/Textures',tex_attire=JE_+'1235_Default_Attire/Textures',hpl=JE_+'1235_Default_Attire/1235_Attire.mcd',
     cover=['M_Tops','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],
@@ -523,7 +539,9 @@ PSYCHO=dict(template='male',weights='source',hide='geom',eye_straighten_deg=0.5,
     attire={(0x5601,0):('atlas',[('M_L_A_Acce','l_a_acce'),('M_R_A_Acce','r_a_acce')]),
             (0x5601,3):('mesh','M_Bottoms','bottoms'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Jacket','jacket'),(0x5602,1):('mesh','M_Tops','tops')})
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'psycho_clown':PSYCHO}
+PSYCHO_RING=dict(PSYCHO,emd='00050602',cover=['M_Tops','M_Bottoms','M_Shoes'],alpha_cut=[],
+    attire={k:v for k,v in PSYCHO['attire'].items() if k!=(0x5602,0)})   # wrestles without the fringe jacket
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))
