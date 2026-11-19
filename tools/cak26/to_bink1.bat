@@ -44,7 +44,12 @@ taskkill /f /im binkc.exe >nul 2>&1
 timeout /t 1 /nobreak >nul
 if exist "%TMPB%" move /y "%TMPB%" "%~2" >nul
 rd /s /q "%TMPD%" 2>nul
-if exist "%~2" (echo OK %~1 >> "%LOG%") else (echo FAILED %~1 >> "%LOG%" & echo FAILED on %~1 - stopping.)
+if not exist "%~2" goto :failed
+echo OK %1>> "%LOG%"
+exit /b
+:failed
+echo FAILED %1>> "%LOG%"
+echo FAILED on %1 - stopping.
 exit /b
 
 :stop
