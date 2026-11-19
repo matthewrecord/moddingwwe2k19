@@ -17,3 +17,11 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
 - Move ids are **big-endian u16**; 5094 names in `MovesID.data` (Modded list; Original has 5054).
 - Validation: 97% of move slots valid across the 303 template movesets; AJ Styles and Aleister Black decode to their real moves.
 - `tools/movesets/moveset19.py` reads/writes slots by name.
+
+## 2. 2K26 side: archives readable from the shell (2026-11-19)
+- AuroraForge NT100 ships its full source (GPL-3.0). Its `cak-reader.js` runs under node on the PC; payload
+  decoding is ported to Python (`tools/cak26/`). All 15 archives indexed (410,627 files); 218/218 test files decode.
+- Game tables are FlatBuffers `.jsfb` with a 4-char file id. **Per-wrestler movesets are in `bakedfile02`, the small
+  unnamed archive:** `Char` (6.15 MB, file 204) = CharMoveSetDataTable (AuroraForge documents the 2K25 layout: one record
+  per wrestler id, ~354 move slots, each slot -> a string-db name id). Also there: `CMov` (3.76 MB, file 179, likely the move
+  catalog), `MoveData/AttackData.jsfb` (`CAtt`), `GhostWriter/Common/MoveSlotPresets.jsfb`, `CAM/MoveData.jsfb`.
