@@ -87,3 +87,12 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
 - 2K26 keeps each wrestler's videos in `Movies/SS/<id>_<NAME>_<year>/` as Titantron, Stage, Apron, Banner and Barricade `.bk2` files (bakedfile56-58). They're stored as plain Bink 2, so no decryption is needed.
 - Extracted 97 folders (463 videos, 2.8 GB) to `2K26 Extracted\Videos\` with `vdump.js` (resumable). That's 63 singles wrestlers from the moveset lists plus all 34 tag-team and intro folders.
 - 2K26 has no video folder for the AAA wrestlers (Lady Shani, Mr Iguana, Psycho Clown, Flammer, La Parka, Vikingo), the alternate versions (Fatu Mattel, Gacy Wyatt Sicks, Lyra QOTR), Kelly Kelly, Ava, Hank Walker, Tank Ledger, Royce Keys, Jazmyn Nyx, Shelley/Sabin singles (they're under MCMG), or the Creeds singles (they're under Creed Brothers).
+
+## 8. Bink conversion and derived 2K19 videos (2026-11-19)
+
+- 2K26's `.bk2` files are Bink 2 revision "n", which RAD Video Tools and 2K19 can't read. `tools/cak26/bk2dec.c` (built with zig cc for Windows) decodes them with 2K26's `bink2w64.dll` and pipes the frames to ffmpeg. All 463 videos are in `2K26 Extracted\Videos (MP4)`.
+- Stage.mp4 (2048²) is an atlas with the same layout in every video I sampled. `derive.py` (run in the device VM, resumable) writes to `Videos (2K19 Derived)\<folder>\`:
+  - Minitron.mp4, 512×256: crop 870×608 @ (0,1216) next to crop 520×530 @ (870,1216), which leaves out the colour swatch.
+  - Wall.mp4, 512×512: whichever candidate panel scores lowest on edges and text (top_right, top_mid, top_left_lower, bottom_strip_mid), with dark or flat panels penalised.
+  - `_choices.json` (scores and flags) and `_contact_sheet.png`.
+- 94 folders done, 17 flagged. From the contact sheet, some walls still contain lettering (e.g. Trick Williams, Bron Breakker, Lyra, Andre Chase, Usos '17), and a few tag-team atlases may use a different layout.
