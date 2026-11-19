@@ -70,3 +70,14 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
   beat the id, and every placed move with a name mismatch is flagged in the report. Overrides grew to 34 (Gun Stun for Tama's
   Cutthroat, Samoan Splash/Spike, Z-360, Lash Extension, Fall From Grace, Rikishi Driver, Michinoku Driver, ...).
 - Remaining headline flags to check in game: Fallon Henley F1 (2K26 "Hoedown" on Famouser 1), Kiana James F1 ("401k" on Suplex Powerslam).
+
+## 6. Overnight batch (2026-11-19)
+
+- 20 characters extracted from 2K26 headlessly into `2K26 Extracted\Characters\` (Danhausen skipped by request). The tools are in `tools/cak26/`.
+- Fixed 28 portrait textures where AuroraForge had swapped width and height. Backups are in `_portrait_fix_backup\`.
+- Entrances are never blank: bytes 0..928 come from the first template that isn't a gimmick (e.g. Jacob Fatu gets Lars Sullivan's).
+- Headline overrides were added for wrong finisher and signature mappings (Powerbomb 10, B.F.T., Sliding Lariat, Tejana Bomb, One of a Kind Moonsault, Crucifix Driver, Sol Snatcher, etc.). `overrides.json` now has 52 entries.
+- Batch A (55 wrestlers: the extracted characters plus everyone in the Characters folder) went to `Downloads\2K26 Movesets\` via `movesets_v2.zip` (unzipped there).
+- Batch B (31 real wrestlers whose WWE debut, at any level, came in 2021 or later and who weren't already in batch A) went the same way via `movesets_2021_debuts.zip`: Bron Breakker, Grayson Waller (205 Live, Jun 2021), Nikkita Lyons, B-Fab, Tony D'Angelo, Trick Williams, Ivy Nile, Nathan Frazer, Stacks, Thea Hail, Jade Cargill, Dragon Lee, Charlie Dempsey, Nick Aldis, Ava, Hank Walker, Tank Ledger, Carmelo Hayes, Stephanie Vaquer, Alex Shelley, Chris Sabin, Jordynne Grace, Penta, Royce Keys, Zaria, Ricky Saints, Karmen Petrovic, Rey Fenix, Tavion Heights, Jazmyn Nyx, Joe Hendry.
+- Excluded: legends, alternate and Mattel versions, personas (Uncle Howdy, El Grande Americano), celebrities (Haliburton, Brunson, Jelly Roll), wrestlers who debuted before 2021 (Shawn Spears/Tye Dillinger, Bronson Reed, Chelsea Green, Pretty Deadly), Demolition (Ax/Smash/Crush), and unknown or created entries (Lilly Doll, Dahlia Hex, Odette Beaumont, Marshall Smith, Bobby Newton). Debut years come from memory; only Waller was checked by web search.
+- Left to review: about 20 slots in batch B are flagged `[name?]` or `(template)` (see `_summary_2021_debuts.md`). Mr Iguana's finishers are still template moves.
