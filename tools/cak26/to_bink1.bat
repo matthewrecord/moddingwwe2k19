@@ -19,10 +19,11 @@ for /r "%ROOT%" %%V in (*.mp4) do (
     ffmpeg.exe -v error -y -i "%%V" -an -start_number 0 -pix_fmt bgr24 "%TMPD%\f%%04d.bmp" >> "%LOG%" 2>&1
     "%RAD%" "%TMPD%\f0000.bmp" "%TMPB%" /F29.97 /O >> "%LOG%" 2>&1
     if exist "%TMPB%" move /y "%TMPB%" "%%~dpnV.bk2" >nul
-    if exist "%%~dpnV.bk2" (echo OK %%V >> "%LOG%") else (echo FAILED %%V >> "%LOG%")
     rd /s /q "%TMPD%" 2>nul
+    if exist "%%~dpnV.bk2" (echo OK %%V >> "%LOG%") else (echo FAILED %%V >> "%LOG%" & echo FAILED on %%V - stopping so you only see one error. & goto :stop)
   )
 )
 echo finished %date% %time% >> "%LOG%"
+:stop
 echo ALL DONE - see %LOG%
 pause
