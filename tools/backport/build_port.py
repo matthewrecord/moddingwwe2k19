@@ -140,7 +140,7 @@ def eye_loops(P,T):
     import loops
     L=[l for l in loops.boundary_loops(T,P) if 20<=len(l)<=60 and abs(P[l,1].mean()+181)<4 and 2<abs(P[l,0].mean())<6]
     return sorted(L,key=lambda l:-P[l,0].mean())   # [left (+x), right]
-def source_weights(S,bones,slot,idx=None):
+def source_weights(S,bones,slot,idx=None,drop_unmapped=False):
     """the mod's own skin weights (BI/BW, by its bone names) -> 2K19 palette slots; bones missing from the palette
     hand their weight to the nearest ancestor that exists. idx: subset of vertices."""
     names=[b['name'] for b in bones]; par=[b['parent'] for b in bones]; memo={}
@@ -148,13 +148,15 @@ def source_weights(S,bones,slot,idx=None):
         if i in memo: return memo[i]
         k=i
         while k>=0 and names[k] not in slot: k=par[k]
-        memo[i]=slot[names[k]] if k>=0 else slot['J_Head']; return memo[i]
+        memo[i]=slot[names[k]] if k>=0 else (None if drop_unmapped else slot['J_Head']); return memo[i]   # drop: rootless bones (2K26 'vector') give no weight
     BI=S['BI'] if idx is None else S['BI'][idx]; BW=S['BW'] if idx is None else S['BW'][idx]
     BW=BW.astype(float)/(255.0 if BW.dtype==np.uint8 else 1.0); vc=len(BI); sl=np.full((vc,7),0xFFFF); w=np.zeros((vc,7),'f4')
     for v in range(vc):
         acc={}
         for i,x in zip(BI[v],BW[v]):
-            if x>0: a=to_slot(int(i)); acc[a]=acc.get(a,0)+x
+            if x>0:
+                a=to_slot(int(i))
+                if a is not None: acc[a]=acc.get(a,0)+x
         it=sorted(sorted(acc.items(),key=lambda t:-t[1])[:7]); t=sum(x for _,x in it) or 1
         for q,(a,x) in enumerate(it): sl[v,q]=a; w[v,q]=x/t
     return sl,w
@@ -176,6 +178,29 @@ def geom_hidden(P,T,cover,depth=8.0,N=None):
         s_=o-tri[nb,0]; u=f*(s_*h).sum(1); q=np.cross(s_,e1[nb]); v=f*(q@d); t=f*(e2[nb]*q).sum(1)
         hid[i]=bool((ok&(u>=0)&(v>=0)&(u+v<=1)&(t>0)&(t<depth+0.3)).any())
     return hid
+def mask_clamp(P,T,mask,HM,recess=0.3,margin=0.1,keep=None,feather=1.0):
+    """head verts whose outward ray hits the mask within 4 cm: recess them, and clamp each morph's outward push to the gap"""
+    S_,T_=mask; tri=S_['POSITION'][:,:3].astype(float)[T_]; C=tri.mean(1); kd=cKDTree(C); rad=np.linalg.norm(tri-C[:,None],axis=2).max()
+    e1=tri[:,1]-tri[:,0]; e2=tri[:,2]-tri[:,0]; N=vnormals(P,np.asarray(T))
+    c0=P.mean(0); N=N if ((P-c0)*N).sum(1).mean()>0 else -N   # point outward
+    gap=np.full(len(P),np.inf)
+    for i,nb in enumerate(kd.query_ball_point(P+N*2,2+rad)):
+        if not nb: continue
+        nb=np.array(nb); d=N[i]; o=P[i]-d*0.05
+        h=np.cross(d,e2[nb]); a=(e1[nb]*h).sum(1); ok=np.abs(a)>1e-9; f=np.where(ok,1/np.where(ok,a,1),0)
+        s_=o-tri[nb,0]; u=f*(s_*h).sum(1); q=np.cross(s_,e1[nb]); v=f*(q@d); t=f*(e2[nb]*q).sum(1)
+        hit=ok&(u>=0)&(v>=0)&(u+v<=1)&(t>0)&(t<4)
+        if hit.any(): gap[i]=t[hit].min()-0.05
+    cov=np.isfinite(gap); rc=cov&~keep if keep is not None else cov   # keep: no recess there (eyelids), but morphs still clamped
+    r=np.zeros(len(P))
+    if recess>0 and rc.any() and (~rc).any():   # feather the recess to 0 over 'feather' cm toward the mask openings (no step at the rim)
+        d=cKDTree(P[~rc]).query(P[rc])[0]; r[rc]=recess*np.clip(d/feather,0,1)
+    P=P.copy(); P-=N*r[:,None]; room=np.where(cov,gap+r-margin,np.inf)
+    HM=HM.copy()
+    for k in range(HM.shape[0]):
+        push=(HM[k]*N).sum(1); over=cov&(push>room)
+        HM[k,over]-=N[over]*(push[over]-room[over])[:,None]
+    return P,HM,int(cov.sum())
 def cap_small_holes(T,P,maxlen=8):
     """close tiny boundary holes (source modelling gaps -> pinholes of light in game). Real openings (neck, mouth,
     eyes) are far longer than maxlen. Cap winding follows the neighbouring triangle."""
@@ -263,6 +288,9 @@ def build(cfg,outpath,PROP=None):
     headW=(PT.copy(),HS.copy(),HW.copy())
     ct=np.where(opid==1,cF,0)[TT]; keep=~((ct==1).any(1)&(ct==-1).any(1)&(np.abs(PT[TT][:,:,0].mean(1)-x0)<xc)); info['mouth_bridge_tris_removed']=int((~keep).sum())
     used=np.unique(TT[keep]); G=mesh_obj(St,TT,keep); vc=len(used); HS,HW,HM=HS[used],HW[used],HM[:,used]
+    if cfg.get('mask'):   # head-locked mask: morphs move only the head, so keep covered skin behind the mask
+        eyez=cKDTree(MB['M_EYE'][0]['POSITION'][:,:3]).query(G['pos'])[0]<cfg.get('mask_eye_keep',1.5)   # lids stay put
+        G['pos'],HM,nc=mask_clamp(G['pos'].astype(float),G['tris'],MA[cfg['mask']],HM,cfg.get('mask_recess',0.3),keep=eyez); G['pos'],HM,_=mask_clamp(G['pos'],G['tris'],MA[cfg['mask']],HM,0.0,0.15,keep=eyez); G['pos']=G['pos'].astype('f4'); info['mask_covered_head_verts']=nc
     jbuild.set_object(m,0,G['pos'],G['nrm'].astype('f4'),np.tile(np.array(RED,'u1'),(vc,1)),G['uv'].astype('f4'),np.zeros((vc,3),'f4'),HS,HW,jbuild.tris_to_strip(G['tris']))
     for n in range(1,120):
         V=np.zeros(vc,dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]); V['p']=HM[n-1]; m.data[m.chunk(0,f'vset{n}')]=bytearray(V.tobytes())
@@ -355,7 +383,7 @@ def build(cfg,outpath,PROP=None):
     def att_w(G,ja,src=None):
         """attire weights: the mod's own (cfg weights='source'), else body donor with head-nearest points taking the head's weights"""
         if cfg.get('weights')=='source' and src is not None:
-            parts_=[source_weights(S_,AM.bones,palette_slot(ja),u_) for S_,u_ in src]
+            parts_=[source_weights(S_,AM.bones,palette_slot(ja),u_,drop_unmapped=True) for S_,u_ in src]
             sl,w=np.concatenate([p[0] for p in parts_]),np.concatenate([p[1] for p in parts_])
             bad=w.sum(1)<1e-6
             if bad.any() and (~bad).any():   # source vertices with no weight: take the nearest weighted vertex's skin
@@ -382,6 +410,11 @@ def build(cfg,outpath,PROP=None):
             if kind=='mesh':
                 _,name,stem=spec[:3]; S,T=MA[name]; msk=np.ones(len(T),bool)
                 if len(spec)>3: cxs=S['POSITION'][T].mean(1)[:,0]; msk=cxs>0 if spec[3]=='L' else cxs<=0
+                if stem in cfg.get('alpha_cut',()):   # 2K19 gear shader is opaque: drop triangles in transparent texture areas (fringe)
+                    A=texconv.load(ci(f"{TA}/{stem}_color.dds"))[...,3]; h_,w_=A.shape; UV=S['TEXCOORD'][:,:2].astype(float)%1.0
+                    smp=np.concatenate([UV[T],UV[T].mean(1,keepdims=True)],1)
+                    av=A[np.clip((smp[...,1]*h_).astype(int),0,h_-1),np.clip((smp[...,0]*w_).astype(int),0,w_-1)]
+                    keep=av.max(1)>=128; info.setdefault('alpha_cut',{})[name]=int((msk&~keep).sum()); msk&=keep
                 G=mesh_obj(S,T,msk); put(ma,k_,ja,G,donor,weights=att_w(G,ja,[(S,np.unique(T[msk]))])); tex[texname]=load_pair(TA,stem)
             else:   # ('atlas', [(mesh, stem), ...])
                 Cc,Nn,pos=atlas(TA,[st for _,st in spec[1]]); parts=[]; srcs=[(MA[n_][0],np.unique(MA[n_][1])) for n_,_ in spec[1]]
@@ -410,7 +443,9 @@ def build(cfg,outpath,PROP=None):
     # g_fEyePa iris depth; eye_mr = cornea/sclera gloss mask). Source eye maps are flat -> 'dead' eyes. Colour only.
     for name,(C,N) in tex.items(): setm(name,C,N)
     for base,stems in hairtex.items():
-        if len(stems)==1: r=texconv.hair(None,ci(f"{TA}/{stems[0]}_rai.dds"),cfg.get('tint',(45,35,30)))
+        if len(stems)==1 and not ci(f"{TA}/{stems[0]}_rai.dds") and ci(f"{TA}/{stems[0]}_color.dds"):
+            r=texconv.hair_color(ci(f"{TA}/{stems[0]}_color.dds"))   # 2K26 mask/wig: real colour + alpha on the head-locked hair slot
+        elif len(stems)==1: r=texconv.hair(None,ci(f"{TA}/{stems[0]}_rai.dds"),cfg.get('tint',(45,35,30)))
         else:
             Rr=np.zeros((2048,2048,4),'u1')
             for i_,st in enumerate(stems): Rr[(i_//2)*1024:(i_//2+1)*1024,(i_%2)*1024:(i_%2+1)*1024]=texconv.resize(texconv.load(ci(f"{TA}/{st}_rai.dds")),1024,1024)
@@ -479,7 +514,16 @@ JEVON=dict(template='male',weights='source',hide='geom',eye_straighten_deg=0.5,w
             (0x5601,1):('mesh','M_L_Wrist','l_wrist'),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
             (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Tops','tops'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON}
+PC_='/home/claude/pairs/PC/1505_Psycho_Clown/'
+PSYCHO=dict(template='male',weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/pc',emd='00050602',
+    base=PC_+'BaseModel/baseModel.mcd',attire_model=PC_+'Default_Attire/Attire.mcd',
+    tex_base=PC_+'BaseModel/Textures',tex_attire=PC_+'Default_Attire/Textures',hpl=PC_+'Default_Attire/Attire.mcd',
+    cover=['M_Jacket','M_Tops','M_Bottoms','M_Shoes'],alpha_cut=['jacket'],
+    hair={0x2715:('M_Mask','mask')},mask='M_Mask',
+    attire={(0x5601,0):('atlas',[('M_L_A_Acce','l_a_acce'),('M_R_A_Acce','r_a_acce')]),
+            (0x5601,3):('mesh','M_Bottoms','bottoms'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5602,0):('mesh','M_Jacket','jacket'),(0x5602,1):('mesh','M_Tops','tops')})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'psycho_clown':PSYCHO}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))

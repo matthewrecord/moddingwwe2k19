@@ -31,6 +31,14 @@ def hair(flow_path,rai_path,tint=(210,173,119),size=None):
     n=np.zeros((h,w,4),'u1'); n[...]=(123,0,140,0); n[...,3]=a
     mr=np.zeros((h,w,4),'u1'); mr[...]=(0,174,0,255)
     return {'':dds_dxt5(col),'_n':dds_dxt5(n),'_mr':dds_dxt5(mr)}
+def hair_color(color_path,size=None):
+    """hair-shader maps from a real colour texture (alpha = cutout), e.g. a mask with wig strands"""
+    c=load(color_path)
+    if size: c=resize(c,*size)
+    w,h=target_size(c.shape[1],c.shape[0]); c=resize(c,w,h).copy(); a=c[...,3]
+    n=np.zeros_like(c); n[...]=(123,0,140,0); n[...,3]=a
+    mr=np.zeros_like(c); mr[...]=(0,174,0,255)
+    return {'':dds_dxt5(c),'_n':dds_dxt5(n),'_mr':dds_dxt5(mr)}
 def read_pack(b):
     n,=struct.unpack_from('<I',b,0); E=[]
     for k in range(n):
