@@ -204,6 +204,36 @@ def mask_clamp(P,T,mask,HM,recess=0.3,margin=0.1,keep=None,feather=1.0):
         push=(HM[k]*N).sum(1); over=cov&(push>room)
         HM[k,over]-=N[over]*(push[over]-room[over])[:,None]
     return P,HM,int(cov.sum())
+def hair_from(pac,head_pos):
+    """donor hair JBOY (fid 0x2715) + its 0x2580 + referenced textures; vertices moved onto our scalp by a radial correspondence field"""
+    hdr_,bl_=epkwrite.raw_blocks(pac); D_={}
+    for f,b in bl_:
+        try: D_[f]=zlib.decompress(b[16:])
+        except Exception: pass
+    jh=jboy.JBOY(D_[0x2715]); m=jbuild.Model(jh)
+    dh=jboy.JBOY(D_[0]).objs[0]['pos'].astype(float); oh=np.asarray(head_pos,float)
+    ds=dh[dh[:,1]<-168]; os_=oh[oh[:,1]<-168]; c=np.array([0,-180.0,-3.0])
+    u=lambda P:(P-c)/np.linalg.norm(P-c,axis=1,keepdims=True)
+    _,nn=cKDTree(u(os_)).query(u(ds)); delta=os_[nn]-ds    # same direction from the head centre
+    # keep only the radial part (no sliding along the scalp)
+    r=u(ds); delta=(delta*r).sum(1,keepdims=True)*r
+    kd=cKDTree(ds); names=set()
+    for k,o in enumerate(jh.objs):
+        P=o['pos'].astype(float); d,i=kd.query(P,8); w=1/np.maximum(d,0.3)**2; w/=w.sum(1,keepdims=True)
+        P2=P+(delta[i]*w[...,None]).sum(1)
+        ch=m.chunk(k,'vset0'); buf=m.data[ch]; vc=o['vc']
+        V=np.frombuffer(bytes(buf[:28*vc]),dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]).copy(); V['p']=P2
+        m.data[ch]=bytearray(V.tobytes())+buf[28*vc:]
+        for v in jboy.obj_params(jh,o).values():
+            if isinstance(v,str) and v.startswith('tex:'): names.add(v[4:])
+    tex={}
+    for f in (0xa,0xc,0x11):
+        if f in D_:
+            try: _,E_=texconv.read_pack(D_[f])
+            except Exception: continue
+            for n_,d_ in E_:
+                if n_ in names and n_ not in tex and not n_.startswith('_a_'): tex[n_]=d_
+    return m.build(),D_[0x2580],tex
 def cap_small_holes(T,P,maxlen=8):
     """close tiny boundary holes (source modelling gaps -> pinholes of light in game). Real openings (neck, mouth,
     eyes) are far longer than maxlen. Cap winding follows the neighbouring triangle."""
@@ -348,8 +378,11 @@ def build(cfg,outpath,PROP=None):
     info['mouth_shift']=np.round(dT,2).tolist()
     J[0]=m.build()
     # ---------------- hair slots (one or more meshes; several textures -> 2x2 rai atlas) ----------------
-    hairtex={}
+    hairtex={}; hairtex_from={}
     for fid,base in TP['hair'].items():
+        if fid==0x2715 and cfg.get('hair_from'):   # whole in-game-proven hair (model + 0x2580 physics + its textures) from another 2K19 pac, fitted to our scalp
+            J[fid],J[0x2580],donor_tex=hair_from(cfg['hair_from'],jboy.JBOY(J[0]).objs[0]['pos']); info['hair_from']=(os.path.basename(cfg['hair_from']),len(J[0x2580]))
+            hairtex_from=donor_tex; continue
         hp_=cfg.get('hair_physics') if fid==0x2715 else None   # (stock pac id): its hair model (Hair_b physics bones) + 0x2580 sim block
         if hp_:
             Hd=[d for _,d in oodl.blocks(open(U+hp_+'.pac','rb').read()) if d and d[:4]==b'JBOY' and jboy.JBOY(d).objs[0]['shader']=='yCS_hair' and any(b_['name'].startswith('Hair_b') for b_ in jboy.JBOY(d).bones)][0]
@@ -469,6 +502,7 @@ def build(cfg,outpath,PROP=None):
         E[base]=r['']; E[base+'_n']=r['_n']; E[base+'_mr']=r['_mr']
     if TP.get('lash') and ci(TB+'/eyelash_color.dds'):
         c=texconv.load(ci(TB+'/eyelash_color.dds')); w,h=texconv.target_size(c.shape[1],c.shape[0]); E['eyelash']=texconv.dds_dxt5(texconv.resize(c,w,h))
+    E.update(hairtex_from)
     J[0xa]=texconv.write_pack(list(E.items()),hd)
     if cfg.get('prop_from'): J[0x50]=[d for _,d in oodl.blocks(open(U+cfg['prop_from']+'.pac','rb').read()) if len(d)==3056][0]; info['prop_from']=cfg['prop_from']
     # eye pivots -> eyeball sphere centres, in every model that carries the eye bones
@@ -521,7 +555,7 @@ KEITH_RING=dict(KEITH,work='/home/claude/ext/kl',emd='00050602',cover=['M_Underw
 KEITH_ENT=dict(KEITH,work='/home/claude/ext/kl',emd='00050604')
 # ---- 2K26 sources (extracted with Aurora CAK Foundry; .mcd with embedded HPL!, hide table read from the attire .mcd) ----
 JE_='/home/claude/pairs/JE/1235_JeVon_Evans/'
-JEVON=dict(template='male',hair_physics='ch36902',donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
+JEVON=dict(template='male',hair_from='/mnt/user-data/uploads/common/WWE 2K19 - modded/mods/CCT/characters/pac/ch/ch39702.pac',donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
     base=JE_+'BaseModel/baseModel.mcd',attire_model=JE_+'1235_Default_Attire/1235_Attire.mcd',
     tex_base=JE_+'BaseModel/Textures',tex_attire=JE_+'1235_Default_Attire/Textures',hpl=JE_+'1235_Default_Attire/1235_Attire.mcd',
     cover=['M_Tops','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],
@@ -541,7 +575,9 @@ PSYCHO=dict(template='male',weights='source',hide='geom',eye_straighten_deg=0.5,
             (0x5602,0):('mesh','M_Jacket','jacket'),(0x5602,1):('mesh','M_Tops','tops')})
 PSYCHO_RING=dict(PSYCHO,emd='00050602',cover=['M_Tops','M_Bottoms','M_Shoes'],alpha_cut=[],
     attire={k:v for k,v in PSYCHO['attire'].items() if k!=(0x5602,0)})   # wrestles without the fringe jacket
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING}
+JEVON_RING=dict(JEVON,emd='00050602',cover=[c for c in JEVON['cover'] if c!='M_Tops'],
+    attire={k:v for k,v in JEVON['attire'].items() if k!=(0x5602,0)})   # wrestles without the tank top
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))

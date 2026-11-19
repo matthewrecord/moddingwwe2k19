@@ -38,3 +38,13 @@ Awaiting in-game check. Watch: the shirt/tights hide edges (geom hide), dreads c
 - **Knees:** the kneepads now take the 2K19 body donor's weights (`donor_weights`), not 2K26's helper-bone mix (H_Hip_L_OS1 9% at the knee).
   Tights and shoes stay on source weights (on donor weights they tore behind the knee in the squat).
 Delivered `jevon_v2_ch50602.pac`. Gates pass.
+
+## v2 in game: surface and knees fixed; the Seth-rig dreads look wrong; the shirt is entrance-only → v3
+- Scanned all `mods/CCT/characters/pac/ch/ch*02.pac` for physics hair (count of `Hair_b` in 0x2715, size of 0x2580; device script `hairscan.py`):
+  80 mods have it. Long dark candidates rendered on Jevon's head: Ortiz 453, Sonny Kiss 968, **Hikuleo 397**, Rush 992, Lio Rush 805, Red Velvet 467.
+- `hair_from=<pac>`: Hikuleo's (`ch39702`) **whole hair** (JBOY 0x2715 byte-for-byte except vertex positions + his 0x2580 + `hair`/`hair_n`
+  textures). It's fitted to Jevon's scalp by a radial correspondence offset (scalp gap median 0.7 cm, max 2.5).
+- Bench limitation: Hikuleo's hair skin slots are stored in a layout `pose.skin` doesn't decode (0xFF00/0x0200), so in bodypose
+  the hair collapses to a line from the hips to the floor. The donor file is identical and works in game.
+- Ring (`jevon_ring`, ch50602): no tank top. Entrance (`jevon_entrance`, ch50604): with it.
+Delivered `jevon_v3_ch50602.pac`, `jevon_v3_ch50604.pac`.

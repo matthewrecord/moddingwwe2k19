@@ -594,3 +594,5 @@ Sources come from Matthew's own 2K26 copy (handoff 020, `writeup/Cak_2k26.md` on
 - Stock pacs are HSPC/Oodle (`oodl.blocks`); stock and CCT files are both named `ch<CCT id>NN`.
 - `donor_weights=[meshes]`: skin those attire meshes from the 2K19 body (used for kneepads; tights and boots tore that way).
 - Psycho Clown split into ring (no jacket, ch50602) and entrance (jacket, ch50604) builds.
+- (§29 add) `hair_from=<2K19 pac>` copies a proven physics hair whole (model, 0x2580, textures) and fits it to the new scalp. That beats
+  re-skinning new strands to another rig's bones (Jevon v2 with Seth's rig looked wrong in game). Mod hair may use a skin-slot layout the bench can't pose.
