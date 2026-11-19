@@ -10,6 +10,15 @@ static int run(const char*cmd,int hide,PROCESS_INFORMATION*out){STARTUPINFOA si=
  if(out){*out=pi;return 0;} WaitForSingleObject(pi.hProcess,INFINITE);DWORD rc;GetExitCodeProcess(pi.hProcess,&rc);CloseHandle(pi.hProcess);CloseHandle(pi.hThread);return rc;}
 static long long fsize(const char*p){WIN32_FILE_ATTRIBUTE_DATA a;if(!GetFileAttributesExA(p,GetFileExInfoStandard,&a))return -1;return ((long long)a.nFileSizeHigh<<32)|a.nFileSizeLow;}
 static void cleardir(const char*d){char p[MAX_PATH];WIN32_FIND_DATAA f;sprintf(p,"%s\\*",d);HANDLE h=FindFirstFileA(p,&f);if(h!=INVALID_HANDLE_VALUE){do{if(f.cFileName[0]=='.')continue;sprintf(p,"%s\\%s",d,f.cFileName);DeleteFileA(p);}while(FindNextFileA(h,&f));FindClose(h);}}
+static DWORD gpid; static int clicked;
+static BOOL CALLBACK kid(HWND w,LPARAM l){char c[64],t[64];GetClassNameA(w,c,64);GetWindowTextA(w,t,64);
+ if(!_stricmp(c,"Button")&&(!strcmp(t,"OK")||!strcmp(t,"&OK")||!strcmp(t,"Done")||!strcmp(t,"&Done")||!strcmp(t,"&Yes")||!strcmp(t,"Yes"))){
+  fprintf(lg,"  auto-clicked '%s' in '%s'\n",t,(char*)l);SendMessageA(w,BM_CLICK,0,0);clicked++;return FALSE;}return TRUE;}
+static BOOL CALLBACK top(HWND w,LPARAM l){DWORD p;GetWindowThreadProcessId(w,&p);if(p!=gpid||!IsWindowVisible(w))return TRUE;
+ char c[64],t[256];GetClassNameA(w,c,64);GetWindowTextA(w,t,256);
+ if(!strcmp(c,"#32770")){HWND x=GetWindow(w,GW_CHILD);for(;x;x=GetWindow(x,GW_HWNDNEXT)){char st[256];GetClassNameA(x,c,64);if(!_stricmp(c,"Static")){GetWindowTextA(x,st,256);if(st[0])fprintf(lg,"  dialog '%s': %s\n",t,st);}}
+   EnumChildWindows(w,kid,(LPARAM)t);}
+ return TRUE;}
 static int one(const char*mp4){
  char out[MAX_PATH];strcpy(out,mp4);strcpy(strrchr(out,'.'),".bk2"); if(fsize(out)>=0)return 1;
  printf("%s\n",mp4); fflush(stdout);
@@ -21,7 +30,8 @@ static int one(const char*mp4){
  sprintf(cmd,"\"%s\" \"%s\" \"%s\" /F29.97 /O",RAD,lst,bik); PROCESS_INFORMATION pi;
  if(run(cmd,0,&pi)!=0){fprintf(lg,"FAILED start binkc %s\n",mp4);return 0;}
  long long last=-2;int stable=0;
- for(;;){ if(WaitForSingleObject(pi.hProcess,1500)==WAIT_OBJECT_0)break; long long s=fsize(bik);
+ gpid=pi.dwProcessId;
+ for(;;){ if(WaitForSingleObject(pi.hProcess,1500)==WAIT_OBJECT_0)break; EnumWindows(top,0); fflush(lg); long long s=fsize(bik);
    if(s>0&&s==last){if(++stable>=2){Sleep(1000);TerminateProcess(pi.hProcess,0);break;}}else stable=0; last=s;}
  CloseHandle(pi.hProcess);CloseHandle(pi.hThread); Sleep(300);
  // verify frame count in header
