@@ -53,3 +53,7 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
   same kind only (taunt/move, strike/grapple/running, springboard/diving, top/middle rope, standing/downed, front/rear, corner/apron/
   ringside/ground/seated/kneeling must all match), since 2K19 animations are tied to the slot's category. Result: 241 set; 14 not placed
   = 5 duplicates + 9 variants with no free compatible slot (2K19 has fewer corner-springboard / middle-rope / corner-running slots).
+- **Psycho Clown (1505) v1:** base Gran Metalik; 244 set, 13 not placed. Finishers Air Raid Crash Neckbreaker 4 / Air Raid Siren
+  (his Psycho Driver family); Signature 2 "Psycho Elbow" -> Back Elbow 2 (name match, weak). Overrides added: Penta taunts -> Cero Miedo,
+  Dragon Lee / Tito Santana / Scott Steiner / Inamura / Knock Out Artist -> generic 2K19 taunts. Repeated substitute taunts now cycle
+  variants (Clown 1 / Clown 2). Mexican Destroyer and Neck Twister (weight-detection slots, vs heavy opponents) have no 2K19 move and keep the base.

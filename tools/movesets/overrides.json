@@ -1,4 +1,5 @@
-{"_comment": "2K26 move name -> 2K19 move id (hex, as in MovesID.data). Checked before automatic name matching. Add corrections here.",
+{
+ "_comment": "2K26 move name -> 2K19 move id (hex, as in MovesID.data). Checked before automatic name matching. Add corrections here.",
  "OG Cutter 1": "0DB1",
  "Crossface 2 - escape": "94E2",
  "Springboard Enziguiri": "1CB1",
@@ -6,4 +7,15 @@
  "Puma 2": "9743",
  "Jackrabbit 2": "0C92",
  "Jackrabbit 4": "9AF3",
- "LFG 1": "2192"}
+ "LFG 1": "2192",
+ "Penta 2": "83F4",
+ "Penta 6": "83F4",
+ "Dragon Lee 2": "0C42",
+ "Tito Santana 1": "7940",
+ "Tito Santana 2": "1642",
+ "Tito Santana 3": "8040",
+ "Scott Steiner 1": "0B42",
+ "Inamura 8": "76F3",
+ "Knock Out Artist 1": "893E",
+ "Knock Out Artist 2": "0542"
+}

@@ -47,7 +47,11 @@ def translate(wid,per,tdir,names,base=None,cat26=None):
                 sub=(n26+' [override]',1.0); mid=int(ov[n26],16)
             elif n26:
                 cand_id,score=substitute(n26,names)
-                if cand_id is not None and score>=0.3: sub=(n26,score); mid=cand_id
+                if cand_id is not None and score>=0.3:
+                    if 'Taunt' in tops[0] and cand_id in out.values():   # same generic taunt again -> next variant (Clown 1 -> Clown 2)
+                        fam19=re.sub(r'\s*\d+\s*$','',names[cand_id]); alt=[k for k,v in names.items() if re.sub(r'\s*\d+\s*$','',v)==fam19 and k not in out.values()]
+                        if alt: cand_id=alt[0]
+                    sub=(n26,score); mid=cand_id
             if sub is None: skipped.append((s,mid,tops[0],'no 2K19 equivalent (%s)'%((cat26 or {}).get(sw(mid),['?'])[0]))); continue
         tgt=None
         for f in tops:
