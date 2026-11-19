@@ -427,8 +427,14 @@ def build(cfg,outpath,PROP=None):
             S80=[d for _,d in oodl.blocks(open(U+hp_+'.pac','rb').read()) if d and d[:8]==bytes.fromhex('0000000020000000')][0]
             jh=jboy.JBOY(Hd); J[0x2580]=S80; info['hair_physics']=(hp_,len(S80))
         elif hr_:
-            hdr2,bl2=epkwrite.raw_blocks(hr_['pac']); D2={f_:zlib.decompress(b_[16:]) for f_,b_ in bl2 if f_ in (0x2715,0x2580)}
-            jh=jboy.JBOY(D2[0x2715]); J[0x2580]=D2[0x2580]; info['hair_rig']=os.path.basename(hr_['pac'])
+            if hr_['pac'].startswith('ch'):   # stock Oodle pac (standard skin-slot layout; mod hair may use another layout the game reads differently)
+                bk=[d for _,d in oodl.blocks(open(U+hr_['pac']+'.pac','rb').read()) if d]
+                jh=jboy.JBOY([d for d in bk if d[:4]==b'JBOY' and jboy.JBOY(d).objs[0]['shader']=='yCS_hair' and any(b_['name'].startswith('Hair_b') for b_ in jboy.JBOY(d).bones)][0])
+                J[0x2580]=[d for d in bk if d[:8]==bytes.fromhex('0000000020000000')][0]
+            else:
+                hdr2,bl2=epkwrite.raw_blocks(hr_['pac']); D2={f_:zlib.decompress(b_[16:]) for f_,b_ in bl2 if f_ in (0x2715,0x2580)}
+                jh=jboy.JBOY(D2[0x2715]); J[0x2580]=D2[0x2580]
+            info['hair_rig']=os.path.basename(hr_['pac'])
         else: jh=jboy.JBOY(B[fid])
         mh=jbuild.Model(jh); spec=cfg['hair'].get(fid)
         if spec and isinstance(spec,tuple): spec=[spec]
@@ -601,7 +607,7 @@ KEITH_RING=dict(KEITH,work='/home/claude/ext/kl',emd='00050602',cover=['M_Underw
 KEITH_ENT=dict(KEITH,work='/home/claude/ext/kl',emd='00050604')
 # ---- 2K26 sources (extracted with Aurora CAK Foundry; .mcd with embedded HPL!, hide table read from the attire .mcd) ----
 JE_='/home/claude/pairs/JE/1235_JeVon_Evans/'
-JEVON=dict(template='male',hair_rig=dict(pac='/mnt/user-data/uploads/common/WWE 2K19 - modded/mods/CCT/characters/pac/ch/ch39702.pac',lock=0.35,tip=0.8),donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
+JEVON=dict(template='male',hair_rig=dict(pac='ch36802',lock=0.35,tip=0.8),donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
     base=JE_+'BaseModel/baseModel.mcd',attire_model=JE_+'1235_Default_Attire/1235_Attire.mcd',
     tex_base=JE_+'BaseModel/Textures',tex_attire=JE_+'1235_Default_Attire/Textures',hpl=JE_+'1235_Default_Attire/1235_Attire.mcd',
     cover=['M_Tops','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],

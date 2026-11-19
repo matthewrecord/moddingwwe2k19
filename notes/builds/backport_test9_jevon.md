@@ -58,3 +58,10 @@ Matthew on v2: too flowing, sat wrong on the crown, read as relaxed straight hai
 - New bench check `hairswing.py`: rotates every chain about its root (fake swing). v4: dreads stay intact ropes, crown fixed.
 - Knobs if the game shows too much or too little motion: `lock` (higher = stiffer crown/upper dread), `tip` (lower = heavier, less swing).
 Delivered `jevon_v4_ch50602.pac` (ring) and `jevon_v4_ch50604.pac` (entrance); v3 (Hikuleo's own hair) stays as a fallback.
+
+## v4 in game: the hair mass slid off the crown and circled the head ("an animal"), even the J_Head-locked top → v5
+- Cause (most likely): Hikuleo's mod hair JBOY stores skin slots in a non-standard layout (bench sees 0xFF00/0x0200), and the game reads
+  that model's skin that way. Our standard-layout weights in his model were read as the wrong bones. (Seth's stock rig in v2 kept the hair in place.)
+- Rule: `hair_rig` uses **stock** rigs only (standard layout). v5 = Roman Reigns `ch36802` (87 chains, median 21 cm, max 47; closest to the 31 cm dreads),
+  same rope weighting (lock 0.35, tip 0.8). Bench: all slots < palette size; hairswing clean.
+Delivered `jevon_v5_ch50602.pac` / `jevon_v5_ch50604.pac`.
