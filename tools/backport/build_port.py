@@ -234,6 +234,43 @@ def hair_from(pac,head_pos):
             for n_,d_ in E_:
                 if n_ in names and n_ not in tex and not n_.startswith('_a_'): tex[n_]=d_
     return m.build(),D_[0x2580],tex
+def rig_dreads(G,jh,head_pos,lock=0.35,tip=0.8,min_piece=20):
+    """Skin rope-like strands (dreads) to a donor hair rig: each connected piece follows ONE Hair_bNN chain, locked to J_Head
+    over the first 'lock' of its length, physics share ramping to 'tip' at the end. Small pieces (hairline, crown) = J_Head."""
+    import re
+    from collections import defaultdict
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    W=bone_world(jh); slot={jh.bones[b]['name']:i for i,b in enumerate(jh.palette)}
+    ch=defaultdict(list)
+    for b in jh.bones:
+        m=re.match(r'Hair_b(\d+)(?:_(\d+))?$',b['name'])
+        if m and b['name'] in slot: ch[int(m.group(1))].append((int(m.group(2)) if m.group(2) else -1,b['name']))
+    chains=[[n for _,n in sorted(v)] for v in ch.values() if len(v)>=2]
+    CP=[np.array([W[n][1] for n in c]) for c in chains]
+    P=G['pos'].astype(float); T=G['tris']; vc=len(P)
+    _,inv=np.unique(np.round(P,3),axis=0,return_inverse=True); inv=inv.ravel(); Tw=inv[T]
+    e=np.concatenate([Tw[:,[0,1]],Tw[:,[1,2]],Tw[:,[2,0]]]); m_=inv.max()+1
+    _,lab=connected_components(coo_matrix((np.ones(len(e)),(e[:,0],e[:,1])),shape=(m_,m_))); lab=lab[inv]
+    hc=np.asarray(head_pos,float); hk=cKDTree(hc)
+    sl=np.zeros((vc,4),int); w=np.zeros((vc,4),'f4'); sl[:,0]=slot['J_Head']; w[:,0]=1; stats=[0,0]
+    for c in np.unique(lab):
+        idx=np.where(lab==c)[0]
+        if len(idx)<=min_piece: stats[1]+=1; continue
+        Q=P[idx]; dh=hk.query(Q)[0]; root=Q[dh<=np.percentile(dh,5)].mean(0)
+        far=Q[np.argmax(np.linalg.norm(Q-root,axis=1))]; ax=far-root; Ld=np.linalg.norm(ax)
+        if Ld<6: stats[1]+=1; continue   # short tuft: stays on the head
+        ax/=Ld; sv=np.clip(((Q-root)@ax)/Ld,0,1)
+        sc=[np.linalg.norm(cp[0]-root)+0.5*np.linalg.norm(cp[min(1,len(cp)-1)]-(root+ax*min(Ld,12))) for cp in CP]; k=int(np.argmin(sc)); cp=CP[k]; names=chains[k]
+        seg=np.r_[0,np.cumsum(np.linalg.norm(np.diff(cp,axis=0),axis=1))]; seg=seg/seg[-1]   # joint positions along the chain, 0..1
+        f=tip*np.clip((sv-lock)/(1-lock),0,1)**1.5   # physics share: none on the locked top, heavier toward the tip
+        for q,v in enumerate(idx):
+            u=sv[q]; i=min(np.searchsorted(seg,u,side='right')-1,len(seg)-2); a=(u-seg[i])/max(seg[i+1]-seg[i],1e-6)
+            b1,b2=slot[names[i]],slot[names[i+1]] if i+1<len(names)-1 else slot[names[i]]
+            wb2=0.5*max(a-0.6,0)/0.4 if b2!=b1 else 0
+            sl[v]=[slot['J_Head'],b1,b2,slot['J_Head']]; w[v]=[1-f[q],f[q]*(1-wb2),f[q]*wb2,0]
+        stats[0]+=1
+    return sl,w,{'dreads_rigged':stats[0],'pieces_on_head':stats[1],'chains':len(chains)}
 def cap_small_holes(T,P,maxlen=8):
     """close tiny boundary holes (source modelling gaps -> pinholes of light in game). Real openings (neck, mouth,
     eyes) are far longer than maxlen. Cap winding follows the neighbouring triangle."""
@@ -383,11 +420,15 @@ def build(cfg,outpath,PROP=None):
         if fid==0x2715 and cfg.get('hair_from'):   # whole in-game-proven hair (model + 0x2580 physics + its textures) from another 2K19 pac, fitted to our scalp
             J[fid],J[0x2580],donor_tex=hair_from(cfg['hair_from'],jboy.JBOY(J[0]).objs[0]['pos']); info['hair_from']=(os.path.basename(cfg['hair_from']),len(J[0x2580]))
             hairtex_from=donor_tex; continue
+        hr_=cfg.get('hair_rig') if fid==0x2715 else None   # dict(pac=<2K19 pac with physics hair>, lock=, tip=): OUR strands on its rig
         hp_=cfg.get('hair_physics') if fid==0x2715 else None   # (stock pac id): its hair model (Hair_b physics bones) + 0x2580 sim block
         if hp_:
             Hd=[d for _,d in oodl.blocks(open(U+hp_+'.pac','rb').read()) if d and d[:4]==b'JBOY' and jboy.JBOY(d).objs[0]['shader']=='yCS_hair' and any(b_['name'].startswith('Hair_b') for b_ in jboy.JBOY(d).bones)][0]
             S80=[d for _,d in oodl.blocks(open(U+hp_+'.pac','rb').read()) if d and d[:8]==bytes.fromhex('0000000020000000')][0]
             jh=jboy.JBOY(Hd); J[0x2580]=S80; info['hair_physics']=(hp_,len(S80))
+        elif hr_:
+            hdr2,bl2=epkwrite.raw_blocks(hr_['pac']); D2={f_:zlib.decompress(b_[16:]) for f_,b_ in bl2 if f_ in (0x2715,0x2580)}
+            jh=jboy.JBOY(D2[0x2715]); J[0x2580]=D2[0x2580]; info['hair_rig']=os.path.basename(hr_['pac'])
         else: jh=jboy.JBOY(B[fid])
         mh=jbuild.Model(jh); spec=cfg['hair'].get(fid)
         if spec and isinstance(spec,tuple): spec=[spec]
@@ -401,7 +442,12 @@ def build(cfg,outpath,PROP=None):
                         i_=stems.index(st); e=8/1024; G['uv']=(((np.clip(G['uv'].astype(float),0,1)*(1-2*e)+e)+[i_%2,i_//2])/2).astype('f4')
                     parts.append(G)
             Gh=concat(parts) if len(parts)>1 else parts[0]
-            if hp_:   # skin each strand vertex like the nearest physics-hair vertex (same palette: J_Head + Hair_b*)
+            if hr_:
+                slh,wh,st=rig_dreads(Gh,jh,jboy.JBOY(J[0]).objs[0]['pos'],hr_.get('lock',0.35),hr_.get('tip',0.8)); info['hair_rig_stats']=st
+                put(mh,0,jh,Gh,donor,col=WHITE,hair=True)
+                vc=len(Gh['pos']); tan=np.zeros((vc,3),'f4'); tan[0::2]=(0,1,0); tan[1::2]=(1,0,1)
+                jbuild.set_object(mh,0,Gh['pos'],Gh['nrm'].astype('f4'),np.tile(np.array(WHITE,'u1'),(vc,1)),Gh['uv'].astype('f4'),tan,slh,wh,jbuild.tris_to_strip(Gh['tris']))
+            elif hp_:   # skin each strand vertex like the nearest physics-hair vertex (same palette: J_Head + Hair_b*)
                 ho=jh.objs[0]; sk=jcheck.raw_skin(jh,ho); _,nn=cKDTree(ho['pos']).query(Gh['pos'])
                 put(mh,0,jh,Gh,donor,col=WHITE,hair=True)
                 vc=len(Gh['pos']); tan=np.zeros((vc,3),'f4'); tan[0::2]=(0,1,0); tan[1::2]=(1,0,1)
@@ -555,7 +601,7 @@ KEITH_RING=dict(KEITH,work='/home/claude/ext/kl',emd='00050602',cover=['M_Underw
 KEITH_ENT=dict(KEITH,work='/home/claude/ext/kl',emd='00050604')
 # ---- 2K26 sources (extracted with Aurora CAK Foundry; .mcd with embedded HPL!, hide table read from the attire .mcd) ----
 JE_='/home/claude/pairs/JE/1235_JeVon_Evans/'
-JEVON=dict(template='male',hair_from='/mnt/user-data/uploads/common/WWE 2K19 - modded/mods/CCT/characters/pac/ch/ch39702.pac',donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
+JEVON=dict(template='male',hair_rig=dict(pac='/mnt/user-data/uploads/common/WWE 2K19 - modded/mods/CCT/characters/pac/ch/ch39702.pac',lock=0.35,tip=0.8),donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
     base=JE_+'BaseModel/baseModel.mcd',attire_model=JE_+'1235_Default_Attire/1235_Attire.mcd',
     tex_base=JE_+'BaseModel/Textures',tex_attire=JE_+'1235_Default_Attire/Textures',hpl=JE_+'1235_Default_Attire/1235_Attire.mcd',
     cover=['M_Tops','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],

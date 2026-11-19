@@ -48,3 +48,13 @@ Delivered `jevon_v2_ch50602.pac`. Gates pass.
   the hair collapses to a line from the hips to the floor. The donor file is identical and works in game.
 - Ring (`jevon_ring`, ch50602): no tank top. Entrance (`jevon_entrance`, ch50604): with it.
 Delivered `jevon_v3_ch50602.pac`, `jevon_v3_ch50604.pac`.
+
+## v4 (2026-11-19): his OWN dreads on Hikuleo's physics rig, as ropes
+Matthew on v2: too flowing, sat wrong on the crown, read as relaxed straight hair, not dreads.
+- `hair_rig=dict(pac=ch39702, lock=0.35, tip=0.8)` → `rig_dreads()`: the hair is split into connected pieces (52 dreads of ~31 cm + 651
+  small hairline/crown bits). Each dread follows **one** Hikuleo `Hair_bNN` chain (64 usable chains, chosen by root position + direction)
+  along its length; the top 35% is locked to J_Head and the physics share ramps (power 1.5) to 0.8 at the tip. The small bits stay 100% J_Head.
+  Hikuleo's hair JBOY (skeleton, proxy) + 0x2580 are used as-is; the skin is written in the standard slot layout, so the bench can pose it.
+- New bench check `hairswing.py`: rotates every chain about its root (fake swing). v4: dreads stay intact ropes, crown fixed.
+- Knobs if the game shows too much or too little motion: `lock` (higher = stiffer crown/upper dread), `tip` (lower = heavier, less swing).
+Delivered `jevon_v4_ch50602.pac` (ring) and `jevon_v4_ch50604.pac` (entrance); v3 (Hikuleo's own hair) stays as a fallback.
