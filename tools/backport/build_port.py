@@ -17,8 +17,11 @@ def ci(path):
         if x.lower()==f.lower(): return os.path.join(d,x)
     return None
 def open_model(path,cache):
-    if path.endswith('.mcd'):
-        b=open(path,'rb').read(); assert b[:4]==b'MCD!' and b[12:16]==b'MDL!'; open(cache,'wb').write(b[16:]); path=cache
+    if path.lower().endswith('.mcd'):
+        # 2K25: MCD! hdr, MDL! at 12. 2K26: MCD! wrapper with CTG!/MDL!/HPL! chunks -> the MDL file starts at 'MDL!MDL!'+4
+        b=open(path,'rb').read(); assert b[:4]==b'MCD!'
+        i=b.find(b'MDL!MDL!'); assert i>=0, 'no MDL! chunk in '+path
+        open(cache,'wb').write(b[i+4:]); path=cache
     return mdlfmt.MDL(path)
 def mats(C,N,skin=False,kyle_nrm=None):
     """color/nrm arrays -> 2K19 (<mat>, _mr, _n) DXT5 by the 2K24 rules; optional blue-channel match to Kyle"""
@@ -73,7 +76,7 @@ WILLOW_DIR='/home/claude/pairs/Willow_Nightingale 2k24 ORIGINAL/969_Doudrop/Base
 TEMPLATES={
  'male':dict(pac=PORT,donor='ch68702',ref=KYLE_DIR,body=[(1,'upper'),(2,'lower')],eyes=(3,4),ov=5,mouth=(6,7,8),off=[],
              hair={0x2715:'hair',0x2716:'hair2'},lash=None,hide_objs=[1,2]),
- 'female':dict(pac=glob.glob('/home/claude/pairs/Willow*PORT*/*.pac')[0],donor='ch75602',ref=WILLOW_DIR,
+ 'female':dict(pac=(glob.glob('/home/claude/pairs/Willow*PORT*/*.pac')+[None])[0],donor='ch75602',ref=WILLOW_DIR,
              body=[(1,'upper'),(2,'hands'),(3,'lower')],hands_x=66,eyes=(4,5),ov=6,mouth=(7,8,9),off=[10],
              hair={0x2715:'hair'},lash=0x4e22,hide_objs=[1,3]),
 }
@@ -155,6 +158,24 @@ def source_weights(S,bones,slot,idx=None):
         it=sorted(sorted(acc.items(),key=lambda t:-t[1])[:7]); t=sum(x for _,x in it) or 1
         for q,(a,x) in enumerate(it): sl[v,q]=a; w[v,q]=x/t
     return sl,w
+def vnormals(P,T):
+    fn=np.cross(P[T[:,1]]-P[T[:,0]],P[T[:,2]]-P[T[:,0]]); N=np.zeros_like(P)
+    for k in range(3): np.add.at(N,T[:,k],fn)
+    return N/np.maximum(np.linalg.norm(N,axis=1,keepdims=True),1e-9)
+def geom_hidden(P,T,cover,depth=8.0,N=None):
+    """body vertices whose outward normal ray hits a cover-mesh triangle within 'depth' cm (start 0.3 cm inside the skin)"""
+    tri=np.concatenate([S_['POSITION'][:,:3].astype(float)[T_] for S_,T_ in cover]); C=tri.mean(1)
+    rad=np.linalg.norm(tri-C[:,None],axis=2).max(); kd=cKDTree(C); P=P.astype(float)
+    if N is None: N=vnormals(P,T)
+    N=N[:,:3].astype(float); N/=np.maximum(np.linalg.norm(N,axis=1,keepdims=True),1e-9); hid=np.zeros(len(P),bool)
+    e1=tri[:,1]-tri[:,0]; e2=tri[:,2]-tri[:,0]
+    for i,nb in enumerate(kd.query_ball_point(P+N*depth/2,depth/2+rad+0.3)):
+        if not nb: continue
+        nb=np.array(nb); o=P[i]-N[i]*0.3; d=N[i]
+        h=np.cross(d,e2[nb]); a=(e1[nb]*h).sum(1); ok=np.abs(a)>1e-9; f=np.where(ok,1/np.where(ok,a,1),0)
+        s_=o-tri[nb,0]; u=f*(s_*h).sum(1); q=np.cross(s_,e1[nb]); v=f*(q@d); t=f*(e2[nb]*q).sum(1)
+        hid[i]=bool((ok&(u>=0)&(v>=0)&(u+v<=1)&(t>0)&(t<depth+0.3)).any())
+    return hid
 def cap_small_holes(T,P,maxlen=8):
     """close tiny boundary holes (source modelling gaps -> pinholes of light in game). Real openings (neck, mouth,
     eyes) are far longer than maxlen. Cap winding follows the neighbouring triangle."""
@@ -246,9 +267,15 @@ def build(cfg,outpath,PROP=None):
     for n in range(1,120):
         V=np.zeros(vc,dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]); V['p']=HM[n-1]; m.data[m.chunk(0,f'vset{n}')]=bytearray(V.tobytes())
     # ---------------- body: hidden-first triangle order so each hide range is one block ----------------
-    H=hpl.parse(cfg['hpl']).get('M_Body',[[]])[0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True; info['hpl_body_verts']=len(H)
     att=np.concatenate([MA[n][0]['POSITION'] for n in cfg['cover']]); near_att=cKDTree(att).query(Sb['POSITION'])[0]<1.0
-    hid_t=hid_v[Tb].any(1)|near_att[Tb].all(1)
+    if cfg.get('hide','hpl')=='geom':
+        # 2K26: attire HPL! lists index the game's generic body, not the character's own M_Body -> unusable.
+        # Hide a body vertex when a cover mesh lies just outside it along its normal (within 'hide_depth' cm).
+        hid_v=geom_hidden(Sb['POSITION'][:,:3],Tb,[MA[n] for n in cfg['cover']],cfg.get('hide_depth',8.0),N=Sb['NORMAL']); info['geom_body_verts']=int(hid_v.sum())
+        hid_t=hid_v[Tb].all(1)
+    else:
+        H=hpl.parse(cfg['hpl']).get('M_Body',[[]])[0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True; info['hpl_body_verts']=len(H)
+        hid_t=hid_v[Tb].any(1)|near_att[Tb].all(1)
     C=Sb['POSITION'][Tb].mean(1); hands=(np.abs(C[:,0])>TP['hands_x']) if TP.get('hands_x') else np.zeros(len(C),bool)
     up=((C[:,1]<-108)|(np.abs(C[:,0])>26))&~hands; parts={'upper':up,'lower':~up&~hands,'hands':hands}; hide_n={}
     for k_,role in TP['body']:
@@ -329,7 +356,12 @@ def build(cfg,outpath,PROP=None):
         """attire weights: the mod's own (cfg weights='source'), else body donor with head-nearest points taking the head's weights"""
         if cfg.get('weights')=='source' and src is not None:
             parts_=[source_weights(S_,AM.bones,palette_slot(ja),u_) for S_,u_ in src]
-            return np.concatenate([p[0] for p in parts_]),np.concatenate([p[1] for p in parts_])
+            sl,w=np.concatenate([p[0] for p in parts_]),np.concatenate([p[1] for p in parts_])
+            bad=w.sum(1)<1e-6
+            if bad.any() and (~bad).any():   # source vertices with no weight: take the nearest weighted vertex's skin
+                _,nn=cKDTree(G['pos'][~bad]).query(G['pos'][bad]); good=np.where(~bad)[0][nn]; sl[bad]=sl[good]; w[bad]=w[good]
+                info['attire_unweighted_fixed']=info.get('attire_unweighted_fixed',0)+int(bad.sum())
+            return sl,w
         sl,w=welded_weights(G['pos'],G['tris'],donor,palette_slot(ja)); dh,ih=th.query(G['pos']); db,_=tb.query(G['pos']); onh=dh<db
         if onh.any():
             # main-model slots -> this attire model's slots, by bone name
@@ -436,7 +468,18 @@ KEITH=dict(template='male',weights='source',work='/home/claude/ext/kl',base=K_+'
 KEITH_RING=dict(KEITH,work='/home/claude/ext/kl',emd='00050602',cover=['M_Underwear','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Elbowpad'],
     attire={k:v for k,v in KEITH['attire'].items() if v[1]!='M_Jacket'})
 KEITH_ENT=dict(KEITH,work='/home/claude/ext/kl',emd='00050604')
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT}
+# ---- 2K26 sources (extracted with Aurora CAK Foundry; .mcd with embedded HPL!, hide table read from the attire .mcd) ----
+JE_='/home/claude/pairs/JE/1235_JeVon_Evans/'
+JEVON=dict(template='male',weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
+    base=JE_+'BaseModel/baseModel.mcd',attire_model=JE_+'1235_Default_Attire/1235_Attire.mcd',
+    tex_base=JE_+'BaseModel/Textures',tex_attire=JE_+'1235_Default_Attire/Textures',hpl=JE_+'1235_Default_Attire/1235_Attire.mcd',
+    cover=['M_Tops','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],
+    hair={0x2715:('M_Hair','hair'),0x2716:('M_Combinations','combinations')},tint=(28,21,17),
+    attire={(0x5601,0):('atlas',[('M_U_Acce','u_acce'),('M_Pierce','pierce'),('M_R_A_Acce','r_a_acce')]),
+            (0x5601,1):('mesh','M_L_Wrist','l_wrist'),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
+            (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5602,0):('mesh','M_Tops','tops'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))

@@ -1,7 +1,9 @@
-"""Textured face comparison: Flash 2K25 M_Head (+M_EYE) vs our fitted head (+ eye objects as built)."""
+"""Textured face comparison (env FC_TEX = source BaseModel/Textures/, FC_MDL = source base .mdl): Flash 2K25 M_Head (+M_EYE) vs our fitted head (+ eye objects as built)."""
 import sys,zlib,numpy as np;sys.path.insert(0,__import__('os').path.dirname(__import__('os').path.abspath(__file__)))
 import mdlfmt,jboy,epkwrite,texconv,render
-F='/home/claude/pairs/FMW/BaseModel/Textures/'
+import os
+F=os.environ.get('FC_TEX','/home/claude/pairs/FMW/BaseModel/Textures/')
+MDLP=os.environ.get('FC_MDL','/home/claude/ext/fmw/base.mdl')
 def tex_tris(P,T,UV,img):
     h,w=img.shape[:2]; out=[]
     for t in T:
@@ -9,15 +11,15 @@ def tex_tris(P,T,UV,img):
         out.append((P[list(t)],c))
     return out
 def source():
-    M=mdlfmt.MDL('/home/claude/ext/fmw/base.mdl'); L=M.lods()[0]; out=[]
+    M=mdlfmt.MDL(MDLP); L=M.lods()[0]; out=[]
     for i,m in enumerate(M.meshes):
         img={'M_Head':'head_color.dds','M_EYE':'eye_color.dds'}.get(m['name'])
-        if img: S=m['streams']; out+=tex_tris(S['POSITION'],L[i].reshape(-1,3),S['TEXCOORD'],texconv.load(F+img))
+        if img: S=m['streams']; out+=tex_tris(S['POSITION'],L[i].reshape(-1,3),S['TEXCOORD'],texconv.load(__import__('build_port').ci(F+img)))
     return out
 def ours(pac):
     hdr,bl=epkwrite.raw_blocks(pac); j=jboy.JBOY(zlib.decompress(dict(bl)[0][16:])); out=[]
     for k,img in ((0,'head_color.dds'),(3,'eye_color.dds'),(4,'eye_color.dds')):
-        o=j.objs[k]; out+=tex_tris(o['pos'],jboy.strip_to_tris(j.indices(o)[1]),o['uv'],texconv.load(F+img))
+        o=j.objs[k]; out+=tex_tris(o['pos'],jboy.strip_to_tris(j.indices(o)[1]),o['uv'],texconv.load(__import__('build_port').ci(F+img)))
     return out
 if __name__=='__main__':
     pac,tag=sys.argv[1],sys.argv[2]

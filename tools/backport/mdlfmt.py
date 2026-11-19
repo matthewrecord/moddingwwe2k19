@@ -49,7 +49,8 @@ class MDL:
         lo,ls=s.ch[b'LODs']; nl,nm2=struct.unpack_from('<2I',b,lo); s.lodraw=(lo,ls,nl,nm2)
     def lods(s, verbose=False):
         b=s.b; lo,ls,nl,nm=s.lodraw; o=lo+8; out=[]
-        for l in range(nl):
+        # 2K26 (v0x2f): LOD0 has the 2K25 layout; LOD1+ records carry an extra field (not decoded). Only LOD0 is used.
+        for l in range(1 if s.ver>=0x2f else nl):
             L=[]
             for m in range(nm):
                 z,n=struct.unpack_from('<HI',b,o); o+=6
