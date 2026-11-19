@@ -85,4 +85,4 @@ Keith Lee v3 delivered: ring `ch50602` and entrance `ch50604`, pinholes capped. 
 ## 2026-11-19 backport (branch claude/2k26-port)
 2K26 ports started. **JeVon Evans v1 delivered** (Downloads\jevon_v1_ch50602.pac; all gates pass, awaiting in-game check).
 2K26 attire HPL! does not index the character body -> geometric hide (`hide='geom'`). Briscoe v4 copied to Downloads (built 11-13, never delivered).
-Psycho Clown v1 delivered (mask on hair slot, §28). Next: Rhea (female template), then the other 14 (`writeup/Backport.md` §27).
+Psycho Clown v2 ring/entrance delivered (mask on hair slot, §28). Jevon v6 (own dreads on Roman rig, §29); v5 confirmed good in game. Next: Rhea (female template), then the other 14 (`writeup/Backport.md` §27).

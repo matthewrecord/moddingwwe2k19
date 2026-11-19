@@ -607,7 +607,7 @@ KEITH_RING=dict(KEITH,work='/home/claude/ext/kl',emd='00050602',cover=['M_Underw
 KEITH_ENT=dict(KEITH,work='/home/claude/ext/kl',emd='00050604')
 # ---- 2K26 sources (extracted with Aurora CAK Foundry; .mcd with embedded HPL!, hide table read from the attire .mcd) ----
 JE_='/home/claude/pairs/JE/1235_JeVon_Evans/'
-JEVON=dict(template='male',hair_rig=dict(pac='ch36802',lock=0.35,tip=0.8),donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
+JEVON=dict(template='male',hair_rig=dict(pac='ch36802',lock=0.09,tip=0.8),donor_weights=['M_L_Kneepad','M_R_Kneepad'],weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/je',emd='00050602',
     base=JE_+'BaseModel/baseModel.mcd',attire_model=JE_+'1235_Default_Attire/1235_Attire.mcd',
     tex_base=JE_+'BaseModel/Textures',tex_attire=JE_+'1235_Default_Attire/Textures',hpl=JE_+'1235_Default_Attire/1235_Attire.mcd',
     cover=['M_Tops','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],

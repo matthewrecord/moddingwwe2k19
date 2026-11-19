@@ -65,3 +65,7 @@ Delivered `jevon_v4_ch50602.pac` (ring) and `jevon_v4_ch50604.pac` (entrance); v
 - Rule: `hair_rig` uses **stock** rigs only (standard layout). v5 = Roman Reigns `ch36802` (87 chains, median 21 cm, max 47; closest to the 31 cm dreads),
   same rope weighting (lock 0.35, tip 0.8). Bench: all slots < palette size; hairswing clean.
 Delivered `jevon_v5_ch50602.pac` / `jevon_v5_ch50604.pac`.
+
+## v5 in game: "much, much better" (Roman rig, rope weighting holds on the crown). Matthew: start the motion much higher → v6
+- Fixed part moved 3/4 of the way toward the scalp: `lock` 0.35 → 0.09 (of each dread's length). Tip share unchanged (0.8).
+Delivered `jevon_v6_ch50602.pac` / `jevon_v6_ch50604.pac`.
