@@ -57,3 +57,16 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
   (his Psycho Driver family); Signature 2 "Psycho Elbow" -> Back Elbow 2 (name match, weak). Overrides added: Penta taunts -> Cero Miedo,
   Dragon Lee / Tito Santana / Scott Steiner / Inamura / Knock Out Artist -> generic 2K19 taunts. Repeated substitute taunts now cycle
   variants (Clown 1 / Clown 2). Mexican Destroyer and Neck Twister (weight-detection slots, vs heavy opponents) have no 2K19 move and keep the base.
+
+## 5. Batch: 2K19 Characters folder (2026-11-19)
+- `D:\Pictures\WWE 2K19\A - Resources\2k19 Characters`: 65 archives, ~55 wrestlers. Kept those that debuted in WWE/AEW/US TV in
+  2021 or later and exist in 2K26: 18 (Brooks Jensen, Fallon Henley, Giulia, Jacob Fatu, Josh Briggs, Kiana James, Lash Legend,
+  Maxxine Dupri, Oba Femi, Solo Sikoa, Tama Tonga, Tonga Loa, Uncle Howdy, El Hijo del Vikingo, Wren Sinclair, Zoey Stark,
+  Jacy Jayne, Lola Vice = Catalina Garcia). Not in 2K26: Alex Zayne, Dijak, Sanga, Saya Kamitani, Swerve, Ospreay, MJF, etc.
+- Translator changes: Finisher2/Signature2 mirror slot 1 when 2K26 repeats it (else the base's finisher stayed, e.g. Kevin Nash's
+  Jackknife on Josh Briggs). **2K26 reuses some 2K19 ids for new moves:** 5.2% of shared-id slot uses have a 2K26 name sharing no word
+  with the 2K19 name; most are renames (taunts lost wrestler names: Bulgaria = Rusev, Demon King = Finn Balor; Boston Crab 4 = Walls
+  of Jericho) but some are real reuse (Samoan Splash on Diving Tomahawk Chop's id, Cutthroat on Clothesline 13's). Now overrides
+  beat the id, and every placed move with a name mismatch is flagged in the report. Overrides grew to 34 (Gun Stun for Tama's
+  Cutthroat, Samoan Splash/Spike, Z-360, Lash Extension, Fall From Grace, Rikishi Driver, Michinoku Driver, ...).
+- Remaining headline flags to check in game: Fallon Henley F1 (2K26 "Hoedown" on Famouser 1), Kiana James F1 ("401k" on Suplex Powerslam).

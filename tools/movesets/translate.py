@@ -39,7 +39,11 @@ def translate(wid,per,tdir,names,base=None,cat26=None):
         cand.append((conf,s,sw(x),[f for f,_ in top]))
     cand.sort(reverse=True); out={}; log=[]; skipped=[]; displaced=[]
     for conf,s,mid,tops in cand:
-        sub=None
+        sub=None; n26=(cat26 or {}).get(sw(mid),[None])[0]; ov=json.load(open(os.path.join(HERE,'overrides.json')))
+        if n26 and n26 in ov and int(ov[n26],16)!=mid:   # curated mapping beats the id (2K26 reuses a few old ids for new moves)
+            sub=(n26+' [override]',1.0); mid=int(ov[n26],16)
+        elif mid in names and n26 and n26.strip().upper()!='TBD' and not set(toks(n26))&set(toks(names[mid])):
+            sub=('2K26 name "%s" differs from the 2K19 name for this id (rename or reused id)'%n26.strip(),0.0)
         if mid not in names:
             n26=(cat26 or {}).get(sw(mid),[None])[0]   # catalog keys = raw 2K26 ids
             ov=json.load(open(os.path.join(HERE,'overrides.json')))
@@ -64,6 +68,9 @@ def translate(wid,per,tdir,names,base=None,cat26=None):
             else: displaced.append((conf,s,mid,tops))
             continue
         out[tgt]=mid; log.append((tgt,mid,s,conf,sub))
+    # 2K26 often repeats Finisher1/Signature1 in the second slot (skipped as a duplicate): mirror it instead of keeping the base's move
+    for a,b in (('moveFinisher1','moveFinisher2'),('moveSignature1','moveSignature2')):
+        if a in out and b not in out: out[b]=out[a]; log.append((b,out[a],-1,1.0,('copy of '+a+' (2K26 repeats it)',1.0)))
     # second pass: displaced moves -> closest FREE slot of the same kind (never taunt<->move, keep vs Standing/Downed, Front/Rear)
     KEEP=('Taunt','Standing','Downed','Front','Rear','Ground','Seated','Kneeling','Apron','Ringside','Corner','Springboard','Diving','Strike','Grapple','Running','Top','Middle')
     for conf,s,mid,tops in displaced:
@@ -83,7 +90,7 @@ def report(wid,base,B,out,log,skipped,names):
     L=['# 2K26 wrestler %d -> 2K19 moveset'%wid,'','Base template (2K19-only slots, untranslated moves): `%s`'%os.path.basename(base),'',
        '%d slots set from 2K26, %d 2K26 moves not placed.'%(len(out),len(skipped)),'','| 2K19 slot | move | 2K26 slot | role confidence |','|---|---|---|---|']
     for tgt,mid,s,conf,sub in sorted(log,key=lambda r:list(B).index(r[0])):
-        L.append('| %s | %s (%04X)%s | %d | %.2f |'%(tgt,names.get(mid,'?'),mid,(' **%s**'%sub[0] if sub[0].startswith('displaced') else ' **substitute for 2K26 "%s" (match %.2f)**'%sub) if sub else '',s,conf))
+        L.append('| %s | %s (%04X)%s | %d | %.2f |'%(tgt,names.get(mid,'?'),mid,(' **%s**'%sub[0] if sub[0].startswith(('displaced','copy','2K26 name')) else ' **substitute for 2K26 "%s" (match %.2f)**'%sub) if sub else '',s,conf))
     L+=['','## Not placed','','| 2K26 slot | id | intended 2K19 slot | reason |','|---|---|---|---|']
     for s,mid,t,why in skipped: L.append('| %d | %04X | %s | %s |'%(s,mid,t,why))
     return '\n'.join(L)
