@@ -26,10 +26,20 @@ def substitute(name26,names,used=()):
         if A[-1] not in B: score*=0.5
         if score>best[1] or (score==best[1] and best[0] is not None and len(n19)<len(names[best[0]])): best=(mid,score)
     return best
+NON_WRESTLER=('Cameraman','CameraMan','Crowd','Cutscene','Dad ','Dummy','Heavy Duty Worker','Highschool','Lady Accomplice','Masked Fan',
+ 'Medical','Mexican Security','Motion Test','Moveset Man','NPC','Photographer','Podcast','Referee','Seamstress','Security Guard','Pete Clark',
+ 'Jack Tice','BCW Fan','Michael Cole','Byron Saxton','Corey Graves','Renee Young','Bobby Heenan','Paul Heyman','Jo Jo','Lana','Maryse')
+GIMMICK_ENTRANCE=('Undertaker','Kane','Bray Wyatt','Sting','Ultimate Warrior','Demon','Elias','Papa Shango','Goldust','Erick Rowan',
+ 'Luke Harper','Jake The Snake','Mr. McMahon','Velveteen','Gold ','Andre the Giant','Shane McMahon')
+ENTRANCE_END=929   # bytes 0..928: entrance / music / trons / advanced entrance / victory settings (layout_2k19.json)
+def candidates(tdir,want):
+    fs=[f for f in glob.glob(os.path.join(tdir,'*.moveset')) if not any(x in os.path.basename(f) for x in NON_WRESTLER)]
+    return sorted(fs,key=lambda f:-len(want & set(m19.read(f).values())))
 def translate(wid,per,tdir,names,base=None,cat26=None):
     ids=per[wid]; want={sw(x) for x in ids if x}
-    if not base:
-        base=max(glob.glob(os.path.join(tdir,'*.moveset')),key=lambda f:len(want & set(m19.read(f).values())))
+    ranked=candidates(tdir,want)
+    if not base: base=ranked[0]
+    entrance=next(f for f in ranked if not any(x in os.path.basename(f) for x in GIMMICK_ENTRANCE))
     B=m19.read(base); fields=list(B)
     roles={int(k):v for k,v in json.load(open(os.path.join(HERE,'slot_roles_2k26.json'))).items()}
     cand=[]
@@ -85,7 +95,7 @@ def translate(wid,per,tdir,names,base=None,cat26=None):
         if best[0] and best[1]>=2:
             out[best[0]]=mid; log.append((best[0],mid,s,conf,('displaced from '+tops[0],best[1]/max(len(A),1))))
         else: skipped.append((s,mid,tops[0],'role already filled, no free slot of the same kind'))
-    return base,B,out,log,skipped
+    return base,B,out,log,skipped,entrance
 def report(wid,base,B,out,log,skipped,names):
     L=['# 2K26 wrestler %d -> 2K19 moveset'%wid,'','Base template (2K19-only slots, untranslated moves): `%s`'%os.path.basename(base),'',
        '%d slots set from 2K26, %d 2K26 moves not placed.'%(len(out),len(skipped)),'','| 2K19 slot | move | 2K26 slot | role confidence |','|---|---|---|---|']
@@ -98,6 +108,8 @@ if __name__=='__main__':
     a=sys.argv; wid=int(a[1]); per={int(k):v for k,v in json.load(open(a[2])).items()}; names=m19.load_names(a[4])
     base=a[a.index('--base')+1] if '--base' in a else None
     cat26={int(k):v for k,v in json.load(open(a[a.index('--catalog')+1])).items()} if '--catalog' in a else None
-    base,B,out,log,sk=translate(wid,per,a[3],names,base,cat26)
-    m19.write(base,out,a[5]); open(a[5][:-8]+'.report.md','w').write(report(wid,base,B,out,log,sk,names))
-    print('base',os.path.basename(base),'set',len(out),'not placed',len(sk))
+    base,B,out,log,sk,ent=translate(wid,per,a[3],names,base,cat26)
+    m19.write(base,out,a[5])
+    b=bytearray(open(a[5],'rb').read()); b[:ENTRANCE_END]=open(ent,'rb').read()[:ENTRANCE_END]; open(a[5],'wb').write(b)   # entrance from a non-gimmick template
+    open(a[5][:-8]+'.report.md','w').write(report(wid,base,B,out,log,sk,names).replace('\n\n%d slots set'%len(out),'\n\nEntrance, music, Titantron and victory settings from: `%s`\n\n%d slots set'%(os.path.basename(ent),len(out)),1))
+    print('base',os.path.basename(base),'| entrance',os.path.basename(ent),'| set',len(out),'not placed',len(sk))
