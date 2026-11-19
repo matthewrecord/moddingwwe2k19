@@ -585,3 +585,12 @@ Sources come from Matthew's own 2K26 copy (handoff 020, `writeup/Cak_2k26.md` on
 - `alpha_cut=[stems]` drops attire triangles in transparent texture areas (the 2K19 gear shader is opaque).
 - 2K26 attire weights use a rootless bone `vector`. It's now dropped (renormalised, nearest-vertex fallback) instead of falling to J_Head, which made "wings".
 - The 2K26 `S_*` meshes are cloth proxies without UVs, so they're skipped.
+
+## 29. In-game round 1 (2026-11-19): BC7 normals, hair physics, knees, entrance attire
+- **2K26 `_nrm` = BC7 data under a DXT5 header.** Decoding it as DXT5 gives noise, which looked like slime/sparkle on every 2K26 port. Auto-detected and re-decoded as BC7.
+  It's a pure normal map, so 2K19's gloss/metal channels get neutral values (gloss 124, metal 0).
+- **2K19 hair physics:** moving hair = a hair JBOY with J_Head + 295 `Hair_b*` bones, driven by block **0x2580** (hundreds of KB in
+  Roman/Seth/Drew; ~2 KB without physics). `hair_physics=<stock pac>` takes that hair model + 0x2580 and skins the new strands from the nearest donor hair vertex.
+- Stock pacs are HSPC/Oodle (`oodl.blocks`); stock and CCT files are both named `ch<CCT id>NN`.
+- `donor_weights=[meshes]`: skin those attire meshes from the 2K19 body (used for kneepads; tights and boots tore that way).
+- Psycho Clown split into ring (no jacket, ch50602) and entrance (jacket, ch50604) builds.
