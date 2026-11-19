@@ -576,3 +576,12 @@ Sources come from Matthew's own 2K26 copy (handoff 020, `writeup/Cak_2k26.md` on
   (Jevon's 1.7° convergence sat under the 2° default). New gate `jawtest.py`. `facecheck.py` takes `FC_TEX`/`FC_MDL`.
 - JeVon Evans v1 passes every gate; awaiting the in-game check (`notes/builds/backport_test9_jevon.md`).
 - Masks (Iguana, Psycho Clown, Flammer, La Parka): study the existing Penta/Fenix/Mistico ports in 2K19 before building them.
+
+## 28. Masks, alpha and rootless bones: Psycho Clown (2026-11-19)
+- Existing 2K19 masked ports (Mistico/Pentagon/Fenix in `mods/CCT/characters/pac/ch`, file = `ch<CCT id>02`) put the mask in the main
+  model as an extra gear object. The builder instead uses the **head-locked hair slot** with the mask's colour texture and alpha (`texconv.hair_color`).
+- Head morphs don't move a head-locked mask, so `mask=<mesh>` recesses covered head skin (0.3 cm, feathered) and clamps each
+  morph's outward push to the head-mask gap. New gate `maskpoke.py` (per-morph and J_Jaw poke counts) must report 0.
+- `alpha_cut=[stems]` drops attire triangles in transparent texture areas (the 2K19 gear shader is opaque).
+- 2K26 attire weights use a rootless bone `vector`. It's now dropped (renormalised, nearest-vertex fallback) instead of falling to J_Head, which made "wings".
+- The 2K26 `S_*` meshes are cloth proxies without UVs, so they're skipped.
