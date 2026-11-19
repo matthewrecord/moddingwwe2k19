@@ -1,2 +1,9 @@
 {"_comment": "2K26 move name -> 2K19 move id (hex, as in MovesID.data). Checked before automatic name matching. Add corrections here.",
- "OG Cutter 1": "0DB1"}
+ "OG Cutter 1": "0DB1",
+ "Crossface 2 - escape": "94E2",
+ "Springboard Enziguiri": "1CB1",
+ "Gamenigiri 2": "79A7",
+ "Puma 2": "9743",
+ "Jackrabbit 2": "0C92",
+ "Jackrabbit 4": "9AF3",
+ "LFG 1": "2192"}

@@ -47,3 +47,9 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
   (token match, move-type word weighted), all flagged in the report. Jevon: 233 slots set, 22 not placed.
 - `decode26.py` rebuilds `char_movesets.json` / `move_catalog26.json` from the two decoded tables.
 - Output `jevon_evans_v1.moveset` + `.report.md`. Note: the base template's non-move data (entrance etc.) comes along; Matthew injects.
+- **v2 (Jevon):** overrides for Crossface 2 - escape -> Crossface, Springboard Enziguiri -> Handspring Enzuigiri, Gamenigiri 2 ->
+  Gamengiri; 2K26-only taunts -> generic 2K19 taunts (Puma -> Crowd Approval 1, Jackrabbit -> Bring It On 1/2, LFG -> Arms Spread 1),
+  replacing Kofi's personal taunts from the base. Displaced moves (valid move, role taken) get a second pass into a FREE slot of the
+  same kind only (taunt/move, strike/grapple/running, springboard/diving, top/middle rope, standing/downed, front/rear, corner/apron/
+  ringside/ground/seated/kneeling must all match), since 2K19 animations are tied to the slot's category. Result: 241 set; 14 not placed
+  = 5 duplicates + 9 variants with no free compatible slot (2K19 has fewer corner-springboard / middle-rope / corner-running slots).

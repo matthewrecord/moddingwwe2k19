@@ -10,6 +10,7 @@ HERE=os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0,HERE)
 import moveset19 as m19
 sw=lambda i:((i>>8)|((i&255)<<8))
 fam=lambda n:re.sub(r'\d+$','',n)
+ctoks=lambda f:set(re.findall(r'[A-Z][a-z]+|\d+',f[4:] if f.startswith('move') else f))
 STOP={'the','of','a','to','and','with','from','new','dlc','mod','hidden','2k18','2k17','2k16','2k15','reversal','into','on','in','vs','left','right','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'}
 def toks(n): return [t for t in re.sub(r'\[.*?\]|\(.*?\)','',n.lower()).replace('-',' ').replace('/',' ').split() if t not in STOP and not t.isdigit()]
 def substitute(name26,names,used=()):
@@ -36,7 +37,7 @@ def translate(wid,per,tdir,names,base=None,cat26=None):
         if not x or s not in roles: continue
         top=roles[s]['top']; conf=top[0][1]/max(roles[s]['seen'],1)
         cand.append((conf,s,sw(x),[f for f,_ in top]))
-    cand.sort(reverse=True); out={}; log=[]; skipped=[]
+    cand.sort(reverse=True); out={}; log=[]; skipped=[]; displaced=[]
     for conf,s,mid,tops in cand:
         sub=None
         if mid not in names:
@@ -50,18 +51,35 @@ def translate(wid,per,tdir,names,base=None,cat26=None):
             if sub is None: skipped.append((s,mid,tops[0],'no 2K19 equivalent (%s)'%((cat26 or {}).get(sw(mid),['?'])[0]))); continue
         tgt=None
         for f in tops:
-            if f not in out: tgt=f; break
+            if f in B and f not in out: tgt=f; break
         if tgt is None:
             sib=[f for f in fields if fam(f)==fam(tops[0]) and f not in out]
             tgt=sib[0] if sib else None
-        if tgt is None: skipped.append((s,mid,tops[0],'role already filled')); continue
+        if tgt is None:
+            if mid in out.values(): skipped.append((s,mid,tops[0],'duplicate of a placed move'))
+            else: displaced.append((conf,s,mid,tops))
+            continue
         out[tgt]=mid; log.append((tgt,mid,s,conf,sub))
+    # second pass: displaced moves -> closest FREE slot of the same kind (never taunt<->move, keep vs Standing/Downed, Front/Rear)
+    KEEP=('Taunt','Standing','Downed','Front','Rear','Ground','Seated','Kneeling','Apron','Ringside','Corner','Springboard','Diving','Strike','Grapple','Running','Top','Middle')
+    for conf,s,mid,tops in displaced:
+        if mid in out.values(): skipped.append((s,mid,tops[0],'duplicate of a placed move')); continue
+        A=ctoks(tops[0]); best=(None,0)
+        for f in fields:
+            if f in out or f.startswith('moveWeightDetection') or 'EMPTY' in f: continue
+            C=ctoks(f)
+            if any((k in A)!=(k in C) for k in KEEP): continue
+            sc=len(A&C)
+            if sc>best[1]: best=(f,sc)
+        if best[0] and best[1]>=2:
+            out[best[0]]=mid; log.append((best[0],mid,s,conf,('displaced from '+tops[0],best[1]/max(len(A),1))))
+        else: skipped.append((s,mid,tops[0],'role already filled, no free slot of the same kind'))
     return base,B,out,log,skipped
 def report(wid,base,B,out,log,skipped,names):
     L=['# 2K26 wrestler %d -> 2K19 moveset'%wid,'','Base template (2K19-only slots, untranslated moves): `%s`'%os.path.basename(base),'',
        '%d slots set from 2K26, %d 2K26 moves not placed.'%(len(out),len(skipped)),'','| 2K19 slot | move | 2K26 slot | role confidence |','|---|---|---|---|']
     for tgt,mid,s,conf,sub in sorted(log,key=lambda r:list(B).index(r[0])):
-        L.append('| %s | %s (%04X)%s | %d | %.2f |'%(tgt,names.get(mid,'?'),mid,' **substitute for 2K26 "%s" (match %.2f)**'%sub if sub else '',s,conf))
+        L.append('| %s | %s (%04X)%s | %d | %.2f |'%(tgt,names.get(mid,'?'),mid,(' **%s**'%sub[0] if sub[0].startswith('displaced') else ' **substitute for 2K26 "%s" (match %.2f)**'%sub) if sub else '',s,conf))
     L+=['','## Not placed','','| 2K26 slot | id | intended 2K19 slot | reason |','|---|---|---|---|']
     for s,mid,t,why in skipped: L.append('| %d | %04X | %s | %s |'%(s,mid,t,why))
     return '\n'.join(L)
