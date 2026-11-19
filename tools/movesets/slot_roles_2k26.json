@@ -1,1 +1,5568 @@
-{"0": ["moveStrikeAttack1", 43, 114], "1": ["moveRopeStrikeAttack", 10, 114], "2": ["moveStrikeAttack4", 22, 114], "3": ["moveStandingStrongStrikeNewFront1", 15, 109], "4": ["moveStandingStrongStrikeNewFront1", 18, 109], "5": ["moveStandingStrongStrikeNewFront2", 7, 109], "6": ["moveRunningStrike1", 25, 114], "7": ["moveRunningStrike1", 16, 113], "8": ["moveWeightDetectionRunningGrappleFront", 39, 114], "9": ["moveStandingStrongStrikeNewRear1", 13, 109], "10": ["moveRunningStrikeRear1", 51, 114], "11": ["moveRunningStrikeRear2", 31, 114], "12": ["moveWeightDetectionRunningGrappleBehind", 33, 114], "13": ["moveWeightDetectionStrongGrappleFront", 7, 109], "14": ["moveFrontMediumGrapple3", 11, 114], "15": ["moveFrontMediumGrapple1", 6, 112], "16": ["moveFrontMediumGrapple2", 6, 113], "17": ["moveFrontFacelock4", 6, 113], "18": ["moveFrontStrongGrapple1", 12, 114], "19": ["moveFrontStrongGrapple3", 10, 114], "20": ["moveFrontStrongGrapple2", 9, 114], "21": ["moveFrontStrongGrapple4", 10, 114], "22": ["moveFrontStrongGrapple2", 9, 112], "23": ["moveStandingStrongStrikeNewRear1", 41, 109], "24": ["moveRearMediumGrapple3", 23, 114], "25": ["moveStandingStrongStrikeNewRear1", 12, 114], "26": ["moveRearMediumGrapple4", 10, 114], "27": ["moveRearMediumGrapple1", 14, 114], "28": ["moveRearStrongGrapple1", 15, 109], "29": ["moveRearStrongGrapple3", 12, 114], "30": ["moveRearStrongGrapple2", 17, 114], "31": ["moveRearStrongGrapple4", 12, 114], "32": ["moveRearStrongGrapple1", 11, 114], "33": ["moveSignature1", 43, 114], "34": ["moveSignature2", 19, 104], "35": ["moveCornerTopRopeGrapple1", 4, 46], "36": ["moveSignature2", 2, 13], "38": ["moveRingsideSignature1", 35, 114], "39": ["moveRingsideSignature2", 15, 54], "40": ["moveFinisher1", 55, 114], "41": ["moveFinisher2", 28, 101], "42": ["moveFinisher2", 8, 57], "43": ["moveFinisher2", 3, 16], "44": ["moveFinisher1", 1, 4], "45": ["moveRingsideFinisher1", 60, 114], "46": ["moveRingsideFinisher2", 25, 69], "47": ["moveRingsideFinisher1", 44, 114], "48": ["moveKneelingOpponentStrike", 99, 114], "49": ["moveKneelingOpponentStrongStrike", 46, 113], "50": ["moveKneelingOpponentRunning", 54, 114], "51": ["moveWeightDetectionKneelingFront", 29, 109], "52": ["moveKneelingOpponentFrontGrapple", 38, 114], "54": ["moveWeightDetectionKneelingRear", 36, 109], "55": ["moveKneelingOpponentBehindGrapple", 37, 114], "57": ["moveSeatedStrongStrikeFront", 33, 114], "58": ["moveSeatedGrappleFront", 81, 114], "59": ["moveSeatedRunningStrike", 50, 114], "60": ["moveSeatedStrongStrikeRear", 64, 114], "61": ["moveSeatedGrappleRear", 37, 114], "62": ["moveGroundStrongStrikeFaceUp1", 30, 113], "63": ["moveWeightDetectionGroundUpper", 32, 109], "64": ["moveFaceUpGrappleUpper", 18, 114], "65": ["moveFaceUpGrappleUpper", 4, 9], "66": ["moveGroundStrongStrikeFaceUp2", 35, 114], "67": ["moveLimbTargetGroundSide", 23, 109], "68": ["moveFaceUpGrappleSide", 19, 112], "70": ["moveGroundStrongStrikeFaceUp3", 21, 114], "71": ["moveGroundStrongStrikeFaceUp3", 19, 109], "72": ["moveFaceUpGrappleLower", 21, 113], "73": ["moveGroundStrongStrikeFaceUp3", 1, 9], "74": ["moveGroundStrongStrikeFaceDown1", 31, 114], "75": ["moveGroundStrongStrikeFaceDown1", 28, 109], "76": ["moveFaceDownGrappleUpper", 22, 109], "77": ["moveFaceDownGrappleUpper", 6, 10], "78": ["moveGroundStrongStrikeFaceDown2", 44, 114], "79": ["moveLimbTargetGroundSide", 49, 109], "80": ["moveFaceUpGrappleSide", 23, 109], "81": ["moveFaceUpGrappleSide", 1, 9], "82": ["moveFaceUpGrappleLower", 4, 114], "83": ["moveGroundStrongStrikeFaceUp3", 16, 109], "84": ["moveFaceUpGrappleLower", 28, 110], "85": ["moveLimbTargetGroundLower", 2, 10], "86": ["moveRunningGroundStrikeUpper", 50, 109], "87": ["moveIrishWhipReboundAttack", 32, 114], "88": ["moveIrishWhipReboundGrapple1", 48, 114], "89": ["moveIrishWhipReboundGrapple1", 24, 114], "90": ["moveDropDownLeapfrog1st", 102, 114], "91": ["moveDropDownLeapfrog2nd", 83, 95], "92": ["moveRunningPullBackAttack", 62, 114], "93": ["moveRunningPullBackGrapple", 56, 114], "94": ["moveCarry1", 25, 114], "95": ["moveCarry4", 33, 114], "96": ["moveCarry2", 45, 114], "97": ["moveCarry3", 9, 114], "98": ["moveCornerFrontStrike1", 69, 114], "99": ["moveCornerStrongStrike1", 29, 114], "100": ["moveCornerFrontRunningStrike", 46, 112], "101": ["moveCornerFrontRunningStrike", 8, 106], "102": ["moveCornerFrontRunningStrike", 17, 106], "103": ["moveCornerStrongStrike1", 10, 109], "104": ["moveCornerFrontGrapple2", 14, 109], "105": ["moveCornerFrontGrapple2", 11, 109], "106": ["moveCornerRearStrike", 78, 114], "107": ["moveCornerRearStrike", 19, 109], "108": ["moveCornerRearRunningStrike", 100, 114], "109": ["moveWeightDetectionCornerGrappleBehind", 80, 109], "110": ["moveCornerRearGrapple1", 29, 109], "111": ["moveCornerRearGrapple1", 21, 109], "112": ["moveCornerSeatedStrongStrike1", 30, 114], "113": ["moveCornerSeatedGrapple", 52, 109], "114": ["moveCornerSeatedRunning", 64, 114], "116": ["moveCornerTopRopeGrapple2", 24, 114], "117": ["moveCornerTopRopeGrapple1", 45, 114], "118": ["moveCornerRearTopRopeGrapple1", 38, 114], "119": ["moveCornerRearTopRopeGrapple1", 51, 114], "120": ["moveTreeOfWoeGrapple", 78, 114], "121": ["moveTreeOfWoeRunning", 88, 114], "122": ["moveRopeStrikeAttack", 79, 114], "123": ["moveRopeStrongStrike", 38, 114], "124": ["moveRopeRunningStrike", 93, 114], "125": ["moveStunnedAgainstRopes2", 16, 109], "126": ["moveStunnedAgainstRopes1", 17, 109], "127": ["moveStunnedAgainstRopes2", 13, 109], "128": ["moveAgainstMiddleRope", 44, 114], "130": ["moveWeightDetectionApronGrappleToApron", 15, 109], "131": ["moveWeightDetectionApronGrappleToApron", 8, 109], "132": ["moveApronGrappleRingToApron", 49, 109], "133": ["moveApronGrappleRingToApronBehind", 61, 114], "134": ["moveWeightDetectionApronGrappleToRing", 31, 109], "135": ["moveApronGrappleApronToRing", 20, 109], "136": ["moveApronRunningToRingside", 69, 114], "137": ["moveApronRingsideRunVsDowned", 87, 114], "138": ["moveDivingMiddleRopeVsStanding", 51, 114], "139": ["moveDivingMiddleRopeVsStanding", 16, 87], "140": ["moveDivingMiddleRopeVsStanding", 2, 9], "141": ["moveDivingMiddleRopeVsDowned", 38, 114], "142": ["moveDivingMiddleRopeVsDowned", 23, 82], "143": ["moveDivingMiddleRopeVsDowned", 3, 9], "144": ["moveDivingTopRopeVsStanding1", 20, 114], "145": ["moveStageDivingVsStanding", 24, 114], "146": ["moveDivingTopRopeVsStanding2", 1, 9], "147": ["moveDivingTopRopeVsDowned2", 34, 112], "148": ["moveStageDivingVsDowned", 28, 112], "149": ["moveStageDivingVsDowned", 4, 9], "150": ["moveRopeSpringboardAttack", 8, 26], "151": ["moveRopeSpringboardRunning", 7, 24], "152": ["moveCornerSpringboard", 7, 30], "153": ["moveCornerSpringboard", 7, 31], "156": ["moveApronSpringboardAttackToRing", 10, 26], "157": ["moveSpringboardToRingVsDowned", 6, 10], "158": ["moveSpringboardToRingVsDowned", 7, 10], "159": ["moveCornerSpringboard", 5, 15], "160": ["moveCornerSpringboard", 2, 10], "163": ["moveSpringboardToApronVsDowned", 5, 22], "164": ["moveOutsideSpringboardAttack", 8, 44], "165": ["moveOutOfRingDiveAttackRun", 10, 51], "166": ["moveApronSpringboardAttackToRingside", 11, 21], "167": ["moveSpringboardToRingsideVsDowned", 3, 5], "169": ["moveApronToRingsideVsDowned", 5, 9], "170": ["moveBarricade1", 26, 109], "171": ["moveFrontFacelock2", 40, 114], "172": ["moveGroundSubmissionUpper", 43, 114], "173": ["moveGroundSubmissionSide", 42, 114], "174": ["moveGroundSubmissionLower", 43, 114], "175": ["moveWorkingHoldFrontFacelock", 74, 112], "176": ["moveWorkingHoldSeated", 83, 112], "177": ["moveLeveragePin", 62, 114], "178": ["moveLeveragePinRear", 55, 114], "181": ["moveAnnounceTableFinisher", 33, 109], "182": ["moveDoubleFinisher", 12, 20], "183": ["moveCatchingFinisher", 20, 41], "184": ["moveTableFinisher1", 61, 114], "185": ["moveTableFinisher2", 39, 114], "186": ["moveHIACCeilingGrapple", 49, 114], "187": ["moveRoyalRumbleRopeFinisher1", 61, 114], "188": ["moveRoyalRumbleRopeFinisher2", 47, 114], "189": ["moveRoyalRumbleApronFinisher1", 70, 114], "190": ["moveRoyalRumbleApronFinisher2", 57, 113], "191": ["moveHIACCeilingGrapple", 50, 114], "192": ["moveHIACFinisher", 48, 114], "195": ["moveComeback", 58, 114], "196": ["movePaybackInstantRecovery", 105, 110], "197": ["moveTauntOpponentStanding5", 7, 107], "198": ["moveRingIn", 103, 114], "199": ["moveRingOut", 97, 114], "200": ["moveApronRingIn", 106, 114], "201": ["moveApronRingOut", 105, 114], "205": ["moveStandingTagTeamUp", 89, 114], "206": ["moveStandingTagTeamLeft", 80, 114], "207": ["moveStandingTagTeamRight", 86, 114], "208": ["moveStandingTagTeamDown", 79, 114], "209": ["moveCornerTagTeamUp", 69, 114], "210": ["moveCornerTagTeamLeft", 78, 114], "211": ["moveCornerTagTeamRight", 79, 114], "212": ["moveCornerTagTeamDown", 78, 114], "217": ["moveKickReversalAttack", 64, 114], "218": ["moveKickReversalGrapple", 54, 114], "220": ["moveKickReversalKickReversal", 40, 114], "221": ["moveKickReversalReversal", 79, 114], "222": ["moveLadderStrikeNew", 98, 114], "223": ["moveLadderStrongStrikeNew", 105, 114], "224": ["moveLadderGrappleNew", 92, 114], "225": ["moveLadderFinisher1New", 68, 114], "226": ["moveLadderFinisher2New", 64, 109], "227": ["moveTable1", 72, 114], "228": ["moveTable2", 52, 114], "229": ["moveTable3", 102, 114], "230": ["moveTable4", 96, 114], "232": ["moveTable5", 98, 114], "234": ["moveBarricade2", 49, 114], "237": ["moveEquipmentBoxDivingVsStanding", 94, 114], "238": ["moveEquipmentBoxDivingVsDowned", 45, 114], "239": ["moveStageDivingVsStanding", 27, 114], "240": ["moveStageDivingVsDowned", 24, 114], "241": ["moveTauntCrowdStanding1", 37, 114], "242": ["moveTauntCrowdStanding2", 31, 110], "243": ["moveTauntCrowdStanding3", 35, 102], "244": ["moveTauntCrowdStanding4", 22, 61], "245": ["moveTauntCrowdStanding5", 37, 114], "246": ["moveTauntPointerCrowdNearCorner1", 60, 114], "247": ["moveTauntPointerCrowdNearCorner2", 33, 100], "248": ["moveTauntPointerCrowdNearCorner1", 59, 114], "249": ["moveTauntPointerCrowdTopRope1", 40, 114], "250": ["moveTauntPointerCrowdTopRope2", 27, 92], "251": ["moveTauntPointerCrowdTopRope3", 40, 114], "252": ["moveTauntPointerCrowdHidden1", 110, 112], "253": ["moveTauntPointerCrowdHidden2", 111, 111], "254": ["moveTauntPointerCrowdHidden2", 111, 112], "255": ["moveTauntPointerCrowdMiddleRope3", 46, 114], "256": ["moveTauntPointerCrowdMiddleRope2", 34, 91], "257": ["moveTauntPointerCrowdMiddleRope3", 47, 114], "258": ["moveTauntPointerCrowdApron1", 62, 114], "259": ["moveTauntPointerCrowdApron2", 27, 69], "260": ["moveTauntPointerCrowdApron1", 62, 114], "261": ["moveTauntPointerCrowdApronToRingside1", 63, 114], "262": ["moveTauntPointerCrowdApronToRingside2", 26, 76], "263": ["moveTauntPointerCrowdApronToRingside1", 60, 114], "264": ["moveTauntOpponentStanding5", 32, 114], "265": ["moveTauntOpponentStanding2", 28, 112], "266": ["moveTauntOpponentStanding3", 21, 90], "267": ["moveTauntOpponentStanding4", 13, 45], "268": ["moveTauntOpponentStanding5", 39, 114], "269": ["moveTauntOpponentGround1", 26, 113], "270": ["moveTauntOpponentGround2", 27, 112], "271": ["moveTauntOpponentGround3", 20, 99], "272": ["moveTauntOpponentGround4", 14, 47], "273": ["moveTauntOpponentGround5", 29, 113], "274": ["moveTauntPointerOpponentNearCorner3", 50, 114], "275": ["moveTauntPointerOpponentNearCorner2", 42, 100], "276": ["moveTauntPointerOpponentNearCorner3", 52, 114], "277": ["moveTauntPointerOpponentTopRope3", 47, 114], "278": ["moveTauntPointerOpponentTopRope2", 40, 103], "279": ["moveTauntPointerOpponentTopRope3", 45, 114], "280": ["moveTauntPointerCrowdHidden2", 111, 112], "281": ["moveTauntPointerCrowdHidden2", 111, 111], "282": ["moveTauntPointerCrowdHidden2", 111, 112], "283": ["moveTauntPointerOpponentMiddleRope1", 50, 114], "284": ["moveTauntPointerOpponentMiddleRope2", 30, 89], "285": ["moveTauntPointerOpponentMiddleRope1", 44, 114], "286": ["moveTauntPointerOpponentApron1", 82, 114], "287": ["moveTauntPointerOpponentApron2", 38, 81], "288": ["moveTauntPointerOpponentApron1", 77, 114], "289": ["moveTauntPointerOpponentApronToRingside3", 66, 114], "290": ["moveTauntPointerOpponentApronToRingside2", 35, 87], "291": ["moveTauntPointerOpponentApronToRingside3", 67, 114], "292": ["moveTauntWakeupStanding1", 68, 114], "293": ["moveTauntPointerWakeupNearCorner1", 87, 114], "294": ["moveTauntPointerWakeupTopRope1", 77, 114], "295": ["moveTauntPointerCrowdHidden2", 114, 114], "296": ["moveTauntPointerWakeupMiddleRope1", 84, 114], "297": ["moveTauntPointerWakeupApron1", 98, 114], "298": ["moveTauntPointerWakeupApronToRingside1", 64, 114], "299": ["moveTauntCrowdStanding4", 1, 72], "300": ["moveTauntCrowdStanding4", 1, 67], "301": ["moveTauntCrowdStanding4", 1, 68], "302": ["moveTauntOpponentStanding4", 3, 95], "303": ["moveTauntOpponentGround2", 1, 92], "304": ["moveTauntOpponentStanding4", 3, 94], "305": ["moveTauntOpponentGround1", 1, 55], "307": ["moveTauntOpponentGround1", 1, 55], "308": ["movePreMatchWarmup1", 53, 112], "309": ["movePreMatchWarmup2", 61, 112], "310": ["movePreMatchWarmup3", 48, 104], "311": ["movePreMatchTitleMatchChampion", 84, 112], "312": ["movePreMatchTitleMatchChallenger1", 62, 112], "313": ["movePreMatchTitleMatchChallenger2", 44, 106], "339": ["moveStandingStrongStrikeNewFront3", 1, 1], "342": ["moveFrontMediumGrapple3", 1, 1], "351": ["moveFaceUpGrappleLower", 1, 1], "353": ["moveStrongStrike1", 1, 2], "354": ["moveStrongStrike1", 1, 3], "355": ["moveSignature2", 1, 3], "356": ["moveStandingStrongStrikeNewFront5", 1, 2], "357": ["moveCornerFrontGrapple1", 1, 1]}
+{
+"7": {
+"top": [
+[
+"moveRunningStrike1",
+16
+],
+[
+"moveRunningStrike2",
+15
+],
+[
+"moveIrishWhipReboundAttack",
+8
+],
+[
+"moveStandingStrongStrikeNewFront1",
+3
+],
+[
+"moveStandingStrongStrikeNewFront3",
+1
+]
+],
+"seen": 113
+},
+"8": {
+"top": [
+[
+"moveWeightDetectionRunningGrappleFront",
+39
+],
+[
+"moveRunningFrontGrapple1",
+35
+],
+[
+"moveRunningFrontGrapple2",
+19
+],
+[
+"moveIrishWhipReboundGrapple1",
+7
+],
+[
+"moveWeightDetectionIrishWhipRebound",
+4
+]
+],
+"seen": 114
+},
+"10": {
+"top": [
+[
+"moveRunningStrikeRear1",
+51
+],
+[
+"moveRunningStrikeRear2",
+24
+],
+[
+"moveStandingStrongStrikeNewRear2",
+20
+],
+[
+"moveStandingStrongStrikeNewRear1",
+6
+]
+],
+"seen": 114
+},
+"11": {
+"top": [
+[
+"moveRunningStrikeRear2",
+31
+],
+[
+"moveRunningStrikeRear1",
+27
+],
+[
+"moveStandingStrongStrikeNewRear1",
+7
+],
+[
+"moveStandingStrongStrikeNewRear2",
+3
+],
+[
+"moveSignature2",
+1
+]
+],
+"seen": 114
+},
+"12": {
+"top": [
+[
+"moveWeightDetectionRunningGrappleBehind",
+33
+],
+[
+"moveRunningRearGrapple1",
+20
+],
+[
+"moveRunningRearGrapple2",
+11
+],
+[
+"moveRearMediumGrapple4",
+3
+],
+[
+"moveRearStrongGrapple4",
+2
+]
+],
+"seen": 114
+},
+"13": {
+"top": [
+[
+"moveWeightDetectionStrongGrappleFront",
+7
+],
+[
+"moveWeightDetectionLimbTargetHead",
+7
+],
+[
+"moveFrontMediumGrapple3",
+5
+],
+[
+"moveFrontMediumGrapple1",
+5
+],
+[
+"moveLimbTargetStandingHead",
+4
+]
+],
+"seen": 109
+},
+"18": {
+"top": [
+[
+"moveFrontStrongGrapple1",
+12
+],
+[
+"moveFrontStrongGrapple4",
+7
+],
+[
+"moveWeightDetectionStrongGrappleFront",
+7
+],
+[
+"moveFrontStrongGrapple3",
+6
+],
+[
+"moveFrontFacelock6",
+4
+]
+],
+"seen": 114
+},
+"23": {
+"top": [
+[
+"moveStandingStrongStrikeNewRear1",
+41
+],
+[
+"moveStandingStrongStrikeNewRear2",
+27
+],
+[
+"moveRearMediumGrapple1",
+3
+],
+[
+"moveWeightDetectionMediumGrappleBehind",
+3
+],
+[
+"moveRearMediumGrapple3",
+2
+]
+],
+"seen": 109
+},
+"31": {
+"top": [
+[
+"moveRearStrongGrapple4",
+12
+],
+[
+"moveRearMediumGrapple4",
+6
+],
+[
+"moveWeightDetectionMediumGrappleBehind",
+5
+],
+[
+"moveRearStrongGrapple2",
+4
+],
+[
+"moveRearMediumGrapple2",
+3
+]
+],
+"seen": 114
+},
+"33": {
+"top": [
+[
+"moveSignature1",
+43
+],
+[
+"moveRingsideSignature1",
+26
+],
+[
+"moveSignature2",
+19
+],
+[
+"moveRingsideSignature2",
+16
+],
+[
+"moveRingsideFinisher1",
+11
+]
+],
+"seen": 114
+},
+"34": {
+"top": [
+[
+"moveSignature2",
+19
+],
+[
+"moveRingsideSignature2",
+12
+],
+[
+"moveFinisher2",
+9
+],
+[
+"moveSignature1",
+7
+],
+[
+"moveRingsideFinisher2",
+7
+]
+],
+"seen": 104
+},
+"38": {
+"top": [
+[
+"moveRingsideSignature1",
+35
+],
+[
+"moveSignature1",
+26
+],
+[
+"moveRingsideSignature2",
+25
+],
+[
+"moveSignature2",
+20
+],
+[
+"moveRingsideFinisher2",
+15
+]
+],
+"seen": 114
+},
+"39": {
+"top": [
+[
+"moveRingsideSignature2",
+15
+],
+[
+"moveSignature2",
+11
+],
+[
+"moveRingsideSignature1",
+8
+],
+[
+"moveRingsideFinisher2",
+8
+],
+[
+"moveRingsideFinisher1",
+5
+]
+],
+"seen": 54
+},
+"40": {
+"top": [
+[
+"moveFinisher1",
+55
+],
+[
+"moveRingsideFinisher1",
+46
+],
+[
+"moveFinisher2",
+26
+],
+[
+"moveRingsideFinisher2",
+23
+],
+[
+"moveCatchingFinisher",
+12
+]
+],
+"seen": 114
+},
+"41": {
+"top": [
+[
+"moveFinisher2",
+28
+],
+[
+"moveRingsideFinisher2",
+26
+],
+[
+"moveFinisher1",
+18
+],
+[
+"moveRingsideFinisher1",
+13
+],
+[
+"moveAnnounceTableFinisher",
+7
+]
+],
+"seen": 101
+},
+"45": {
+"top": [
+[
+"moveRingsideFinisher1",
+60
+],
+[
+"moveFinisher1",
+46
+],
+[
+"moveRingsideFinisher2",
+32
+],
+[
+"moveFinisher2",
+23
+],
+[
+"moveCatchingFinisher",
+13
+]
+],
+"seen": 114
+},
+"46": {
+"top": [
+[
+"moveRingsideFinisher2",
+25
+],
+[
+"moveFinisher2",
+19
+],
+[
+"moveRingsideFinisher1",
+11
+],
+[
+"moveFinisher1",
+8
+],
+[
+"moveRingsideSignature2",
+5
+]
+],
+"seen": 69
+},
+"48": {
+"top": [
+[
+"moveKneelingOpponentStrike",
+99
+]
+],
+"seen": 114
+},
+"50": {
+"top": [
+[
+"moveKneelingOpponentRunning",
+54
+]
+],
+"seen": 114
+},
+"52": {
+"top": [
+[
+"moveKneelingOpponentFrontGrapple",
+38
+],
+[
+"moveWeightDetectionKneelingFront",
+24
+]
+],
+"seen": 114
+},
+"58": {
+"top": [
+[
+"moveSeatedGrappleFront",
+81
+],
+[
+"moveWeightDetectionSeatedFront",
+3
+],
+[
+"moveFaceUpGrappleLower",
+3
+],
+[
+"moveLimbTargetGroundLower",
+2
+],
+[
+"moveWeightDetectionGroundLower",
+2
+]
+],
+"seen": 114
+},
+"60": {
+"top": [
+[
+"moveSeatedStrongStrikeRear",
+64
+]
+],
+"seen": 114
+},
+"62": {
+"top": [
+[
+"moveGroundStrongStrikeFaceUp1",
+30
+],
+[
+"moveLimbTargetGroundUpper",
+5
+],
+[
+"moveFaceUpGrappleUpper",
+3
+]
+],
+"seen": 113
+},
+"63": {
+"top": [
+[
+"moveWeightDetectionGroundUpper",
+32
+],
+[
+"moveFaceUpGrappleUpper",
+26
+],
+[
+"moveWeightDetectionSeatedRear",
+17
+],
+[
+"moveSeatedGrappleRear",
+15
+],
+[
+"moveLimbTargetGroundUpper",
+12
+]
+],
+"seen": 109
+},
+"66": {
+"top": [
+[
+"moveGroundStrongStrikeFaceUp2",
+35
+],
+[
+"moveSignature2",
+4
+],
+[
+"moveRingsideSignature2",
+2
+]
+],
+"seen": 114
+},
+"71": {
+"top": [
+[
+"moveGroundStrongStrikeFaceUp3",
+19
+],
+[
+"moveGroundStrongStrikeFaceDown3",
+18
+],
+[
+"moveLimbTargetGroundLower",
+12
+],
+[
+"moveWeightDetectionSeatedFront",
+12
+],
+[
+"moveSeatedStrongStrikeFront",
+10
+]
+],
+"seen": 109
+},
+"72": {
+"top": [
+[
+"moveFaceUpGrappleLower",
+21
+],
+[
+"moveGroundStrongStrikeFaceUp3",
+10
+],
+[
+"moveLimbTargetGroundLower",
+10
+],
+[
+"moveWeightDetectionGroundLower",
+9
+],
+[
+"moveWeightDetectionSeatedFront",
+7
+]
+],
+"seen": 113
+},
+"77": {
+"top": [
+[
+"moveFaceDownGrappleUpper",
+6
+],
+[
+"moveGroundStrongStrikeFaceDown1",
+5
+]
+],
+"seen": 10
+},
+"78": {
+"top": [
+[
+"moveGroundStrongStrikeFaceDown2",
+44
+],
+[
+"moveFaceDownGrappleSide",
+36
+]
+],
+"seen": 114
+},
+"84": {
+"top": [
+[
+"moveFaceUpGrappleLower",
+28
+],
+[
+"moveFaceDownGrappleLower",
+23
+],
+[
+"moveWeightDetectionGroundLower",
+19
+],
+[
+"moveLimbTargetGroundLower",
+9
+],
+[
+"moveGroundStrongStrikeFaceDown3",
+4
+]
+],
+"seen": 110
+},
+"86": {
+"top": [
+[
+"moveRunningGroundStrikeUpper",
+50
+],
+[
+"moveRunningGroundStrikeSide",
+35
+],
+[
+"moveRunningGroundStrikeLower",
+35
+]
+],
+"seen": 109
+},
+"88": {
+"top": [
+[
+"moveIrishWhipReboundGrapple1",
+48
+],
+[
+"moveWeightDetectionIrishWhipRebound",
+14
+],
+[
+"moveIrishWhipReboundGrapple2",
+9
+],
+[
+"moveRunningFrontGrapple1",
+3
+],
+[
+"moveWeightDetectionRunningGrappleFront",
+3
+]
+],
+"seen": 114
+},
+"93": {
+"top": [
+[
+"moveRunningPullBackGrapple",
+56
+],
+[
+"moveWeightDetectionPullBackAttack",
+34
+]
+],
+"seen": 114
+},
+"94": {
+"top": [
+[
+"moveCarry1",
+25
+],
+[
+"moveFrontStrongGrapple1",
+4
+],
+[
+"moveSignature2",
+1
+],
+[
+"moveRingsideSignature2",
+1
+],
+[
+"moveFrontStrongGrapple4",
+1
+]
+],
+"seen": 114
+},
+"95": {
+"top": [
+[
+"moveCarry4",
+33
+],
+[
+"moveFrontStrongGrapple3",
+9
+],
+[
+"moveFrontStrongGrapple2",
+5
+],
+[
+"moveCarry1",
+2
+],
+[
+"moveFrontMediumGrapple3",
+1
+]
+],
+"seen": 114
+},
+"96": {
+"top": [
+[
+"moveCarry2",
+45
+],
+[
+"moveFrontStrongGrapple2",
+3
+],
+[
+"moveCarry3",
+3
+],
+[
+"moveFrontStrongGrapple4",
+2
+],
+[
+"moveFrontStrongGrapple1",
+1
+]
+],
+"seen": 114
+},
+"104": {
+"top": [
+[
+"moveCornerFrontGrapple2",
+14
+],
+[
+"moveWeightDetectionCornerGrappleFront",
+13
+],
+[
+"moveCornerFrontGrapple1",
+11
+],
+[
+"moveCornerStrongStrike1",
+10
+],
+[
+"moveCornerStrongStrike2",
+6
+]
+],
+"seen": 109
+},
+"108": {
+"top": [
+[
+"moveCornerRearRunningStrike",
+100
+]
+],
+"seen": 114
+},
+"109": {
+"top": [
+[
+"moveWeightDetectionCornerGrappleBehind",
+80
+],
+[
+"moveCornerRearGrapple2",
+62
+],
+[
+"moveCornerRearGrapple1",
+32
+]
+],
+"seen": 109
+},
+"110": {
+"top": [
+[
+"moveCornerRearGrapple1",
+29
+],
+[
+"moveCornerRearGrapple2",
+20
+],
+[
+"moveWeightDetectionCornerGrappleBehind",
+7
+]
+],
+"seen": 109
+},
+"113": {
+"top": [
+[
+"moveCornerSeatedGrapple",
+52
+],
+[
+"moveCornerSeatedStrongStrike1",
+2
+]
+],
+"seen": 109
+},
+"119": {
+"top": [
+[
+"moveCornerRearTopRopeGrapple1",
+51
+],
+[
+"moveCornerRearTopRopeGrapple2",
+39
+],
+[
+"moveWeightDetectionTopRopeGrappleBehind",
+10
+]
+],
+"seen": 114
+},
+"121": {
+"top": [
+[
+"moveTreeOfWoeRunning",
+88
+]
+],
+"seen": 114
+},
+"122": {
+"top": [
+[
+"moveRopeStrikeAttack",
+79
+],
+[
+"moveStrikeCombination1",
+26
+],
+[
+"moveStrikeAttack1",
+21
+],
+[
+"moveStrikeCombination2",
+12
+],
+[
+"moveStrikeAttack4",
+5
+]
+],
+"seen": 114
+},
+"124": {
+"top": [
+[
+"moveRopeRunningStrike",
+93
+]
+],
+"seen": 114
+},
+"125": {
+"top": [
+[
+"moveStunnedAgainstRopes2",
+16
+],
+[
+"moveStunnedAgainstRopes1",
+10
+],
+[
+"moveRopeStrongStrike",
+5
+],
+[
+"moveWeightDetectionStunnedAgainstRopes",
+5
+],
+[
+"moveSuicideDive",
+4
+]
+],
+"seen": 109
+},
+"132": {
+"top": [
+[
+"moveApronGrappleRingToApron",
+49
+],
+[
+"moveWeightDetectionApronGrappleToApron",
+9
+]
+],
+"seen": 109
+},
+"137": {
+"top": [
+[
+"moveApronRingsideRunVsDowned",
+87
+]
+],
+"seen": 114
+},
+"139": {
+"top": [
+[
+"moveDivingMiddleRopeVsStanding",
+16
+]
+],
+"seen": 87
+},
+"141": {
+"top": [
+[
+"moveDivingMiddleRopeVsDowned",
+38
+],
+[
+"moveSignature1",
+1
+]
+],
+"seen": 114
+},
+"144": {
+"top": [
+[
+"moveDivingTopRopeVsStanding1",
+20
+],
+[
+"moveDivingTopRopeVsStanding2",
+7
+],
+[
+"moveStageDivingVsStanding",
+6
+]
+],
+"seen": 114
+},
+"145": {
+"top": [
+[
+"moveStageDivingVsStanding",
+24
+],
+[
+"moveDivingTopRopeVsStanding2",
+23
+],
+[
+"moveDivingTopRopeVsStanding1",
+23
+]
+],
+"seen": 114
+},
+"148": {
+"top": [
+[
+"moveStageDivingVsDowned",
+28
+],
+[
+"moveDivingTopRopeVsDowned1",
+23
+],
+[
+"moveDivingTopRopeVsDowned2",
+18
+],
+[
+"moveSignature2",
+2
+],
+[
+"moveSignature1",
+1
+]
+],
+"seen": 112
+},
+"149": {
+"top": [
+[
+"moveStageDivingVsDowned",
+4
+],
+[
+"moveDivingTopRopeVsDowned2",
+4
+],
+[
+"moveDivingTopRopeVsDowned1",
+3
+]
+],
+"seen": 9
+},
+"177": {
+"top": [
+[
+"moveLeveragePin",
+62
+]
+],
+"seen": 114
+},
+"181": {
+"top": [
+[
+"moveAnnounceTableFinisher",
+33
+],
+[
+"moveRingsideFinisher2",
+16
+],
+[
+"moveFinisher1",
+11
+],
+[
+"moveRingsideFinisher1",
+11
+],
+[
+"moveFinisher2",
+11
+]
+],
+"seen": 109
+},
+"182": {
+"top": [
+[
+"moveDoubleFinisher",
+12
+]
+],
+"seen": 20
+},
+"183": {
+"top": [
+[
+"moveCatchingFinisher",
+20
+],
+[
+"moveRingsideFinisher1",
+14
+],
+[
+"moveFinisher1",
+12
+],
+[
+"moveAnnounceTableFinisher",
+5
+],
+[
+"moveSignature2",
+3
+]
+],
+"seen": 41
+},
+"184": {
+"top": [
+[
+"moveTableFinisher1",
+61
+],
+[
+"moveTableFinisher2",
+14
+],
+[
+"moveTable1",
+8
+],
+[
+"moveTable2",
+2
+]
+],
+"seen": 114
+},
+"186": {
+"top": [
+[
+"moveHIACCeilingGrapple",
+49
+],
+[
+"moveSemiTrailerToss",
+45
+],
+[
+"moveStageToss",
+38
+]
+],
+"seen": 114
+},
+"187": {
+"top": [
+[
+"moveRoyalRumbleRopeFinisher1",
+61
+],
+[
+"moveRoyalRumbleRopeFinisher2",
+20
+],
+[
+"moveTable4",
+18
+],
+[
+"moveRopeRunningStrike",
+1
+]
+],
+"seen": 114
+},
+"189": {
+"top": [
+[
+"moveRoyalRumbleApronFinisher1",
+70
+],
+[
+"moveRoyalRumbleApronFinisher2",
+16
+]
+],
+"seen": 114
+},
+"190": {
+"top": [
+[
+"moveRoyalRumbleApronFinisher2",
+57
+],
+[
+"moveRoyalRumbleApronFinisher1",
+17
+]
+],
+"seen": 113
+},
+"191": {
+"top": [
+[
+"moveHIACCeilingGrapple",
+50
+],
+[
+"moveSemiTrailerToss",
+48
+],
+[
+"moveStageToss",
+39
+]
+],
+"seen": 114
+},
+"196": {
+"top": [
+[
+"movePaybackInstantRecovery",
+105
+]
+],
+"seen": 110
+},
+"198": {
+"top": [
+[
+"moveRingIn",
+103
+]
+],
+"seen": 114
+},
+"199": {
+"top": [
+[
+"moveRingOut",
+97
+]
+],
+"seen": 114
+},
+"200": {
+"top": [
+[
+"moveApronRingIn",
+106
+]
+],
+"seen": 114
+},
+"201": {
+"top": [
+[
+"moveApronRingOut",
+105
+]
+],
+"seen": 114
+},
+"205": {
+"top": [
+[
+"moveStandingTagTeamUp",
+89
+],
+[
+"moveStandingTagTeamDown",
+12
+],
+[
+"moveStandingTagTeamRight",
+7
+],
+[
+"moveStandingTagTeamLeft",
+1
+]
+],
+"seen": 114
+},
+"208": {
+"top": [
+[
+"moveStandingTagTeamDown",
+79
+],
+[
+"moveStandingTagTeamLeft",
+8
+],
+[
+"moveStandingTagTeamUp",
+6
+],
+[
+"moveStandingTagTeamRight",
+1
+]
+],
+"seen": 114
+},
+"209": {
+"top": [
+[
+"moveCornerTagTeamUp",
+69
+],
+[
+"moveCornerTagTeamDown",
+16
+],
+[
+"moveCornerTagTeamRight",
+3
+]
+],
+"seen": 114
+},
+"210": {
+"top": [
+[
+"moveCornerTagTeamLeft",
+78
+],
+[
+"moveCornerTagTeamRight",
+5
+],
+[
+"moveCornerTagTeamDown",
+5
+],
+[
+"moveCornerTagTeamUp",
+3
+]
+],
+"seen": 114
+},
+"217": {
+"top": [
+[
+"moveKickReversalAttack",
+64
+]
+],
+"seen": 114
+},
+"221": {
+"top": [
+[
+"moveKickReversalReversal",
+79
+]
+],
+"seen": 114
+},
+"222": {
+"top": [
+[
+"moveLadderStrikeNew",
+98
+],
+[
+"moveLadderStrike",
+2
+]
+],
+"seen": 114
+},
+"223": {
+"top": [
+[
+"moveLadderStrongStrikeNew",
+105
+],
+[
+"moveLadderStrongStrike",
+77
+]
+],
+"seen": 114
+},
+"224": {
+"top": [
+[
+"moveLadderGrappleNew",
+92
+],
+[
+"moveWeightDetectionLadderGrapple",
+42
+],
+[
+"moveLadderGrapple",
+41
+]
+],
+"seen": 114
+},
+"225": {
+"top": [
+[
+"moveLadderFinisher1New",
+68
+],
+[
+"moveLadderFinisher2New",
+38
+],
+[
+"moveLadderFinisher2",
+31
+],
+[
+"moveLadderFinisher1",
+28
+]
+],
+"seen": 114
+},
+"226": {
+"top": [
+[
+"moveLadderFinisher2New",
+64
+],
+[
+"moveLadderFinisher1New",
+39
+],
+[
+"moveLadderFinisher2",
+38
+],
+[
+"moveLadderFinisher1",
+32
+]
+],
+"seen": 109
+},
+"227": {
+"top": [
+[
+"moveTable1",
+72
+],
+[
+"moveTableFinisher1",
+6
+],
+[
+"moveTableFinisher2",
+2
+]
+],
+"seen": 114
+},
+"229": {
+"top": [
+[
+"moveTable3",
+102
+]
+],
+"seen": 114
+},
+"230": {
+"top": [
+[
+"moveTable4",
+96
+],
+[
+"moveRoyalRumbleRopeFinisher1",
+22
+],
+[
+"moveRoyalRumbleRopeFinisher2",
+7
+]
+],
+"seen": 114
+},
+"232": {
+"top": [
+[
+"moveTable5",
+98
+]
+],
+"seen": 114
+},
+"237": {
+"top": [
+[
+"moveEquipmentBoxDivingVsStanding",
+94
+]
+],
+"seen": 114
+},
+"239": {
+"top": [
+[
+"moveStageDivingVsStanding",
+27
+],
+[
+"moveDivingTopRopeVsStanding1",
+16
+],
+[
+"moveDivingTopRopeVsStanding2",
+10
+],
+[
+"moveSignature1",
+3
+],
+[
+"moveFinisher1",
+1
+]
+],
+"seen": 114
+},
+"241": {
+"top": [
+[
+"moveTauntCrowdStanding1",
+37
+],
+[
+"moveTauntCrowdStanding5",
+32
+],
+[
+"moveTauntUp",
+24
+],
+[
+"moveTauntCrowdStanding2",
+22
+],
+[
+"moveTauntCrowdStanding4",
+18
+]
+],
+"seen": 114
+},
+"243": {
+"top": [
+[
+"moveTauntCrowdStanding3",
+35
+],
+[
+"moveTauntCrowdStanding5",
+24
+],
+[
+"moveTauntCrowdStanding1",
+18
+],
+[
+"moveTauntLeft",
+16
+],
+[
+"moveTauntCrowdStanding2",
+12
+]
+],
+"seen": 102
+},
+"245": {
+"top": [
+[
+"moveTauntCrowdStanding5",
+37
+],
+[
+"moveTauntCrowdStanding1",
+31
+],
+[
+"moveTauntCrowdStanding2",
+27
+],
+[
+"moveTauntUp",
+20
+],
+[
+"moveTauntCrowdStanding4",
+18
+]
+],
+"seen": 114
+},
+"249": {
+"top": [
+[
+"moveTauntPointerCrowdTopRope1",
+40
+],
+[
+"moveTauntPointerCrowdTopRope3",
+37
+],
+[
+"moveTauntPointerCrowdTopRope2",
+22
+],
+[
+"moveTauntPointerOpponentTopRope2",
+5
+]
+],
+"seen": 114
+},
+"251": {
+"top": [
+[
+"moveTauntPointerCrowdTopRope3",
+40
+],
+[
+"moveTauntPointerCrowdTopRope1",
+39
+],
+[
+"moveTauntPointerCrowdTopRope2",
+26
+],
+[
+"moveTauntPointerOpponentTopRope2",
+5
+]
+],
+"seen": 114
+},
+"252": {
+"top": [
+[
+"moveTauntPointerCrowdHidden1",
+110
+],
+[
+"moveTauntPointerCrowdHidden2",
+110
+],
+[
+"moveTauntPointerCrowdHidden3",
+110
+],
+[
+"moveTauntPointerWakeupHidden1",
+107
+],
+[
+"moveTauntPointerOpponentHidden1",
+107
+]
+],
+"seen": 112
+},
+"253": {
+"top": [
+[
+"moveTauntPointerCrowdHidden2",
+111
+],
+[
+"moveTauntPointerCrowdHidden3",
+111
+],
+[
+"moveTauntPointerCrowdHidden1",
+109
+],
+[
+"moveTauntPointerWakeupHidden1",
+108
+],
+[
+"moveTauntPointerOpponentHidden1",
+108
+]
+],
+"seen": 111
+},
+"254": {
+"top": [
+[
+"moveTauntPointerCrowdHidden2",
+111
+],
+[
+"moveTauntPointerCrowdHidden3",
+111
+],
+[
+"moveTauntPointerCrowdHidden1",
+109
+],
+[
+"moveTauntPointerWakeupHidden1",
+108
+],
+[
+"moveTauntPointerOpponentHidden1",
+108
+]
+],
+"seen": 112
+},
+"256": {
+"top": [
+[
+"moveTauntPointerCrowdMiddleRope2",
+34
+],
+[
+"moveTauntPointerCrowdMiddleRope1",
+21
+],
+[
+"moveTauntPointerCrowdMiddleRope3",
+19
+],
+[
+"moveTauntPointerOpponentMiddleRope1",
+2
+],
+[
+"moveTauntPointerOpponentMiddleRope3",
+2
+]
+],
+"seen": 91
+},
+"258": {
+"top": [
+[
+"moveTauntPointerCrowdApron1",
+62
+],
+[
+"moveTauntPointerCrowdApron3",
+55
+],
+[
+"moveTauntPointerCrowdApron2",
+51
+],
+[
+"moveTauntPointerOpponentApron1",
+2
+],
+[
+"moveTauntPointerOpponentApron3",
+2
+]
+],
+"seen": 114
+},
+"260": {
+"top": [
+[
+"moveTauntPointerCrowdApron1",
+62
+],
+[
+"moveTauntPointerCrowdApron3",
+55
+],
+[
+"moveTauntPointerCrowdApron2",
+51
+],
+[
+"moveTauntPointerOpponentApron1",
+2
+],
+[
+"moveTauntPointerOpponentApron3",
+2
+]
+],
+"seen": 114
+},
+"261": {
+"top": [
+[
+"moveTauntPointerCrowdApronToRingside1",
+63
+],
+[
+"moveTauntPointerCrowdApronToRingside3",
+50
+],
+[
+"moveTauntPointerCrowdApronToRingside2",
+38
+],
+[
+"moveTauntPointerOpponentApronToRingside2",
+7
+],
+[
+"moveTauntPointerOpponentApronToRingside1",
+4
+]
+],
+"seen": 114
+},
+"263": {
+"top": [
+[
+"moveTauntPointerCrowdApronToRingside1",
+60
+],
+[
+"moveTauntPointerCrowdApronToRingside3",
+51
+],
+[
+"moveTauntPointerCrowdApronToRingside2",
+39
+],
+[
+"moveTauntPointerOpponentApronToRingside2",
+7
+],
+[
+"moveTauntPointerOpponentApronToRingside1",
+4
+]
+],
+"seen": 114
+},
+"264": {
+"top": [
+[
+"moveTauntOpponentStanding5",
+32
+],
+[
+"moveTauntOpponentStanding1",
+30
+],
+[
+"moveTauntOpponentStanding3",
+17
+],
+[
+"moveTauntOpponentStanding2",
+15
+],
+[
+"moveTauntOpponentStanding4",
+12
+]
+],
+"seen": 114
+},
+"268": {
+"top": [
+[
+"moveTauntOpponentStanding5",
+39
+],
+[
+"moveTauntOpponentStanding1",
+23
+],
+[
+"moveTauntOpponentStanding3",
+22
+],
+[
+"moveTauntOpponentStanding2",
+16
+],
+[
+"moveTauntOpponentStanding4",
+13
+]
+],
+"seen": 114
+},
+"269": {
+"top": [
+[
+"moveTauntOpponentGround1",
+26
+],
+[
+"moveTauntOpponentGround5",
+26
+],
+[
+"moveTauntUp",
+14
+],
+[
+"moveTauntWakeupStanding1",
+13
+],
+[
+"moveTauntOpponentGround3",
+13
+]
+],
+"seen": 113
+},
+"270": {
+"top": [
+[
+"moveTauntOpponentGround2",
+27
+],
+[
+"moveTauntOpponentGround5",
+15
+],
+[
+"moveTauntOpponentStanding2",
+14
+],
+[
+"moveTauntOpponentStanding5",
+11
+],
+[
+"moveTauntOpponentGround1",
+10
+]
+],
+"seen": 112
+},
+"273": {
+"top": [
+[
+"moveTauntOpponentGround5",
+29
+],
+[
+"moveTauntOpponentGround1",
+19
+],
+[
+"moveTauntOpponentGround3",
+13
+],
+[
+"moveTauntOpponentStanding1",
+12
+],
+[
+"moveTauntWakeupStanding1",
+11
+]
+],
+"seen": 113
+},
+"274": {
+"top": [
+[
+"moveTauntPointerOpponentNearCorner3",
+50
+],
+[
+"moveTauntPointerOpponentNearCorner1",
+49
+],
+[
+"moveTauntPointerOpponentNearCorner2",
+37
+],
+[
+"moveTauntPointerWakeupNearCorner1",
+19
+]
+],
+"seen": 114
+},
+"276": {
+"top": [
+[
+"moveTauntPointerOpponentNearCorner3",
+52
+],
+[
+"moveTauntPointerOpponentNearCorner1",
+49
+],
+[
+"moveTauntPointerOpponentNearCorner2",
+42
+],
+[
+"moveTauntPointerWakeupNearCorner1",
+19
+]
+],
+"seen": 114
+},
+"277": {
+"top": [
+[
+"moveTauntPointerOpponentTopRope3",
+47
+],
+[
+"moveTauntPointerOpponentTopRope1",
+46
+],
+[
+"moveTauntPointerOpponentTopRope2",
+27
+],
+[
+"moveTauntPointerWakeupTopRope1",
+1
+]
+],
+"seen": 114
+},
+"279": {
+"top": [
+[
+"moveTauntPointerOpponentTopRope3",
+45
+],
+[
+"moveTauntPointerOpponentTopRope1",
+41
+],
+[
+"moveTauntPointerOpponentTopRope2",
+30
+],
+[
+"moveTauntPointerWakeupTopRope1",
+1
+],
+[
+"moveTauntPointerCrowdTopRope2",
+1
+]
+],
+"seen": 114
+},
+"280": {
+"top": [
+[
+"moveTauntPointerCrowdHidden2",
+111
+],
+[
+"moveTauntPointerCrowdHidden3",
+111
+],
+[
+"moveTauntPointerCrowdHidden1",
+109
+],
+[
+"moveTauntPointerWakeupHidden1",
+108
+],
+[
+"moveTauntPointerOpponentHidden1",
+108
+]
+],
+"seen": 112
+},
+"281": {
+"top": [
+[
+"moveTauntPointerCrowdHidden2",
+111
+],
+[
+"moveTauntPointerCrowdHidden3",
+111
+],
+[
+"moveTauntPointerCrowdHidden1",
+109
+],
+[
+"moveTauntPointerWakeupHidden1",
+108
+],
+[
+"moveTauntPointerOpponentHidden1",
+108
+]
+],
+"seen": 111
+},
+"282": {
+"top": [
+[
+"moveTauntPointerCrowdHidden2",
+111
+],
+[
+"moveTauntPointerCrowdHidden3",
+111
+],
+[
+"moveTauntPointerCrowdHidden1",
+109
+],
+[
+"moveTauntPointerWakeupHidden1",
+108
+],
+[
+"moveTauntPointerOpponentHidden1",
+108
+]
+],
+"seen": 112
+},
+"283": {
+"top": [
+[
+"moveTauntPointerOpponentMiddleRope1",
+50
+],
+[
+"moveTauntPointerOpponentMiddleRope3",
+42
+],
+[
+"moveTauntPointerOpponentMiddleRope2",
+36
+],
+[
+"moveTauntPointerWakeupMiddleRope1",
+8
+],
+[
+"moveTauntPointerCrowdMiddleRope2",
+3
+]
+],
+"seen": 114
+},
+"285": {
+"top": [
+[
+"moveTauntPointerOpponentMiddleRope1",
+44
+],
+[
+"moveTauntPointerOpponentMiddleRope3",
+42
+],
+[
+"moveTauntPointerOpponentMiddleRope2",
+39
+],
+[
+"moveTauntPointerWakeupMiddleRope1",
+7
+],
+[
+"moveTauntPointerCrowdMiddleRope2",
+3
+]
+],
+"seen": 114
+},
+"286": {
+"top": [
+[
+"moveTauntPointerOpponentApron1",
+82
+],
+[
+"moveTauntPointerOpponentApron3",
+82
+],
+[
+"moveTauntPointerOpponentApron2",
+66
+],
+[
+"moveTauntPointerWakeupApron1",
+2
+]
+],
+"seen": 114
+},
+"287": {
+"top": [
+[
+"moveTauntPointerOpponentApron2",
+38
+],
+[
+"moveTauntPointerOpponentApron1",
+20
+],
+[
+"moveTauntPointerOpponentApron3",
+20
+],
+[
+"moveTauntPointerWakeupApron1",
+7
+]
+],
+"seen": 81
+},
+"288": {
+"top": [
+[
+"moveTauntPointerOpponentApron1",
+77
+],
+[
+"moveTauntPointerOpponentApron3",
+77
+],
+[
+"moveTauntPointerOpponentApron2",
+66
+],
+[
+"moveTauntPointerWakeupApron1",
+2
+]
+],
+"seen": 114
+},
+"289": {
+"top": [
+[
+"moveTauntPointerOpponentApronToRingside3",
+66
+],
+[
+"moveTauntPointerOpponentApronToRingside1",
+54
+],
+[
+"moveTauntPointerOpponentApronToRingside2",
+50
+],
+[
+"moveTauntPointerCrowdApronToRingside1",
+5
+],
+[
+"moveTauntPointerCrowdApronToRingside2",
+5
+]
+],
+"seen": 114
+},
+"290": {
+"top": [
+[
+"moveTauntPointerOpponentApronToRingside2",
+35
+],
+[
+"moveTauntPointerOpponentApronToRingside1",
+24
+],
+[
+"moveTauntPointerOpponentApronToRingside3",
+24
+],
+[
+"moveTauntPointerCrowdApronToRingside3",
+7
+],
+[
+"moveTauntPointerCrowdApronToRingside2",
+6
+]
+],
+"seen": 87
+},
+"291": {
+"top": [
+[
+"moveTauntPointerOpponentApronToRingside3",
+67
+],
+[
+"moveTauntPointerOpponentApronToRingside2",
+55
+],
+[
+"moveTauntPointerOpponentApronToRingside1",
+52
+],
+[
+"moveTauntPointerWakeupApronToRingside1",
+5
+],
+[
+"moveTauntPointerCrowdApronToRingside1",
+3
+]
+],
+"seen": 114
+},
+"292": {
+"top": [
+[
+"moveTauntWakeupStanding1",
+68
+],
+[
+"moveTauntUp",
+12
+],
+[
+"moveTauntDown",
+8
+],
+[
+"moveTauntCrowdStanding1",
+8
+],
+[
+"moveTauntCrowdStanding5",
+8
+]
+],
+"seen": 114
+},
+"293": {
+"top": [
+[
+"moveTauntPointerWakeupNearCorner1",
+87
+],
+[
+"moveTauntPointerOpponentNearCorner2",
+12
+],
+[
+"moveTauntPointerOpponentNearCorner3",
+10
+],
+[
+"moveTauntPointerOpponentNearCorner1",
+7
+]
+],
+"seen": 114
+},
+"294": {
+"top": [
+[
+"moveTauntPointerWakeupTopRope1",
+77
+],
+[
+"moveTauntPointerOpponentTopRope3",
+3
+],
+[
+"moveTauntPointerOpponentTopRope1",
+2
+],
+[
+"moveTauntPointerOpponentTopRope2",
+2
+],
+[
+"moveTauntPointerCrowdTopRope1",
+1
+]
+],
+"seen": 114
+},
+"295": {
+"top": [
+[
+"moveTauntPointerCrowdHidden2",
+114
+],
+[
+"moveTauntPointerCrowdHidden3",
+114
+],
+[
+"moveTauntPointerCrowdHidden1",
+112
+],
+[
+"moveTauntPointerWakeupHidden1",
+111
+],
+[
+"moveTauntPointerOpponentHidden1",
+111
+]
+],
+"seen": 114
+},
+"296": {
+"top": [
+[
+"moveTauntPointerWakeupMiddleRope1",
+84
+],
+[
+"moveTauntPointerOpponentMiddleRope1",
+5
+],
+[
+"moveTauntPointerOpponentMiddleRope3",
+5
+],
+[
+"moveTauntPointerOpponentMiddleRope2",
+4
+],
+[
+"moveTauntPointerCrowdMiddleRope1",
+1
+]
+],
+"seen": 114
+},
+"297": {
+"top": [
+[
+"moveTauntPointerWakeupApron1",
+98
+],
+[
+"moveTauntPointerOpponentApron2",
+7
+],
+[
+"moveTauntPointerOpponentApron1",
+4
+],
+[
+"moveTauntPointerOpponentApron3",
+4
+]
+],
+"seen": 114
+},
+"298": {
+"top": [
+[
+"moveTauntPointerWakeupApronToRingside1",
+64
+],
+[
+"moveTauntPointerOpponentApronToRingside1",
+16
+],
+[
+"moveTauntPointerOpponentApronToRingside3",
+15
+],
+[
+"moveTauntPointerOpponentApronToRingside2",
+4
+]
+],
+"seen": 114
+},
+"302": {
+"top": [
+[
+"moveTauntOpponentStanding4",
+3
+],
+[
+"moveTauntOpponentStanding5",
+1
+],
+[
+"moveTauntOpponentStanding1",
+1
+],
+[
+"moveTauntOpponentStanding3",
+1
+],
+[
+"moveTauntCrowdStanding4",
+1
+]
+],
+"seen": 95
+},
+"304": {
+"top": [
+[
+"moveTauntOpponentStanding4",
+3
+],
+[
+"moveTauntOpponentStanding5",
+1
+],
+[
+"moveTauntOpponentStanding1",
+1
+],
+[
+"moveTauntOpponentStanding3",
+1
+],
+[
+"moveTauntCrowdStanding4",
+1
+]
+],
+"seen": 94
+},
+"0": {
+"top": [
+[
+"moveStrikeAttack1",
+43
+],
+[
+"moveStrikeCombination1",
+22
+],
+[
+"moveStrikeCombination2",
+22
+],
+[
+"moveRopeStrikeAttack",
+8
+],
+[
+"moveStrikeAttack7",
+7
+]
+],
+"seen": 114
+},
+"2": {
+"top": [
+[
+"moveStrikeAttack4",
+22
+],
+[
+"moveStrikeAttack2",
+12
+],
+[
+"moveStrikeCombination1",
+9
+],
+[
+"moveStrikeCombination2",
+8
+],
+[
+"moveStrikeAttack6",
+7
+]
+],
+"seen": 114
+},
+"3": {
+"top": [
+[
+"moveStandingStrongStrikeNewFront1",
+15
+],
+[
+"moveStandingStrongStrikeNewFront5",
+10
+],
+[
+"moveStandingStrongStrikeNewFront4",
+8
+],
+[
+"moveStrongStrike2",
+5
+],
+[
+"moveStandingStrongStrikeNewFront2",
+3
+]
+],
+"seen": 109
+},
+"14": {
+"top": [
+[
+"moveFrontMediumGrapple3",
+11
+],
+[
+"moveFrontMediumGrapple2",
+5
+],
+[
+"moveFrontMediumGrapple1",
+4
+],
+[
+"moveFrontFacelock6",
+4
+],
+[
+"moveHiddenGrappleDiagonalUp",
+4
+]
+],
+"seen": 114
+},
+"16": {
+"top": [
+[
+"moveFrontMediumGrapple2",
+6
+],
+[
+"moveFrontMediumGrapple4",
+6
+],
+[
+"moveWeightDetectionFrontFacelock",
+5
+],
+[
+"moveFrontMediumGrapple1",
+4
+],
+[
+"moveFrontFacelock7",
+3
+]
+],
+"seen": 113
+},
+"25": {
+"top": [
+[
+"moveStandingStrongStrikeNewRear1",
+12
+],
+[
+"moveRearMediumGrapple2",
+11
+],
+[
+"moveStandingStrongStrikeNewRear2",
+8
+],
+[
+"moveWeightDetectionMediumGrappleBehind",
+8
+],
+[
+"moveRearMediumGrapple1",
+6
+]
+],
+"seen": 114
+},
+"28": {
+"top": [
+[
+"moveRearStrongGrapple1",
+15
+],
+[
+"moveRearStrongGrapple4",
+11
+],
+[
+"moveRearStrongGrapple3",
+10
+],
+[
+"moveWeightDetectionStrongGrappleBehind",
+9
+],
+[
+"moveRunningRearGrapple2",
+7
+]
+],
+"seen": 109
+},
+"29": {
+"top": [
+[
+"moveRearStrongGrapple3",
+12
+],
+[
+"moveRearStrongGrapple1",
+8
+],
+[
+"moveRearStrongGrapple2",
+6
+],
+[
+"moveRearMediumGrapple3",
+3
+],
+[
+"moveRunningRearGrapple2",
+3
+]
+],
+"seen": 114
+},
+"32": {
+"top": [
+[
+"moveRearStrongGrapple1",
+11
+],
+[
+"moveRearStrongGrapple3",
+8
+],
+[
+"moveRearStrongGrapple2",
+3
+],
+[
+"moveWeightDetectionStrongGrappleBehind",
+3
+],
+[
+"moveRunningRearGrapple2",
+2
+]
+],
+"seen": 114
+},
+"42": {
+"top": [
+[
+"moveFinisher2",
+8
+],
+[
+"moveRingsideFinisher2",
+5
+],
+[
+"moveRingsideFinisher1",
+4
+],
+[
+"moveFinisher1",
+2
+],
+[
+"moveDivingMiddleRopeVsStanding",
+2
+]
+],
+"seen": 57
+},
+"49": {
+"top": [
+[
+"moveKneelingOpponentStrongStrike",
+46
+]
+],
+"seen": 113
+},
+"54": {
+"top": [
+[
+"moveWeightDetectionKneelingRear",
+36
+],
+[
+"moveKneelingOpponentBehindGrapple",
+28
+]
+],
+"seen": 109
+},
+"67": {
+"top": [
+[
+"moveLimbTargetGroundSide",
+23
+],
+[
+"moveWeightDetectionGroundSide",
+20
+],
+[
+"moveFaceUpGrappleSide",
+7
+],
+[
+"moveGroundStrongStrikeFaceUp2",
+1
+]
+],
+"seen": 109
+},
+"70": {
+"top": [
+[
+"moveGroundStrongStrikeFaceUp3",
+21
+],
+[
+"moveGroundStrongStrikeFaceDown3",
+11
+],
+[
+"moveWeightDetectionSeatedFront",
+8
+],
+[
+"moveSeatedStrongStrikeFront",
+6
+],
+[
+"moveFaceUpGrappleLower",
+3
+]
+],
+"seen": 114
+},
+"74": {
+"top": [
+[
+"moveGroundStrongStrikeFaceDown1",
+31
+],
+[
+"moveFaceDownGrappleUpper",
+11
+]
+],
+"seen": 114
+},
+"79": {
+"top": [
+[
+"moveLimbTargetGroundSide",
+49
+],
+[
+"moveGroundStrongStrikeFaceDown2",
+10
+],
+[
+"moveFaceDownGrappleSide",
+5
+],
+[
+"moveFaceUpGrappleSide",
+1
+]
+],
+"seen": 109
+},
+"83": {
+"top": [
+[
+"moveGroundStrongStrikeFaceUp3",
+16
+],
+[
+"moveLimbTargetGroundLower",
+15
+],
+[
+"moveGroundStrongStrikeFaceDown3",
+13
+],
+[
+"moveWeightDetectionGroundLower",
+9
+],
+[
+"moveWeightDetectionSeatedFront",
+9
+]
+],
+"seen": 109
+},
+"87": {
+"top": [
+[
+"moveIrishWhipReboundAttack",
+32
+],
+[
+"moveRunningStrike1",
+12
+],
+[
+"moveRunningStrike2",
+8
+],
+[
+"moveStandingStrongStrikeNewFront2",
+3
+],
+[
+"moveStrongStrike1",
+3
+]
+],
+"seen": 114
+},
+"90": {
+"top": [
+[
+"moveDropDownLeapfrog1st",
+102
+],
+[
+"moveDropDownLeapfrog2nd",
+20
+]
+],
+"seen": 114
+},
+"91": {
+"top": [
+[
+"moveDropDownLeapfrog2nd",
+83
+],
+[
+"moveDropDownLeapfrog1st",
+10
+]
+],
+"seen": 95
+},
+"100": {
+"top": [
+[
+"moveCornerFrontRunningStrike",
+46
+]
+],
+"seen": 112
+},
+"105": {
+"top": [
+[
+"moveCornerFrontGrapple2",
+11
+],
+[
+"moveCornerFrontGrapple1",
+11
+],
+[
+"moveCornerStrongStrike1",
+8
+],
+[
+"moveWeightDetectionCornerGrappleFront",
+8
+],
+[
+"moveSignature1",
+1
+]
+],
+"seen": 109
+},
+"106": {
+"top": [
+[
+"moveCornerRearStrike",
+78
+]
+],
+"seen": 114
+},
+"116": {
+"top": [
+[
+"moveCornerTopRopeGrapple2",
+24
+],
+[
+"moveCornerTopRopeGrapple1",
+23
+],
+[
+"moveWeightDetectionTopRopeGrappleFront",
+20
+],
+[
+"moveSignature1",
+1
+]
+],
+"seen": 114
+},
+"118": {
+"top": [
+[
+"moveCornerRearTopRopeGrapple1",
+38
+],
+[
+"moveWeightDetectionTopRopeGrappleBehind",
+33
+],
+[
+"moveCornerRearTopRopeGrapple2",
+28
+]
+],
+"seen": 114
+},
+"120": {
+"top": [
+[
+"moveTreeOfWoeGrapple",
+78
+]
+],
+"seen": 114
+},
+"123": {
+"top": [
+[
+"moveRopeStrongStrike",
+38
+],
+[
+"moveWeightDetectionStunnedAgainstRopes",
+27
+]
+],
+"seen": 114
+},
+"126": {
+"top": [
+[
+"moveStunnedAgainstRopes1",
+17
+],
+[
+"moveWeightDetectionStunnedAgainstRopes",
+17
+],
+[
+"moveRopeStrongStrike",
+16
+],
+[
+"moveStunnedAgainstRopes2",
+11
+],
+[
+"moveSuicideDive",
+3
+]
+],
+"seen": 109
+},
+"131": {
+"top": [
+[
+"moveWeightDetectionApronGrappleToApron",
+8
+],
+[
+"moveApronGrappleRingToApron",
+6
+]
+],
+"seen": 109
+},
+"134": {
+"top": [
+[
+"moveWeightDetectionApronGrappleToRing",
+31
+],
+[
+"moveApronGrappleApronToRing",
+29
+]
+],
+"seen": 109
+},
+"142": {
+"top": [
+[
+"moveDivingMiddleRopeVsDowned",
+23
+]
+],
+"seen": 82
+},
+"150": {
+"top": [
+[
+"moveRopeSpringboardAttack",
+8
+],
+[
+"moveRopeSpringboardRunning",
+4
+]
+],
+"seen": 26
+},
+"151": {
+"top": [
+[
+"moveRopeSpringboardRunning",
+7
+],
+[
+"moveRopeSpringboardAttack",
+6
+]
+],
+"seen": 24
+},
+"166": {
+"top": [
+[
+"moveApronSpringboardAttackToRingside",
+11
+],
+[
+"moveApronToRingsideVsDowned",
+2
+]
+],
+"seen": 21
+},
+"170": {
+"top": [
+[
+"moveBarricade1",
+26
+],
+[
+"moveBarricade2",
+21
+]
+],
+"seen": 109
+},
+"171": {
+"top": [
+[
+"moveFrontFacelock2",
+40
+],
+[
+"moveRingsideSignature2",
+5
+],
+[
+"moveSignature1",
+3
+],
+[
+"moveSignature2",
+3
+],
+[
+"moveRingsideSignature1",
+3
+]
+],
+"seen": 114
+},
+"172": {
+"top": [
+[
+"moveGroundSubmissionUpper",
+43
+]
+],
+"seen": 114
+},
+"174": {
+"top": [
+[
+"moveGroundSubmissionLower",
+43
+],
+[
+"moveKickReversalKickReversal",
+27
+],
+[
+"moveLimbTargetGroundLower",
+1
+]
+],
+"seen": 114
+},
+"175": {
+"top": [
+[
+"moveWorkingHoldFrontFacelock",
+74
+],
+[
+"moveWorkingHoldSeated",
+16
+]
+],
+"seen": 112
+},
+"176": {
+"top": [
+[
+"moveWorkingHoldSeated",
+83
+],
+[
+"moveWorkingHoldFrontFacelock",
+18
+]
+],
+"seen": 112
+},
+"188": {
+"top": [
+[
+"moveRoyalRumbleRopeFinisher2",
+47
+],
+[
+"moveRoyalRumbleRopeFinisher1",
+24
+],
+[
+"moveTable4",
+6
+]
+],
+"seen": 114
+},
+"192": {
+"top": [
+[
+"moveHIACFinisher",
+48
+]
+],
+"seen": 114
+},
+"195": {
+"top": [
+[
+"moveComeback",
+58
+]
+],
+"seen": 114
+},
+"206": {
+"top": [
+[
+"moveStandingTagTeamLeft",
+80
+],
+[
+"moveStandingTagTeamDown",
+7
+],
+[
+"moveStandingTagTeamRight",
+6
+],
+[
+"moveStandingTagTeamUp",
+5
+]
+],
+"seen": 114
+},
+"207": {
+"top": [
+[
+"moveStandingTagTeamRight",
+86
+],
+[
+"moveStandingTagTeamLeft",
+5
+],
+[
+"moveStandingTagTeamUp",
+3
+],
+[
+"moveStandingTagTeamDown",
+1
+]
+],
+"seen": 114
+},
+"211": {
+"top": [
+[
+"moveCornerTagTeamRight",
+79
+],
+[
+"moveCornerTagTeamLeft",
+6
+],
+[
+"moveCornerTagTeamUp",
+3
+],
+[
+"moveCornerTagTeamDown",
+1
+]
+],
+"seen": 114
+},
+"212": {
+"top": [
+[
+"moveCornerTagTeamDown",
+78
+],
+[
+"moveCornerTagTeamUp",
+10
+],
+[
+"moveCornerTagTeamLeft",
+5
+],
+[
+"moveCornerTagTeamRight",
+4
+]
+],
+"seen": 114
+},
+"218": {
+"top": [
+[
+"moveKickReversalGrapple",
+54
+]
+],
+"seen": 114
+},
+"220": {
+"top": [
+[
+"moveKickReversalKickReversal",
+40
+],
+[
+"moveGroundSubmissionLower",
+24
+],
+[
+"moveLimbTargetGroundLower",
+1
+]
+],
+"seen": 114
+},
+"228": {
+"top": [
+[
+"moveTable2",
+52
+],
+[
+"moveTableFinisher2",
+12
+],
+[
+"moveTableFinisher1",
+1
+]
+],
+"seen": 114
+},
+"247": {
+"top": [
+[
+"moveTauntPointerCrowdNearCorner2",
+33
+],
+[
+"moveTauntPointerCrowdNearCorner3",
+26
+],
+[
+"moveTauntPointerCrowdNearCorner1",
+22
+],
+[
+"moveTauntPointerOpponentNearCorner2",
+1
+],
+[
+"moveTauntPointerOpponentNearCorner3",
+1
+]
+],
+"seen": 100
+},
+"259": {
+"top": [
+[
+"moveTauntPointerCrowdApron2",
+27
+],
+[
+"moveTauntPointerCrowdApron1",
+19
+],
+[
+"moveTauntPointerCrowdApron3",
+19
+],
+[
+"moveTauntPointerOpponentApron1",
+1
+],
+[
+"moveTauntPointerOpponentApron3",
+1
+]
+],
+"seen": 69
+},
+"265": {
+"top": [
+[
+"moveTauntOpponentStanding2",
+28
+],
+[
+"moveTauntOpponentStanding1",
+21
+],
+[
+"moveTauntRight",
+12
+],
+[
+"moveTauntOpponentGround5",
+12
+],
+[
+"moveTauntOpponentGround1",
+10
+]
+],
+"seen": 112
+},
+"308": {
+"top": [
+[
+"movePreMatchWarmup1",
+53
+],
+[
+"movePreMatchWarmup2",
+9
+],
+[
+"movePreMatchWarmup3",
+9
+],
+[
+"movePreMatchWarmup4",
+7
+],
+[
+"movePreMatchWarmup5",
+5
+]
+],
+"seen": 112
+},
+"309": {
+"top": [
+[
+"movePreMatchWarmup2",
+61
+],
+[
+"movePreMatchWarmup3",
+12
+],
+[
+"movePreMatchWarmup5",
+8
+],
+[
+"movePreMatchWarmup4",
+7
+],
+[
+"movePreMatchWarmup1",
+5
+]
+],
+"seen": 112
+},
+"313": {
+"top": [
+[
+"movePreMatchTitleMatchChallenger2",
+44
+],
+[
+"movePreMatchTitleMatchChallenger1",
+26
+]
+],
+"seen": 106
+},
+"4": {
+"top": [
+[
+"moveStandingStrongStrikeNewFront1",
+18
+],
+[
+"moveStrongStrike1",
+10
+],
+[
+"moveStandingStrongStrikeNewFront2",
+10
+],
+[
+"moveStandingStrongStrikeNewFront4",
+7
+],
+[
+"moveStandingStrongStrikeNewFront3",
+6
+]
+],
+"seen": 109
+},
+"9": {
+"top": [
+[
+"moveStandingStrongStrikeNewRear1",
+13
+],
+[
+"moveStandingStrongStrikeNewRear2",
+7
+],
+[
+"moveRunningStrikeRear1",
+7
+],
+[
+"moveRunningStrikeRear2",
+1
+]
+],
+"seen": 109
+},
+"19": {
+"top": [
+[
+"moveFrontStrongGrapple3",
+10
+],
+[
+"moveFrontStrongGrapple1",
+8
+],
+[
+"moveFrontStrongGrapple2",
+7
+],
+[
+"moveFrontStrongGrapple4",
+3
+],
+[
+"moveFrontMediumGrapple2",
+3
+]
+],
+"seen": 114
+},
+"24": {
+"top": [
+[
+"moveRearMediumGrapple3",
+23
+],
+[
+"moveStandingStrongStrikeNewRear2",
+8
+],
+[
+"moveRearMediumGrapple4",
+7
+],
+[
+"moveRearMediumGrapple1",
+5
+],
+[
+"moveRunningRearGrapple2",
+3
+]
+],
+"seen": 114
+},
+"26": {
+"top": [
+[
+"moveRearMediumGrapple4",
+10
+],
+[
+"moveRearMediumGrapple2",
+9
+],
+[
+"moveWeightDetectionMediumGrappleBehind",
+9
+],
+[
+"moveStandingStrongStrikeNewRear2",
+9
+],
+[
+"moveRearMediumGrapple1",
+8
+]
+],
+"seen": 114
+},
+"30": {
+"top": [
+[
+"moveRearStrongGrapple2",
+17
+],
+[
+"moveRearStrongGrapple1",
+11
+],
+[
+"moveRearStrongGrapple3",
+5
+],
+[
+"moveRearMediumGrapple3",
+5
+],
+[
+"moveWeightDetectionStrongGrappleBehind",
+2
+]
+],
+"seen": 114
+},
+"47": {
+"top": [
+[
+"moveRingsideFinisher1",
+44
+],
+[
+"moveFinisher1",
+38
+],
+[
+"moveRingsideFinisher2",
+28
+],
+[
+"moveFinisher2",
+22
+],
+[
+"moveAnnounceTableFinisher",
+15
+]
+],
+"seen": 114
+},
+"59": {
+"top": [
+[
+"moveSeatedRunningStrike",
+50
+]
+],
+"seen": 114
+},
+"61": {
+"top": [
+[
+"moveSeatedGrappleRear",
+37
+],
+[
+"moveWeightDetectionSeatedRear",
+23
+],
+[
+"moveWeightDetectionGroundUpper",
+22
+],
+[
+"moveFaceUpGrappleUpper",
+15
+],
+[
+"moveSeatedStrongStrikeRear",
+9
+]
+],
+"seen": 114
+},
+"64": {
+"top": [
+[
+"moveFaceUpGrappleUpper",
+18
+],
+[
+"moveWeightDetectionGroundUpper",
+16
+],
+[
+"moveLimbTargetGroundUpper",
+14
+],
+[
+"moveWeightDetectionSeatedRear",
+11
+],
+[
+"moveSeatedGrappleRear",
+10
+]
+],
+"seen": 114
+},
+"68": {
+"top": [
+[
+"moveFaceUpGrappleSide",
+19
+],
+[
+"moveWeightDetectionGroundSide",
+19
+],
+[
+"moveGroundStrongStrikeFaceUp2",
+3
+],
+[
+"moveLimbTargetGroundSide",
+1
+]
+],
+"seen": 112
+},
+"75": {
+"top": [
+[
+"moveGroundStrongStrikeFaceDown1",
+28
+],
+[
+"moveFaceDownGrappleUpper",
+18
+],
+[
+"moveLimbTargetGroundUpper",
+2
+],
+[
+"moveGroundStrongStrikeFaceUp1",
+2
+]
+],
+"seen": 109
+},
+"98": {
+"top": [
+[
+"moveCornerFrontStrike1",
+69
+],
+[
+"moveCornerFrontStrike2",
+15
+]
+],
+"seen": 114
+},
+"103": {
+"top": [
+[
+"moveCornerStrongStrike1",
+10
+],
+[
+"moveCornerFrontGrapple1",
+10
+],
+[
+"moveCornerFrontGrapple2",
+9
+],
+[
+"moveWeightDetectionCornerGrappleFront",
+7
+],
+[
+"moveCornerStrongStrike2",
+5
+]
+],
+"seen": 109
+},
+"111": {
+"top": [
+[
+"moveCornerRearGrapple1",
+21
+],
+[
+"moveCornerRearGrapple2",
+11
+],
+[
+"moveWeightDetectionCornerGrappleBehind",
+2
+]
+],
+"seen": 109
+},
+"114": {
+"top": [
+[
+"moveCornerSeatedRunning",
+64
+],
+[
+"moveSignature1",
+2
+]
+],
+"seen": 114
+},
+"133": {
+"top": [
+[
+"moveApronGrappleRingToApronBehind",
+61
+]
+],
+"seen": 114
+},
+"136": {
+"top": [
+[
+"moveApronRunningToRingside",
+69
+]
+],
+"seen": 114
+},
+"185": {
+"top": [
+[
+"moveTableFinisher2",
+39
+],
+[
+"moveTableFinisher1",
+14
+],
+[
+"moveTable1",
+5
+],
+[
+"moveTable2",
+5
+]
+],
+"seen": 114
+},
+"197": {
+"top": [
+[
+"moveTauntOpponentStanding5",
+7
+],
+[
+"moveTauntOpponentStanding1",
+5
+],
+[
+"movePaybackInstantRecovery",
+4
+],
+[
+"moveTauntDown",
+3
+],
+[
+"moveTauntLeft",
+3
+]
+],
+"seen": 107
+},
+"234": {
+"top": [
+[
+"moveBarricade2",
+49
+],
+[
+"moveBarricade1",
+21
+]
+],
+"seen": 114
+},
+"255": {
+"top": [
+[
+"moveTauntPointerCrowdMiddleRope3",
+46
+],
+[
+"moveTauntPointerCrowdMiddleRope1",
+39
+],
+[
+"moveTauntPointerCrowdMiddleRope2",
+30
+],
+[
+"moveTauntPointerOpponentMiddleRope2",
+9
+],
+[
+"moveTauntPointerOpponentMiddleRope3",
+9
+]
+],
+"seen": 114
+},
+"257": {
+"top": [
+[
+"moveTauntPointerCrowdMiddleRope3",
+47
+],
+[
+"moveTauntPointerCrowdMiddleRope1",
+39
+],
+[
+"moveTauntPointerCrowdMiddleRope2",
+31
+],
+[
+"moveTauntPointerOpponentMiddleRope2",
+9
+],
+[
+"moveTauntPointerOpponentMiddleRope3",
+9
+]
+],
+"seen": 114
+},
+"271": {
+"top": [
+[
+"moveTauntOpponentGround3",
+20
+],
+[
+"moveTauntOpponentGround5",
+14
+],
+[
+"moveTauntOpponentGround1",
+13
+],
+[
+"moveTauntDown",
+10
+],
+[
+"moveTauntOpponentGround2",
+8
+]
+],
+"seen": 99
+},
+"311": {
+"top": [
+[
+"movePreMatchTitleMatchChampion",
+84
+]
+],
+"seen": 112
+},
+"312": {
+"top": [
+[
+"movePreMatchTitleMatchChallenger1",
+62
+],
+[
+"movePreMatchTitleMatchChallenger2",
+30
+]
+],
+"seen": 112
+},
+"5": {
+"top": [
+[
+"moveStandingStrongStrikeNewFront2",
+7
+],
+[
+"moveStandingStrongStrikeNewFront5",
+6
+],
+[
+"moveStrongStrike2",
+6
+],
+[
+"moveStandingStrongStrikeNewFront1",
+6
+],
+[
+"moveStandingStrongStrikeNewFront4",
+5
+]
+],
+"seen": 109
+},
+"6": {
+"top": [
+[
+"moveRunningStrike1",
+25
+],
+[
+"moveIrishWhipReboundAttack",
+11
+],
+[
+"moveRunningStrike2",
+10
+],
+[
+"moveStandingStrongStrikeNewFront4",
+3
+],
+[
+"moveStandingStrongStrikeNewFront5",
+2
+]
+],
+"seen": 114
+},
+"21": {
+"top": [
+[
+"moveFrontStrongGrapple4",
+10
+],
+[
+"moveFrontStrongGrapple1",
+4
+],
+[
+"moveWeightDetectionStrongGrappleFront",
+4
+],
+[
+"moveFrontStrongGrapple2",
+4
+],
+[
+"moveFrontStrongGrapple3",
+4
+]
+],
+"seen": 114
+},
+"55": {
+"top": [
+[
+"moveKneelingOpponentBehindGrapple",
+37
+],
+[
+"moveWeightDetectionKneelingRear",
+35
+]
+],
+"seen": 114
+},
+"76": {
+"top": [
+[
+"moveFaceDownGrappleUpper",
+22
+],
+[
+"moveGroundStrongStrikeFaceDown1",
+16
+],
+[
+"moveLimbTargetGroundUpper",
+4
+],
+[
+"moveFaceUpGrappleUpper",
+2
+],
+[
+"moveGroundStrongStrikeFaceUp1",
+1
+]
+],
+"seen": 109
+},
+"99": {
+"top": [
+[
+"moveCornerStrongStrike1",
+29
+],
+[
+"moveWeightDetectionCornerGrappleFront",
+18
+],
+[
+"moveCornerStrongStrike2",
+12
+]
+],
+"seen": 114
+},
+"138": {
+"top": [
+[
+"moveDivingMiddleRopeVsStanding",
+51
+]
+],
+"seen": 114
+},
+"147": {
+"top": [
+[
+"moveDivingTopRopeVsDowned2",
+34
+],
+[
+"moveStageDivingVsDowned",
+22
+],
+[
+"moveDivingTopRopeVsDowned1",
+21
+]
+],
+"seen": 112
+},
+"178": {
+"top": [
+[
+"moveLeveragePinRear",
+55
+]
+],
+"seen": 114
+},
+"242": {
+"top": [
+[
+"moveTauntCrowdStanding2",
+31
+],
+[
+"moveTauntCrowdStanding5",
+21
+],
+[
+"moveTauntCrowdStanding1",
+18
+],
+[
+"moveTauntCrowdStanding3",
+12
+],
+[
+"moveTauntDown",
+9
+]
+],
+"seen": 110
+},
+"244": {
+"top": [
+[
+"moveTauntCrowdStanding4",
+22
+],
+[
+"moveTauntCrowdStanding2",
+13
+],
+[
+"moveTauntDown",
+8
+],
+[
+"moveTauntOpponentStanding2",
+6
+],
+[
+"moveTauntOpponentGround4",
+6
+]
+],
+"seen": 61
+},
+"250": {
+"top": [
+[
+"moveTauntPointerCrowdTopRope2",
+27
+],
+[
+"moveTauntPointerCrowdTopRope1",
+18
+],
+[
+"moveTauntPointerCrowdTopRope3",
+17
+],
+[
+"moveTauntPointerOpponentTopRope3",
+7
+],
+[
+"moveTauntPointerOpponentTopRope1",
+6
+]
+],
+"seen": 92
+},
+"266": {
+"top": [
+[
+"moveTauntOpponentStanding3",
+21
+],
+[
+"moveTauntOpponentStanding5",
+14
+],
+[
+"moveTauntOpponentStanding4",
+12
+],
+[
+"moveTauntOpponentStanding1",
+10
+],
+[
+"moveTauntOpponentGround1",
+9
+]
+],
+"seen": 90
+},
+"284": {
+"top": [
+[
+"moveTauntPointerOpponentMiddleRope2",
+30
+],
+[
+"moveTauntPointerOpponentMiddleRope3",
+28
+],
+[
+"moveTauntPointerOpponentMiddleRope1",
+18
+],
+[
+"moveTauntPointerWakeupMiddleRope1",
+6
+],
+[
+"moveTauntPointerCrowdMiddleRope1",
+4
+]
+],
+"seen": 89
+},
+"310": {
+"top": [
+[
+"movePreMatchWarmup3",
+48
+],
+[
+"movePreMatchWarmup1",
+9
+],
+[
+"movePreMatchWarmup2",
+6
+],
+[
+"movePreMatchWarmup5",
+6
+],
+[
+"movePreMatchWarmup4",
+4
+]
+],
+"seen": 104
+},
+"92": {
+"top": [
+[
+"moveRunningPullBackAttack",
+62
+]
+],
+"seen": 114
+},
+"101": {
+"top": [
+[
+"moveCornerFrontRunningStrike",
+8
+],
+[
+"moveSignature2",
+1
+]
+],
+"seen": 106
+},
+"112": {
+"top": [
+[
+"moveCornerSeatedStrongStrike1",
+30
+],
+[
+"moveCornerSeatedGrapple",
+6
+]
+],
+"seen": 114
+},
+"117": {
+"top": [
+[
+"moveCornerTopRopeGrapple1",
+45
+],
+[
+"moveCornerTopRopeGrapple2",
+23
+],
+[
+"moveWeightDetectionTopRopeGrappleFront",
+7
+],
+[
+"moveFinisher1",
+1
+],
+[
+"moveFinisher2",
+1
+]
+],
+"seen": 114
+},
+"130": {
+"top": [
+[
+"moveWeightDetectionApronGrappleToApron",
+15
+],
+[
+"moveRoyalRumbleApronFinisher1",
+2
+],
+[
+"moveRoyalRumbleApronFinisher2",
+1
+],
+[
+"moveApronGrappleRingToApron",
+1
+]
+],
+"seen": 109
+},
+"238": {
+"top": [
+[
+"moveEquipmentBoxDivingVsDowned",
+45
+],
+[
+"moveEquipmentBoxDivingVsStanding",
+1
+]
+],
+"seen": 114
+},
+"262": {
+"top": [
+[
+"moveTauntPointerCrowdApronToRingside2",
+26
+],
+[
+"moveTauntPointerCrowdApronToRingside1",
+21
+],
+[
+"moveTauntPointerCrowdApronToRingside3",
+20
+],
+[
+"moveTauntPointerOpponentApronToRingside1",
+3
+],
+[
+"moveTauntPointerOpponentApronToRingside3",
+2
+]
+],
+"seen": 76
+},
+"272": {
+"top": [
+[
+"moveTauntOpponentGround4",
+14
+],
+[
+"moveTauntOpponentGround1",
+7
+],
+[
+"moveTauntOpponentGround5",
+7
+],
+[
+"moveTauntOpponentStanding1",
+5
+],
+[
+"moveTauntOpponentStanding5",
+4
+]
+],
+"seen": 47
+},
+"275": {
+"top": [
+[
+"moveTauntPointerOpponentNearCorner2",
+42
+],
+[
+"moveTauntPointerOpponentNearCorner1",
+29
+],
+[
+"moveTauntPointerOpponentNearCorner3",
+28
+],
+[
+"moveTauntPointerWakeupNearCorner1",
+11
+],
+[
+"moveTauntPointerCrowdNearCorner1",
+1
+]
+],
+"seen": 100
+},
+"278": {
+"top": [
+[
+"moveTauntPointerOpponentTopRope2",
+40
+],
+[
+"moveTauntPointerOpponentTopRope1",
+25
+],
+[
+"moveTauntPointerOpponentTopRope3",
+25
+],
+[
+"moveTauntPointerCrowdTopRope3",
+4
+],
+[
+"moveTauntPointerCrowdTopRope2",
+3
+]
+],
+"seen": 103
+},
+"17": {
+"top": [
+[
+"moveFrontFacelock4",
+6
+],
+[
+"moveFrontMediumGrapple1",
+4
+],
+[
+"moveWeightDetectionStrongGrappleFront",
+4
+],
+[
+"moveFrontMediumGrapple4",
+4
+],
+[
+"moveFrontStrongGrapple1",
+3
+]
+],
+"seen": 113
+},
+"65": {
+"top": [
+[
+"moveFaceUpGrappleUpper",
+4
+],
+[
+"moveWeightDetectionSeatedRear",
+3
+],
+[
+"moveWeightDetectionGroundUpper",
+2
+],
+[
+"moveGroundStrongStrikeFaceUp1",
+1
+]
+],
+"seen": 9
+},
+"85": {
+"top": [
+[
+"moveLimbTargetGroundLower",
+2
+],
+[
+"moveFaceDownGrappleLower",
+2
+],
+[
+"moveGroundStrongStrikeFaceDown3",
+1
+],
+[
+"moveFaceUpGrappleLower",
+1
+]
+],
+"seen": 10
+},
+"97": {
+"top": [
+[
+"moveCarry3",
+9
+],
+[
+"moveCarry1",
+3
+],
+[
+"moveFrontFacelock4",
+2
+],
+[
+"moveFrontStrongGrapple1",
+2
+],
+[
+"moveFrontStrongGrapple4",
+1
+]
+],
+"seen": 114
+},
+"246": {
+"top": [
+[
+"moveTauntPointerCrowdNearCorner1",
+60
+],
+[
+"moveTauntPointerCrowdNearCorner3",
+54
+],
+[
+"moveTauntPointerCrowdNearCorner2",
+37
+],
+[
+"moveTauntPointerOpponentNearCorner1",
+5
+],
+[
+"moveTauntPointerOpponentNearCorner3",
+4
+]
+],
+"seen": 114
+},
+"248": {
+"top": [
+[
+"moveTauntPointerCrowdNearCorner1",
+59
+],
+[
+"moveTauntPointerCrowdNearCorner3",
+59
+],
+[
+"moveTauntPointerCrowdNearCorner2",
+36
+],
+[
+"moveTauntPointerOpponentNearCorner1",
+5
+],
+[
+"moveTauntPointerOpponentNearCorner3",
+4
+]
+],
+"seen": 114
+},
+"15": {
+"top": [
+[
+"moveFrontMediumGrapple1",
+6
+],
+[
+"moveWeightDetectionMediumGrappleFront",
+5
+],
+[
+"moveFrontFacelock5",
+5
+],
+[
+"moveFrontFacelock7",
+4
+],
+[
+"moveWeightDetectionFrontFacelock",
+4
+]
+],
+"seen": 112
+},
+"27": {
+"top": [
+[
+"moveRearMediumGrapple1",
+14
+],
+[
+"moveRearMediumGrapple2",
+11
+],
+[
+"moveRearMediumGrapple4",
+7
+],
+[
+"moveWeightDetectionMediumGrappleBehind",
+6
+],
+[
+"moveStandingStrongStrikeNewRear1",
+5
+]
+],
+"seen": 114
+},
+"51": {
+"top": [
+[
+"moveWeightDetectionKneelingFront",
+29
+],
+[
+"moveKneelingOpponentFrontGrapple",
+26
+]
+],
+"seen": 109
+},
+"73": {
+"top": [
+[
+"moveGroundStrongStrikeFaceUp3",
+1
+],
+[
+"moveGroundStrongStrikeFaceDown3",
+1
+]
+],
+"seen": 9
+},
+"80": {
+"top": [
+[
+"moveFaceUpGrappleSide",
+23
+],
+[
+"moveWeightDetectionGroundSide",
+16
+],
+[
+"moveFaceDownGrappleSide",
+10
+],
+[
+"moveGroundStrongStrikeFaceDown2",
+8
+],
+[
+"moveLimbTargetGroundSide",
+1
+]
+],
+"seen": 109
+},
+"81": {
+"top": [
+[
+"moveFaceUpGrappleSide",
+1
+],
+[
+"moveWeightDetectionGroundSide",
+1
+]
+],
+"seen": 9
+},
+"127": {
+"top": [
+[
+"moveStunnedAgainstRopes2",
+13
+],
+[
+"moveRopeStrongStrike",
+12
+],
+[
+"moveStunnedAgainstRopes1",
+11
+],
+[
+"moveWeightDetectionStunnedAgainstRopes",
+9
+]
+],
+"seen": 109
+},
+"140": {
+"top": [
+[
+"moveDivingMiddleRopeVsStanding",
+2
+]
+],
+"seen": 9
+},
+"143": {
+"top": [
+[
+"moveDivingMiddleRopeVsDowned",
+3
+]
+],
+"seen": 9
+},
+"146": {
+"top": [
+[
+"moveDivingTopRopeVsStanding2",
+1
+]
+],
+"seen": 9
+},
+"152": {
+"top": [
+[
+"moveCornerSpringboard",
+7
+]
+],
+"seen": 30
+},
+"153": {
+"top": [
+[
+"moveCornerSpringboard",
+7
+]
+],
+"seen": 31
+},
+"156": {
+"top": [
+[
+"moveApronSpringboardAttackToRing",
+10
+],
+[
+"moveSpringboardToApronVsDowned",
+2
+]
+],
+"seen": 26
+},
+"157": {
+"top": [
+[
+"moveSpringboardToRingVsDowned",
+6
+],
+[
+"moveSpringboardRunningToRingVsDowned",
+6
+]
+],
+"seen": 10
+},
+"158": {
+"top": [
+[
+"moveSpringboardToRingVsDowned",
+7
+],
+[
+"moveSpringboardRunningToRingVsDowned",
+7
+]
+],
+"seen": 10
+},
+"159": {
+"top": [
+[
+"moveCornerSpringboard",
+5
+]
+],
+"seen": 15
+},
+"160": {
+"top": [
+[
+"moveCornerSpringboard",
+2
+]
+],
+"seen": 10
+},
+"165": {
+"top": [
+[
+"moveOutOfRingDiveAttackRun",
+10
+]
+],
+"seen": 51
+},
+"173": {
+"top": [
+[
+"moveGroundSubmissionSide",
+42
+],
+[
+"moveRingsideSignature1",
+2
+],
+[
+"moveRingsideSignature2",
+2
+],
+[
+"moveSignature1",
+1
+],
+[
+"moveSignature2",
+1
+]
+],
+"seen": 114
+},
+"240": {
+"top": [
+[
+"moveStageDivingVsDowned",
+24
+],
+[
+"moveDivingTopRopeVsDowned2",
+22
+],
+[
+"moveDivingTopRopeVsDowned1",
+19
+],
+[
+"moveFinisher2",
+5
+],
+[
+"moveFinisher1",
+2
+]
+],
+"seen": 114
+},
+"22": {
+"top": [
+[
+"moveFrontStrongGrapple2",
+9
+],
+[
+"moveFrontMediumGrapple3",
+7
+],
+[
+"moveWeightDetectionStrongGrappleFront",
+6
+],
+[
+"moveFrontStrongGrapple1",
+6
+],
+[
+"moveFrontStrongGrapple4",
+5
+]
+],
+"seen": 112
+},
+"57": {
+"top": [
+[
+"moveSeatedStrongStrikeFront",
+33
+],
+[
+"moveWeightDetectionSeatedFront",
+11
+],
+[
+"moveGroundStrongStrikeFaceDown3",
+8
+],
+[
+"moveGroundStrongStrikeFaceUp3",
+5
+],
+[
+"moveLimbTargetGroundLower",
+2
+]
+],
+"seen": 114
+},
+"102": {
+"top": [
+[
+"moveCornerFrontRunningStrike",
+17
+]
+],
+"seen": 106
+},
+"267": {
+"top": [
+[
+"moveTauntOpponentStanding4",
+13
+],
+[
+"moveTauntOpponentStanding6",
+4
+],
+[
+"moveTauntOpponentGround6",
+4
+],
+[
+"moveTauntOpponentStanding2",
+4
+],
+[
+"moveTauntLeft",
+4
+]
+],
+"seen": 45
+},
+"89": {
+"top": [
+[
+"moveIrishWhipReboundGrapple1",
+24
+],
+[
+"moveIrishWhipReboundGrapple2",
+13
+],
+[
+"moveWeightDetectionIrishWhipRebound",
+3
+],
+[
+"moveFrontMediumGrapple4",
+2
+],
+[
+"moveSignature1",
+1
+]
+],
+"seen": 114
+},
+"1": {
+"top": [
+[
+"moveRopeStrikeAttack",
+10
+],
+[
+"moveStrikeAttack7",
+9
+],
+[
+"moveStrikeCombination2",
+9
+],
+[
+"moveStrikeAttack2",
+8
+],
+[
+"moveStrikeCombination1",
+8
+]
+],
+"seen": 114
+},
+"36": {
+"top": [
+[
+"moveSignature2",
+2
+],
+[
+"moveFinisher1",
+1
+],
+[
+"moveFinisher2",
+1
+]
+],
+"seen": 13
+},
+"135": {
+"top": [
+[
+"moveApronGrappleApronToRing",
+20
+],
+[
+"moveWeightDetectionApronGrappleToRing",
+15
+]
+],
+"seen": 109
+},
+"299": {
+"top": [
+[
+"moveTauntCrowdStanding4",
+1
+],
+[
+"moveTauntCrowdStanding5",
+1
+]
+],
+"seen": 72
+},
+"301": {
+"top": [
+[
+"moveTauntCrowdStanding4",
+1
+],
+[
+"moveTauntCrowdStanding5",
+1
+]
+],
+"seen": 68
+},
+"107": {
+"top": [
+[
+"moveCornerRearStrike",
+19
+],
+[
+"moveCornerRearRunningStrike",
+1
+]
+],
+"seen": 109
+},
+"128": {
+"top": [
+[
+"moveAgainstMiddleRope",
+44
+]
+],
+"seen": 114
+},
+"35": {
+"top": [
+[
+"moveCornerTopRopeGrapple1",
+4
+],
+[
+"moveSignature2",
+3
+],
+[
+"moveRingsideSignature2",
+3
+],
+[
+"moveCornerRearTopRopeGrapple1",
+3
+],
+[
+"moveWeightDetectionTopRopeGrappleBehind",
+3
+]
+],
+"seen": 46
+},
+"43": {
+"top": [
+[
+"moveFinisher2",
+3
+],
+[
+"moveRingsideFinisher1",
+2
+],
+[
+"moveRingsideFinisher2",
+1
+],
+[
+"moveDivingTopRopeVsDowned1",
+1
+],
+[
+"moveSignature2",
+1
+]
+],
+"seen": 16
+},
+"164": {
+"top": [
+[
+"moveOutsideSpringboardAttack",
+8
+]
+],
+"seen": 44
+},
+"20": {
+"top": [
+[
+"moveFrontStrongGrapple2",
+9
+],
+[
+"moveWeightDetectionMediumGrappleFront",
+6
+],
+[
+"moveFrontMediumGrapple4",
+5
+],
+[
+"moveFrontMediumGrapple1",
+5
+],
+[
+"moveFrontStrongGrapple4",
+4
+]
+],
+"seen": 114
+},
+"44": {
+"top": [
+[
+"moveFinisher1",
+1
+],
+[
+"moveFinisher2",
+1
+]
+],
+"seen": 4
+},
+"339": {
+"top": [
+[
+"moveStandingStrongStrikeNewFront3",
+1
+]
+],
+"seen": 1
+},
+"342": {
+"top": [
+[
+"moveFrontMediumGrapple3",
+1
+]
+],
+"seen": 1
+},
+"163": {
+"top": [
+[
+"moveSpringboardToApronVsDowned",
+5
+],
+[
+"moveApronSpringboardAttackToRing",
+2
+]
+],
+"seen": 22
+},
+"167": {
+"top": [
+[
+"moveSpringboardToRingsideVsDowned",
+3
+]
+],
+"seen": 5
+},
+"169": {
+"top": [
+[
+"moveApronToRingsideVsDowned",
+5
+],
+[
+"moveApronSpringboardAttackToRingside",
+3
+]
+],
+"seen": 9
+},
+"82": {
+"top": [
+[
+"moveFaceUpGrappleLower",
+4
+],
+[
+"moveWeightDetectionGroundLower",
+4
+],
+[
+"moveFaceDownGrappleLower",
+2
+]
+],
+"seen": 114
+},
+"305": {
+"top": [
+[
+"moveTauntOpponentGround1",
+1
+],
+[
+"moveTauntOpponentGround5",
+1
+],
+[
+"moveTauntOpponentStanding3",
+1
+],
+[
+"moveTauntOpponentStanding5",
+1
+]
+],
+"seen": 55
+},
+"307": {
+"top": [
+[
+"moveTauntOpponentGround1",
+1
+],
+[
+"moveTauntOpponentGround5",
+1
+],
+[
+"moveTauntOpponentStanding3",
+1
+],
+[
+"moveTauntOpponentStanding5",
+1
+]
+],
+"seen": 55
+},
+"354": {
+"top": [
+[
+"moveStrongStrike1",
+1
+],
+[
+"moveStandingStrongStrikeNewFront1",
+1
+],
+[
+"moveGroundStrongStrikeFaceDown1",
+1
+]
+],
+"seen": 3
+},
+"355": {
+"top": [
+[
+"moveSignature2",
+1
+],
+[
+"moveRingsideSignature2",
+1
+],
+[
+"moveFrontStrongGrapple1",
+1
+]
+],
+"seen": 3
+},
+"356": {
+"top": [
+[
+"moveStandingStrongStrikeNewFront5",
+1
+],
+[
+"moveSignature1",
+1
+],
+[
+"moveRingsideSignature1",
+1
+],
+[
+"moveRingsideSignature2",
+1
+]
+],
+"seen": 2
+},
+"351": {
+"top": [
+[
+"moveFaceUpGrappleLower",
+1
+],
+[
+"moveWeightDetectionGroundLower",
+1
+]
+],
+"seen": 1
+},
+"357": {
+"top": [
+[
+"moveCornerFrontGrapple1",
+1
+],
+[
+"moveWeightDetectionCornerGrappleFront",
+1
+]
+],
+"seen": 1
+},
+"300": {
+"top": [
+[
+"moveTauntCrowdStanding4",
+1
+],
+[
+"moveTauntOpponentGround2",
+1
+]
+],
+"seen": 67
+},
+"303": {
+"top": [
+[
+"moveTauntOpponentGround2",
+1
+]
+],
+"seen": 92
+},
+"353": {
+"top": [
+[
+"moveStrongStrike1",
+1
+]
+],
+"seen": 2
+}
+}

@@ -38,3 +38,12 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
   [2K19 field, votes, wrestlers with that slot filled]). E.g. 33/34 signatures, 40/41 finishers, 38/45 ringside sig/fin,
   18-21 front strong grapples, 28-31 rear strong grapples, 0-7 strikes.
 - Game data stays out of git: decoded tables live in `D:\Pictures\WWE 2K19\A - Resources\2K26 Extracted\`.
+
+## 4. First translation: Jevon Evans (2026-11-19)
+- Move catalog `CMov` (bakedfile02 file 179): 8,161 named moves (record f0 = name, f1 = u16 id). Jevon's 2K26 finisher id
+  0xB2DC = "OG Cutter 1"; his other moves with no 2K19 id now have names (Trouble In Paradise, Ripcord Spanish Fly, ...).
+- `tools/movesets/translate.py`: base = the 2K19 template sharing the most moves (Jevon: Kofi Kingston '12); 2K26 slots
+  written to learned roles in confidence order; moves without a 2K19 id -> `overrides.json` (curated) else closest 2K19 name
+  (token match, move-type word weighted), all flagged in the report. Jevon: 233 slots set, 22 not placed.
+- `decode26.py` rebuilds `char_movesets.json` / `move_catalog26.json` from the two decoded tables.
+- Output `jevon_evans_v1.moveset` + `.report.md`. Note: the base template's non-move data (entrance etc.) comes along; Matthew injects.
