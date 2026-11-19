@@ -25,3 +25,16 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
   unnamed archive:** `Char` (6.15 MB, file 204) = CharMoveSetDataTable (AuroraForge documents the 2K25 layout: one record
   per wrestler id, ~354 move slots, each slot -> a string-db name id). Also there: `CMov` (3.76 MB, file 179, likely the move
   catalog), `MoveData/AttackData.jsfb` (`CAtt`), `GhostWriter/Common/MoveSlotPresets.jsfb`, `CAM/MoveData.jsfb`.
+
+## 3. 2K26 CharMoveSetDataTable decoded; move ids carry over from 2K19 (2026-11-19)
+- `Char` table (bakedfile02 file 204): root f0 -> vector of **789 wrestler records** (f0 = u16 wrestler id = the
+  `Characters/<id>_Name` folder id, f1 -> wrapper); wrapper f0 -> vector of **358 slot tables**; slot table f0 = **u16 move id**
+  (f4 -> optional small sub-table, 4 of 358 slots use it).
+- **2K26 move ids are 2K19 move ids, byte-swapped** (the Data Editor stores them big-endian). 4,124 of the 5,615 distinct ids used
+  across the 2K26 roster exist in the 2K19 move list; Jevon: 217 of 265 filled slots map directly (Superkick, Blue Thunder Bomb,
+  Springboard Cutter, Sit-Out Powerbomb, ...).
+- **Slot roles** learned by voting: 117 wrestlers exist in both games (2K19 template movesets x 2K26 roster); each filled 2K26 slot
+  votes for the 2K19 slot holding the same move. 294/358 slots get a role (`tools/movesets/slot_roles_2k26.json`: slot ->
+  [2K19 field, votes, wrestlers with that slot filled]). E.g. 33/34 signatures, 40/41 finishers, 38/45 ringside sig/fin,
+  18-21 front strong grapples, 28-31 rear strong grapples, 0-7 strikes.
+- Game data stays out of git: decoded tables live in `D:\Pictures\WWE 2K19\A - Resources\2K26 Extracted\`.
