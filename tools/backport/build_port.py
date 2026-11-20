@@ -729,6 +729,10 @@ def build(cfg,outpath,PROP=None):
         if st_ in sheer:   # 2K26 sheer fabric (shader opacity, colour alone reads as solid dark): paint skin through it
             C=C.copy(); col_,tol_,mix_=sheer[st_]; d_=np.abs(C[...,:3].astype(int)-np.array(col_)).max(-1)<tol_
             C[...,:3][d_]=(mix_*(np.array(cfg['diag_sheer_rgb']) if cfg.get('diag_sheer_rgb') else skin_rgb)+(1-mix_)*C[...,:3][d_].astype(float)).astype('u1'); info.setdefault('sheer',{})[st_]=int(d_.sum())
+        if st_ in cfg.get('lace_clear',{}):   # lace panel: the black painted under the 3D strings reads as solid black chunks in 2K19 -> make it see-through too
+            from scipy.ndimage import binary_dilation
+            r_,thr_=cfg['lace_clear'][st_]; C=C.copy(); hole=C[...,3]<128; zone=binary_dilation(hole,iterations=r_)
+            dk=zone&(C[...,:3].max(-1)<thr_); C[...,3][dk]=0; info.setdefault('lace_clear',{})[st_]=int(dk.sum())
         setm(name,C,N,keep_alpha=st_ in ka)
     for base,stems in hairtex.items():
         if len(stems)==1 and not ci(f"{TA}/{stems[0]}_rai.dds") and ci(f"{TA}/{stems[0]}_color.dds"):
@@ -846,7 +850,7 @@ RHEA_ENT=dict(RHEA_RING,work='/home/claude/ext/rh2e',emd='00050604',cover=RHEA_R
    
     attire={**RHEA_RING['attire'],(0x5602,1):('mesh','M_Jacket','jacket')})
 RQ_='/home/claude/pairs/RQ/927_Raquel_Rodriguez/'
-RAQUEL_RING=dict(template='female',keep_alpha=['outfit'],lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+RAQUEL_RING=dict(template='female',keep_alpha=['outfit'],lace_clear={'outfit':(12,45)},seethrough_reach=6.0,lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/rq',emd='00050602',
     base=RQ_+'BaseModel/baseModel.mcd',attire_model=RQ_+'927_Default_Attire/927_Attire.mcd',
     tex_base=RQ_+'BaseModel/Textures',tex_attire=RQ_+'927_Default_Attire/Textures',hpl=RQ_+'927_Default_Attire/927_Attire.mcd',

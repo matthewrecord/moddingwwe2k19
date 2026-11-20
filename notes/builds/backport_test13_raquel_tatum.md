@@ -189,3 +189,9 @@ reproduce both glitches offline.
     It's a look choice, not a hole.
 - The bench model (hide spans, alpha-test on yCS_trans, back-face culling with negated normals) matches the game for
   these cases.
+
+## v6 (Raquel): black triangles inside the lace
+- Cause: the lace texture has opaque black painted under/around the 3D strings. With alpha-test on, those texels draw as solid black chunks over the skin.
+- Reproduced offline with gamerender (view q2, ID buffer → outfit tris ~4049-4086).
+- Fix: `lace_clear={'outfit':(12,45)}` clears near-black texels within 12 px of existing holes (91k texels), plus `seethrough_reach=6.0` so the body under the widened holes is drawn.
+- Gates on v6: preview ok, legstress 0 spikes.

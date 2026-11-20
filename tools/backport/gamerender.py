@@ -39,13 +39,14 @@ def gather(B,TX,hide,rots=None,gear_alpha=False,trans_opaque=False):
 def rot(view):
     a,e=np.radians(VIEWS[view][0]),np.radians(VIEWS[view][1])
     Ry=np.array([[np.cos(a),0,np.sin(a)],[0,1,0],[-np.sin(a),0,np.cos(a)]]); return Ry
-def render(objs,view,box,px):
+def render(objs,view,box,px,ids=None):
     R=rot(view); x0,x1,y0,y1=box; W=px; H=int(px*(y1-y0)/(x1-x0))
     img=np.zeros((H,W,3)); img[:]=(1,0,1); Z=np.full((H,W),np.inf)
-    for P,UV,T,tex,cut,Nn in objs:
+    if ids is not None: ids.resize((H,W,2),refcheck=False); ids[:]=-1
+    for oi,(P,UV,T,tex,cut,Nn) in enumerate(objs):
         Q=P@R.T; X=(Q[:,0]-x0)/(x1-x0)*W; Y=(Q[:,1]-y0)/(y1-y0)*H; Zc=Q[:,2]   # +z = away from camera (front faces -z)
         Nr=-(Nn@R.T) if Nn is not None else None   # 2K19 stores normals negated (stock bodies too)
-        for t in T:
+        for ti,t in enumerate(T):
             if CULL and Nr is not None and Nr[t,2].mean()>0.05: continue   # back-facing (normal points away from the camera): the game culls it
             xs,ys=X[t],Y[t]
             mnx,mxx=int(max(0,np.floor(xs.min()))),int(min(W-1,np.ceil(xs.max()))); mny,mxy=int(max(0,np.floor(ys.min()))),int(min(H-1,np.ceil(ys.max())))
@@ -66,6 +67,7 @@ def render(objs,view,box,px):
                 keep=(s[:,3]>=128) if cut else np.ones(len(yy),bool); col=s[:,:3]/255
             yy,xx,zz,col=yy[keep],xx[keep],zz[keep],col[keep]
             Z[mny+yy,mnx+xx]=zz; img[mny+yy,mnx+xx]=col
+            if ids is not None: ids[mny+yy,mnx+xx]=(oi,ti)
     return (img*255).astype('u1')
 POSES={'rest':None,'arms down':{'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65)},
        'walk':{'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65),'J_Leg_L':([1,0,0],-25),'J_Leg_R':([1,0,0],15),'J_Knee_L':([1,0,0],30)},
