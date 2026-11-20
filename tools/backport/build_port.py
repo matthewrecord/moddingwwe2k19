@@ -706,7 +706,16 @@ def build(cfg,outpath,PROP=None):
     hd,E=texconv.read_pack(B[0xa]); E=dict(E)
     def setm(base,C,N,skin=False,nname=None,kyle=None,keep_alpha=False):
         r=mats(C,N,skin,kyle,keep_alpha); E[base]=r['']; E[base+'_mr']=r['_mr']; E[nname or base+'_n']=r['_n']
-    c,n=load_pair(TB,'body'); setm('all_color',c,n,True,'all_n',ci(TP['ref']+'/Textures/body_nrm.dds'))
+    c,n=load_pair(TB,'body')
+    if cfg.get('diag_paint'):   # DIAGNOSTIC: paint the body texels under given boxes (|x| lo,hi, y lo,hi) a flat colour
+        from PIL import ImageDraw
+        c=c.copy(); h_,w_=c.shape[:2]; im_=Image.fromarray(c); dr_=ImageDraw.Draw(im_); Pb_=Sb['POSITION'][:,:3].astype(float); uv_=np.asarray(Sb['TEXCOORD'])[:,:2]
+        for (x0,x1,y0,y1),rgb in cfg['diag_paint']:
+            m_=(np.abs(Pb_[:,0])>=x0)&(np.abs(Pb_[:,0])<=x1)&(Pb_[:,1]>=y0)&(Pb_[:,1]<=y1)
+            for t in np.asarray(Tb)[m_[np.asarray(Tb)].any(1)]:
+                dr_.polygon([((uv_[v,0]%1)*w_,(uv_[v,1]%1)*h_) for v in t],fill=tuple(rgb)+(255,))
+        c=np.asarray(im_); info['diag_paint']=len(cfg['diag_paint'])
+    setm('all_color',c,n,True,'all_n',ci(TP['ref']+'/Textures/body_nrm.dds'))
     c,n=load_pair(TB,'head')
     if cfg.get('undereye_lighten'): c=lighten_undereye(c,MB,cfg['undereye_lighten']); info['undereye_lighten']=cfg['undereye_lighten']
     setm('head',c,n,True,None,ci(TP['ref']+'/Textures/head_nrm.dds'))
@@ -719,7 +728,7 @@ def build(cfg,outpath,PROP=None):
         st_=texstem.get(name,name)
         if st_ in sheer:   # 2K26 sheer fabric (shader opacity, colour alone reads as solid dark): paint skin through it
             C=C.copy(); col_,tol_,mix_=sheer[st_]; d_=np.abs(C[...,:3].astype(int)-np.array(col_)).max(-1)<tol_
-            C[...,:3][d_]=(mix_*skin_rgb+(1-mix_)*C[...,:3][d_].astype(float)).astype('u1'); info.setdefault('sheer',{})[st_]=int(d_.sum())
+            C[...,:3][d_]=(mix_*(np.array(cfg['diag_sheer_rgb']) if cfg.get('diag_sheer_rgb') else skin_rgb)+(1-mix_)*C[...,:3][d_].astype(float)).astype('u1'); info.setdefault('sheer',{})[st_]=int(d_.sum())
         setm(name,C,N,keep_alpha=st_ in ka)
     for base,stems in hairtex.items():
         if len(stems)==1 and not ci(f"{TA}/{stems[0]}_rai.dds") and ci(f"{TA}/{stems[0]}_color.dds"):
@@ -857,7 +866,9 @@ TATUM_RING=dict(template='female',sheer={'socks':((70,40,30),45,0.6)},lid_fit=Tr
             (0x5602,0):('mesh','M_Brassiere','brassiere'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
 TATUM_ENT=dict(TATUM_RING,work='/home/claude/ext/tpe',emd='00050604',hair_body_blend=dict(TATUM_RING['hair_body_blend'],a_max=0.7),cover=TATUM_RING['cover']+['M_Jacket'],hair={0x2715:('M_Hair_Entrance','hair')},
     attire={**TATUM_RING['attire'],(0x5601,2):('mesh','M_Jacket','jacket')})
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA,'rhea_ring':RHEA_RING,'rhea_entrance':RHEA_ENT,'raquel_ring':RAQUEL_RING,'raquel_entrance':RAQUEL_ENT,'tatum_ring':TATUM_RING,'tatum_entrance':TATUM_ENT}
+RAQUEL_DIAG=dict(RAQUEL_ENT,work='/home/claude/ext/rqd',diag_paint=[((0,32,-112,-55),(0,255,0))])
+TATUM_DIAG=dict(TATUM_ENT,work='/home/claude/ext/tpd',diag_paint=[((2,20,-82,-45),(0,255,0))],sheer={'socks':((70,40,30),45,1.0)},diag_sheer_rgb=(0,255,255))
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA,'rhea_ring':RHEA_RING,'rhea_entrance':RHEA_ENT,'raquel_ring':RAQUEL_RING,'raquel_entrance':RAQUEL_ENT,'tatum_ring':TATUM_RING,'tatum_entrance':TATUM_ENT,'raquel_diag':RAQUEL_DIAG,'tatum_diag':TATUM_DIAG}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))
