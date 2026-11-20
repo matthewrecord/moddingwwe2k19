@@ -176,3 +176,16 @@ reproduce both glitches offline.
   - Whether the entrance pac in the game is the v5 file.
 - Proposed next step: a diagnostic pac (body under the lace painted bright green, socks' sheer texels painted bright
   cyan) to tell "body hidden" from "body drawn but dark". Waiting on Matthew.
+
+## Diagnostic result (2026-11-20, in game, entrance pacs)
+- **Raquel:** green shows through the lace in the entrance, bright and in every shot. So the body is drawn there, and
+  `keep_alpha` (v5) makes the lace panel transparent in game. yCS_trans does alpha-test.
+  - The DIAG pac is the v5 entrance with only the body texels recoloured, so v5's entrance shows skin there. The black
+    Matthew saw was v3/v4 (alpha forced 255), or v5 not loaded, or skin in deep shadow.
+  - `gamerender.py` predicted exactly this image (green diamonds through the lace).
+- **Tatum:** cyan stripes render on the sock as painted, and no green shows through the sock anywhere, so there are no
+  holes. The green on the bare left thigh is expected (no sock on that leg).
+  - So v5's "see-through" look on that leg is the sheer stripes, which v5 tints 60% skin on purpose (how sheer reads).
+    It's a look choice, not a hole.
+- The bench model (hide spans, alpha-test on yCS_trans, back-face culling with negated normals) matches the game for
+  these cases.
