@@ -605,3 +605,23 @@ Sources come from Matthew's own 2K26 copy (handoff 020, `writeup/Cak_2k26.md` on
 - **`lid_fit`** (new, per config): scales eye-closing morph travel per eye until the remaining lid gap matches the donor.
   Use it when lidcheck shows a source eye opening that closes short.
 - **`eye_recess`** (cm, per config): pushes the eyeballs back a little when eyegaze shows a small poke at the 25° turns.
+
+## 31. Female 2K26 ports in game: Rhea, Raquel, Tatum (2026-11-20)
+Three rounds of in-game feedback turned into weight rules and new gates. All of them are now in `build_port.py`, on by
+default, and listed in `tools/backport/README.md` ("2K26 sources: the weight rules learned in game").
+- **Round 1:**
+  - Tatum's leg spikes came from the rootless 2K26 cloth bone `vector` and from missing helper bones mapped to the wrong
+    ancestor.
+  - Raquel's hip warping came from the body's hips and legs being partly weighted to J_Head.
+  - Tatum's hair tore apart because triangles spanned two hair chains.
+- **Round 2:**
+  - Skin showed through where gear with its own weights drifted off hidden skin. Fixed with `tight_follow`, plus
+    alpha-aware hiding.
+  - Rhea's open vest: left out of the cover list.
+  - Tatum's entrance hair was frozen by the body blend. Fixed with `a_max`.
+- **Round 3:**
+  - Skin under Raquel's lace stayed hidden. Fixed with `seethrough_reach`.
+  - Tatum's donor-weighted socks and kneepads skipped `tight_follow`. Fixed by emptying `donor_weights`.
+- **New gates:** lidcheck (formalised), hairclip, hairstretch, hairtear, legstress. `pose_fk` now moves the donor's
+  rootless m### helpers with the nearest J_ bone.
+- Build notes: `notes/builds/backport_test12_rhea_jd.md` and `notes/builds/backport_test13_raquel_tatum.md`.

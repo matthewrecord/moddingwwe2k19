@@ -99,6 +99,30 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
      the lids beyond rest).
    - Female: lash blink check (head + lash under the strongest eyelid morph; lashes must close with the lid).
    - Jaw test with `pose.py` (rotate J_Jaw 15° plus morph 114 at 0.6, front and side): no spikes.
+   - **Lid closure**: `lidcheck.py <pac> <donor>`. Each eye-closing morph should leave the same % gap as the donor. If an
+     eye closes short (big source eye openings), set `lid_fit=True`.
+   - **Hair on body**: `hairclip.py <pac>` (arms down/shrug/forward, lean, lean back, twist). Count hair verts crossing
+     into body or attire: aim for ≤ ~1.5 cm deep.
+   - **Hair stretch**: `hairstretch.py <pac>` (head turn/tilt/look down). p99.9 ≤ ~2.5.
+   - **Hair tearing**: `hairtear.py <pac>` (random independent chain swings). p99.9 ≤ ~1.4; Paige's own hair is 1.1.
+     Higher means triangles span two chains: use `hair_body_blend(post_smooth=60)`.
+   - **Hips and legs**: `legstress.py <pac>` (bend over 90, split 45, knee 120, kick back). Gear crossing into the body
+     should be ~0 on the first three; kick back is high on every port. Stretch shows tearing.
+   - These offline tests don't run the game's hair physics, and the donor's rootless m### helpers are approximated as
+     following the nearest J_ bone. In-game screenshots overrule them.
+
+### 2K26 sources: the weight rules learned in game (all in `build_port.py`, on by default)
+| Rule | Why |
+|---|---|
+| Drop the rootless `vector` bone everywhere (body and attire), fill from neighbours | It's 2K26's cloth bone. Handed to J_Head it made hips and legs move with the head (Rhea/Raquel/Tatum, up to 0.3). |
+| `donor_for_missing`: on hips and legs, blend in the donor's skin by the share of weight on bones 2K19 lacks (H_Quad_Jig, H_Knee_Lower, H_Leg_Vol_S/B) | The nearest-ancestor fallback put thigh jiggle on J_Hips and tore Tatum's socks. |
+| `tight_follow` (1.5 cm): gear close to the skin on hips and legs takes the skin under it (barycentric, closest body triangle) | Gear with different weights drifts off the hidden skin, and you see through the body. Don't use nearest-vertex copy (steps) and don't smooth it afterwards (brings the crossings back). |
+| Don't put tight gear (socks, kneepads) in `donor_weights` | Donor-weighted gear skips `tight_follow` and leaves see-through spots (Tatum). |
+| `opaque_cover` + `seethrough_reach` (3 cm) | Lace and cut-outs: drop cover triangles with ≥10% transparent texels from the hide test, and keep body within 3 cm of them drawn (Raquel's hip lace showed black). |
+| Leave loose or open garments out of `cover` (open vests, jackets) | They swing off the body, and hidden skin shows (Rhea's entrance). |
+| `eye_recess` (0.05-0.15 cm) | When eyegaze pokes at 25°. |
+| `hair_physics='<stock id>'` | Pick the stock rig whose hair is closest to the source hair (`hairscan2.py` lists stock pacs with Hair_b rigs; Paige ch43402 fits long hair). |
+| `hair_body_blend(...)` | Hair resting on shoulders and back follows the body, not only the head and chains. `a_max` < 1 keeps some physics: at 1.0, hair lying on a hoodie looked frozen (Tatum's entrance). Long back hair: `dfull`/`dzero` 6/18. Remapping the pelvis bones to J_Spine2 was tried and was worse. |
 6. Commit the notes and renders, then deliver to
    `D:\SteamLibrary\steamapps\common\WWE 2K19 - modded\_moddingwwe2k19_builds\backport\<testN_name>\`.
    Matthew installs it in slot ch50602, backing up first.
@@ -137,6 +161,8 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
 | `eyegaze` | eye gaze stress test (gate) |
 | `lidcheck` | lid closure % per eye-closing morph |
 | `bodypose` | body pose stress test (gate) |
+| `hairclip`, `hairstretch`, `hairtear` | hair-on-body, head-turn stretch and chain-tearing gates |
+| `legstress` | hip/leg pose gate: gear crossing the body, edge stretch |
 | `eyepatch` | straighten eyes + move eye pivots on an EXISTING pac (any port) |
 | `hidetable` | block 0xCE hide table read/build |
 | `jcheck` | compare a written object against port conventions |
