@@ -39,7 +39,8 @@ def gather(B,TX,hide,rots=None,gear_alpha=False,trans_opaque=False):
     return out
 def rot(view):
     a,e=np.radians(VIEWS[view][0]),np.radians(VIEWS[view][1])
-    Ry=np.array([[np.cos(a),0,np.sin(a)],[0,1,0],[-np.sin(a),0,np.cos(a)]]); return Ry
+    Ry=np.array([[np.cos(a),0,np.sin(a)],[0,1,0],[-np.sin(a),0,np.cos(a)]])
+    Rx=np.array([[1,0,0],[0,np.cos(e),-np.sin(e)],[0,np.sin(e),np.cos(e)]]); return Rx@Ry   # e>0 = camera below, looking up (elevation was silently ignored before)
 def render(objs,view,box,px,ids=None):
     R=rot(view); x0,x1,y0,y1=box; W=px; H=int(px*(y1-y0)/(x1-x0))
     img=np.zeros((H,W,3)); img[:]=(1,0,1); Z=np.full((H,W),np.inf)

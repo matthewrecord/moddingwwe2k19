@@ -200,3 +200,10 @@ reproduce both glitches offline.
 Not reproduced offline. Ruled out: lighting/shadow (user), LOD (pac has none), hide-table object offset (both readings show skin),
 double-sided outfit (CULL off: no change), depth bias on trans layers (gamerender TBIAS 0.5-2 cm: no change).
 Next: DIAG2 (v6 + green body paint) decides between "body drawn but dark" and "body not drawn there by the game".
+
+## DIAG2 result
+Lace windows are green to the rear edge, so the body is drawn there. A pure-black wedge still sits in front of the green, just under the
+window's top edge, with the camera low and looking up. So an object is drawn over the skin; it's not a dark skin texture.
+gamerender bug found: rot() ignored elevation, so every render was at hip height. Fixed. Still not reproduced in rest, walk or bend poses.
+Body maps (mr, n) are flat in the lace zone. The hair yDefault mesh ends at y -119, above the lace.
+Next: COLORID (tools/backport/colorid.py, every diffuse a flat colour, alpha kept) names the object drawing the wedge.
