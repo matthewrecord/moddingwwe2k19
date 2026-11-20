@@ -163,6 +163,47 @@ def lid_fit(P,T,HM,DP,DT,DM,thr=0.4,iters=3):
                 k=float(np.clip((1-rd[n])/max(1-ro[n],1e-3),0.85,1.25)); HM[n]*=(1+(k-1)*w)[:,None]
                 log[f'{side}{n+1}']=(round(100*rd[n]),round(100*ro[n]))
     O=lid_gaps(P,T,HM); return HM,{k_:(v[0],v[1],round(100*O[k_[0]][1][int(k_[1:])-1]/O[k_[0]][0])) for k_,v in log.items()}
+def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth=0):
+    """Hair strands resting on the shoulders/chest: blend their skin toward the nearest body/attire vertex's bones, so the
+    shoulders carry them instead of the head/physics chain (no clipping when the body moves under the hair).
+    Appends the needed body bones to the hair JBOY's palette."""
+    import jcheck,struct as st_
+    jh=jboy.JBOY(Jh); o=jh.objs[0]; P=o['pos'].astype(float); sk=jcheck.raw_skin(jh,o).copy(); ns=sk.shape[1]
+    names=[b_['name'] for b_ in jh.bones]; pal=list(jh.palette)
+    BP=[];BS=[]
+    for jb_,ks in Jbody_list:
+        jb=jboy.JBOY(jb_)
+        for k in ks:
+            ob=jb.objs[k]; s2=jcheck.raw_skin(jb,ob); BP.append(ob['pos'].astype(float))
+            def up(bi):   # nearest ancestor that the hair skeleton also has (body twist/helper bones are not in it)
+                while bi>=0 and jb.bones[bi]['name'] not in names: bi=jb.bones[bi]['parent']
+                return jb.bones[bi]['name'] if bi>=0 else 'J_Head'
+            BS.append([[ (up(int(jb.palette[i])),w) for i,w in zip(r['i'],r['w']) if w>0 and i<len(jb.palette)] for r in s2])
+    BP=np.concatenate(BP); BS=sum(BS,[])
+    d,nn=cKDTree(BP).query(P)
+    a=np.clip((P[:,1]-y0)/(y1-y0),0,1)*np.clip((dzero-d)/(dzero-dfull),0,1)
+    if smooth:   # spread the blend along the strands so neighbouring vertices don't pull apart (stretch on head turns)
+        import scipy.sparse as sp_
+        T_=jboy.strip_to_tris(jh.indices(o)[1]); E_=np.concatenate([T_[:,[0,1]],T_[:,[1,2]],T_[:,[2,0]]]); n_=len(P)
+        A_=sp_.coo_matrix((np.ones(len(E_)*2),(np.r_[E_[:,0],E_[:,1]],np.r_[E_[:,1],E_[:,0]])),shape=(n_,n_)).tocsr(); deg=np.asarray(A_.sum(1)).ravel()+1
+        for _ in range(smooth): a=(A_@a+a)/deg
+    nb=0
+    for v in np.where(a>0.01)[0]:
+        acc={}
+        for i,w in zip(sk['i'][v],sk['w'][v]):
+            if w>0: acc[int(i)]=acc.get(int(i),0)+float(w)*(1-a[v])
+        for nm,w in BS[nn[v]]:
+            bi=names.index(nm)
+            if bi not in pal: pal.append(bi)
+            sl=pal.index(bi); acc[sl]=acc.get(sl,0)+float(w)*a[v]
+        top=[t for t in sorted(acc.items(),key=lambda t:-t[1])[:ns] if t[1]>1e-6]; tot=sum(w for _,w in top)   # weight-descending, like the stock hair
+        sk['i'][v]=0xFFFF; sk['w'][v]=0; sk['p'][v]=0
+        for q,(sl,w) in enumerate(top): sk['i'][v,q]=sl; sk['w'][v,q]=w/tot
+        nb+=1
+    m=jbuild.Model(jh); m.data[m.chunk(0,'skin')]=bytearray(sk.tobytes())
+    pc=[c for c in m.order if m.name[c]=='pal'][0]; m.data[pc]=bytearray(st_.pack('>%dI'%len(pal),*pal))
+    hc=[c for c in m.order if m.name[c]=='palhdr'][0]; st_.pack_into('>I',m.data[hc],0,len(pal))
+    return m.build(),dict(blended=int(nb),full=int((a>0.99).sum()),pal_added=len(pal)-len(jh.palette))
 def source_weights(S,bones,slot,idx=None,drop_unmapped=False):
     """the mod's own skin weights (BI/BW, by its bone names) -> 2K19 palette slots; bones missing from the palette
     hand their weight to the nearest ancestor that exists. idx: subset of vertices."""
@@ -590,6 +631,11 @@ def build(cfg,outpath,PROP=None):
                 J[fid],done=move_bones(d,tg)
                 if fid==0: info['eye_pivot_moved']=done
     if cfg.get('emd'): hdr=hdr[:0x80C]+cfg['emd'].encode()+hdr[0x814:]
+    if cfg.get('hair_body_blend') and 0x2715 in J:
+        jb0=jboy.JBOY(J[0]); L=[(J[0],[k for k,o in enumerate(jb0.objs) if o['shader']=='yCS_skin' and k>0])]
+        for f_ in (0x5601,0x5602):
+            if f_ in J: L.append((J[f_],list(range(len(jboy.JBOY(J[f_]).objs)))))
+        J[0x2715],info['hair_body_blend']=hair_body_blend(J[0x2715],L,**cfg['hair_body_blend'])
     pac=epkwrite.build_raw(hdr,[(fid,epkwrite.zblock(J[fid]) if fid in J else blk) for fid,blk in blocks]); open(outpath,'wb').write(pac)
     info['size']=len(pac); return info
 
@@ -661,7 +707,20 @@ RHEA=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',
             (0x5601,1):('mesh','M_L_Wrist','l_wrist'),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
             (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Tops','tops'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA}
+R2_='/home/claude/pairs/RH2/816_Rhea_Ripley_2019/'
+RHEA_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100),
+    weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/rh2',emd='00050602',
+    base=R2_+'BaseModel/BaseModel.mcd',attire_model=R2_+'816_Default_Attire/816_Attire.mcd',
+    tex_base=R2_+'BaseModel/Textures',tex_attire=R2_+'816_Default_Attire/Textures',hpl=R2_+'816_Default_Attire/816_Attire.mcd',
+    cover=['M_Brassiere','M_Tights','M_Shoes','M_L_Wrist','M_R_Wrist'],
+    hair={0x2715:('M_Hair','hair')},tint=(20,18,18),
+    attire={(0x5601,0):('atlas',[('M_U_Acce','U_acce'),('M_Pierce','pierce'),('M_L_A_Acce','l_a_acce'),('M_R_A_Acce','r_a_acce')]),
+            (0x5601,1):('mesh','M_L_Wrist','l_wrist'),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
+            (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5602,0):('mesh','M_Brassiere','brassiere')})
+RHEA_ENT=dict(RHEA_RING,work='/home/claude/ext/rh2e',emd='00050604',cover=RHEA_RING['cover']+['M_Jacket'],
+    attire={**RHEA_RING['attire'],(0x5602,1):('mesh','M_Jacket','jacket')})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA,'rhea_ring':RHEA_RING,'rhea_entrance':RHEA_ENT}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))
