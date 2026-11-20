@@ -46,3 +46,44 @@ Renders: `notes/builds/renders/raquel`, `notes/builds/renders/tatum`.
 
 ## Unconfirmed
 Hair colours are guesses (2K26 hair colour comes from CAS data I haven't decoded).
+
+## v2 (same day), after Matthew's in-game test
+**Feedback:**
+- Tatum: big problems on the legs (spikes near the backs of her knees and on the socks).
+- Tatum: the hair comes apart from itself, and the middle clips while the ends don't.
+- Raquel: skin and outfit warp ("fluidity") at the upper thighs and hips.
+
+### Causes
+1. **Hips and legs moving with the head.** The body's source weights handed the 2K26 rootless cloth bone `vector` to
+   J_Head: up to 0.30 J_Head weight on hip and leg vertices, in Raquel, Tatum and Rhea alike.
+   - Fix: drop `vector` on the body too, and fill weightless vertices from the nearest weighted body vertex.
+2. **2K26 helper bones the 2K19 skeleton lacks** (H_Quad_Jig, H_Knee_Lower, H_Leg_Vol_S/B, `vector`). The old fallback
+   gave their weight to the nearest existing ancestor, which put a thigh jiggle bone on J_Hips. That tore the tops of
+   Tatum's socks.
+   - Fix (`donor_for_missing`, on by default): on hips and legs (y below -125, ramped), blend in the 2K19 donor's skin
+     in proportion to the weight share on missing bones.
+   - Tatum's socks (mostly cloth-simulated in 2K26) take donor weights outright.
+3. **Hair tearing.** Each hair vertex copied its nearest Paige chain, so triangles spanned two chains that move
+   independently.
+   - Fix: `hair_body_blend(post_smooth=60)` Laplacian-smooths the final hair skin along the strands.
+   - The hair-to-body blend now maps the donor's rootless m### helpers to the nearest J_ bone instead of J_Head.
+
+### New gates
+- `legstress.py`: hip/leg poses (bend over 90, split 45, knee 120, kick back), counting attire crossing into the body
+  and edge stretch.
+- `hairtear.py`: random independent chain swings, measuring hair edge stretch.
+- `pose.pose_fk` now moves the donor's rootless m### helper bones with the nearest J_ bone, as the game does. Before,
+  they stayed at bind pose, so donor-weighted parts looked frozen in the tests.
+
+| Metric | v1 → v2 |
+|---|---|
+| hairtear, Tatum | p99.9 6.7 → 1.3 (Paige's own hair: 1.1) |
+| hairtear, Raquel | 5.8 → 1.3 |
+| legstress, Tatum, bend over 90 | stretch max 94 → 16 (the rest is donor m-bone approximation); cross 215 → 113 |
+| legstress, Raquel | cross 328/409/120/702 → 32/5/2/516; stretch unchanged (≤2.2 p99.9) |
+| hairclip, Raquel | ≤1.6 cm |
+| hairclip, Tatum ring | ≤1.2 cm (lean: 2 verts, 2.9 cm) |
+| hairclip, Tatum entrance (hoodie) | 81-127 verts ≤1.8 cm |
+| eyes, lids | unchanged, pass |
+
+Rhea v2 also has the J_Head-on-legs problem (built before this fix); rebuild it if Matthew sees it.

@@ -39,15 +39,22 @@ def pose_fk(j,k,rots,morph=None):
     if morph:
         M=np.asarray(jboy.morphs(j,o))
         for n,a in morph.items(): P+=a*M[n-1]
-    W={n:p for n,(R,p) in _bp.bone_world(j).items()}; bs=j.bones; names=[b['name'] for b in bs]; D={}
+    W={n:p for n,(R,p) in _bp.bone_world(j).items()}; bs=j.bones; names=[b['name'] for b in bs]; D={}; _cache={}
     def delta(i):
         if i in D: return D[i]
         b=bs[i]; A=np.eye(3); t=np.zeros(3)
         if b['name'] in rots:
             ax,deg=rots[b['name']]; R=Rot.from_rotvec(np.radians(deg)*np.asarray(ax,float)/np.linalg.norm(ax)).as_matrix(); c=W[b['name']]
             A=R; t=c-R@c
-        if b['parent']>=0:
-            pA,pt=delta(b['parent']); A,t=pA@A,pA@t+pt
+        par=b['parent']
+        if par<0 and b['name'][:1]=='m' and b['name'][1:4].isdigit():   # rootless donor helper (game drives it from the nearby joint): follow the nearest J_ bone
+            if 'mpar' not in _cache: _cache['mpar']={}
+            if b['name'] not in _cache['mpar']:
+                c=W[b['name']]; cand=[(np.linalg.norm(W[n_]-c),ii) for ii,n_ in enumerate(names) if n_.startswith('J_') and n_ in W]
+                _cache['mpar'][b['name']]=min(cand)[1]
+            par=_cache['mpar'][b['name']]
+        if par>=0:
+            pA,pt=delta(par); A,t=pA@A,pA@t+pt
         D[i]=(A,t); return D[i]
     S=skin(j,o); out=np.zeros_like(P); idx={n:i for i,n in enumerate(names)}
     for v,inf in enumerate(S):

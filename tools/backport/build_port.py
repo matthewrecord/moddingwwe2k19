@@ -163,7 +163,18 @@ def lid_fit(P,T,HM,DP,DT,DM,thr=0.4,iters=3):
                 k=float(np.clip((1-rd[n])/max(1-ro[n],1e-3),0.85,1.25)); HM[n]*=(1+(k-1)*w)[:,None]
                 log[f'{side}{n+1}']=(round(100*rd[n]),round(100*ro[n]))
     O=lid_gaps(P,T,HM); return HM,{k_:(v[0],v[1],round(100*O[k_[0]][1][int(k_[1:])-1]/O[k_[0]][0])) for k_,v in log.items()}
-def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth=0):
+def smooth_skin(sl,w,T,npal,iters,keep=None):
+    """Laplacian-smooth skin weights over mesh edges (dense over palette slots), then top-7 per vertex.
+    Slots are written weight-descending (stock hair order); unused = 0xFFFF / 0."""
+    import scipy.sparse as sp_
+    n=len(sl); ns=sl.shape[1]; real=(sl!=0xFFFF)&(w>0)
+    D=sp_.csr_matrix((w[real].astype(float),(np.repeat(np.arange(n),ns).reshape(n,ns)[real],sl[real])),shape=(n,npal+1)).toarray()
+    E=np.concatenate([T[:,[0,1]],T[:,[1,2]],T[:,[2,0]]]); A=sp_.coo_matrix((np.ones(len(E)*2),(np.r_[E[:,0],E[:,1]],np.r_[E[:,1],E[:,0]])),shape=(n,n)).tocsr()
+    deg=np.asarray(A.sum(1)).ravel()+1
+    for _ in range(iters): D=(A@D+D)/deg[:,None]
+    o=np.argsort(-D,axis=1)[:,:ns]; ww=np.take_along_axis(D,o,1); ww[ww<1e-4]=0; ww/=np.maximum(ww.sum(1,keepdims=True),1e-9)
+    sl2=np.where(ww>0,o,0xFFFF); return sl2.astype(int),ww.astype('f4')
+def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth=0,post_smooth=0):
     """Hair strands resting on the shoulders/chest: blend their skin toward the nearest body/attire vertex's bones, so the
     shoulders carry them instead of the head/physics chain (no clipping when the body moves under the hair).
     Appends the needed body bones to the hair JBOY's palette."""
@@ -175,9 +186,14 @@ def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth
         jb=jboy.JBOY(jb_)
         for k in ks:
             ob=jb.objs[k]; s2=jcheck.raw_skin(jb,ob); BP.append(ob['pos'].astype(float))
-            def up(bi):   # nearest ancestor that the hair skeleton also has (body twist/helper bones are not in it)
+            Wb_={n_:p_ for n_,(R_,p_) in bone_world(jb).items()}
+            def up(bi):   # nearest ancestor that the hair skeleton also has (body twist/helper bones are not in it);
+                b0=bi       # rootless donor helpers (m###) take the nearest J_ bone by position, not J_Head
                 while bi>=0 and jb.bones[bi]['name'] not in names: bi=jb.bones[bi]['parent']
-                return jb.bones[bi]['name'] if bi>=0 else 'J_Head'
+                if bi>=0: return jb.bones[bi]['name']
+                c_=Wb_.get(jb.bones[b0]['name'])
+                if c_ is None: return 'J_Head'
+                return min((np.linalg.norm(Wb_[n_]-c_),n_) for n_ in Wb_ if n_.startswith('J_') and n_ in names)[1]
             BS.append([[ (up(int(jb.palette[i])),w) for i,w in zip(r['i'],r['w']) if w>0 and i<len(jb.palette)] for r in s2])
     BP=np.concatenate(BP); BS=sum(BS,[])
     d,nn=cKDTree(BP).query(P)
@@ -200,10 +216,34 @@ def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth
         sk['i'][v]=0xFFFF; sk['w'][v]=0; sk['p'][v]=0
         for q,(sl,w) in enumerate(top): sk['i'][v,q]=sl; sk['w'][v,q]=w/tot
         nb+=1
+    if post_smooth:   # smooth the final (chain + body) skin along the strands
+        T_=jboy.strip_to_tris(jh.indices(o)[1]); s2,w2=smooth_skin(sk['i'].astype(int),sk['w'].astype('f4'),T_,len(pal),post_smooth)
+        sk['i']=s2; sk['w']=w2; sk['p']=0
     m=jbuild.Model(jh); m.data[m.chunk(0,'skin')]=bytearray(sk.tobytes())
     pc=[c for c in m.order if m.name[c]=='pal'][0]; m.data[pc]=bytearray(st_.pack('>%dI'%len(pal),*pal))
     hc=[c for c in m.order if m.name[c]=='palhdr'][0]; st_.pack_into('>I',m.data[hc],0,len(pal))
     return m.build(),dict(blended=int(nb),full=int((a>0.99).sum()),pal_added=len(pal)-len(jh.palette))
+def blend_skin(sl1,w1,sl2,w2,a):
+    """per-vertex mix of two skins (a=0 -> first, 1 -> second), 7 slots, weight-sorted then slot-ascending"""
+    sl=sl1.copy(); w=w1.copy()
+    for v in np.where(a>1e-3)[0]:
+        acc={}
+        for s_,x in zip(sl1[v],w1[v]):
+            if x>0: acc[int(s_)]=acc.get(int(s_),0)+x*(1-a[v])
+        for s_,x in zip(sl2[v],w2[v]):
+            if x>0: acc[int(s_)]=acc.get(int(s_),0)+x*a[v]
+        it=sorted(sorted(acc.items(),key=lambda t:-t[1])[:7]); t=sum(x for _,x in it) or 1
+        sl[v]=0xFFFF; w[v]=0
+        for q,(s_,x) in enumerate(it): sl[v,q]=s_; w[v,q]=x/t
+    return sl,w
+def legs_ramp(P,cfg):
+    """donor_legs=(y_top,y_full): 0 above y_top, 1 below y_full (y grows downward)"""
+    y0,y1=cfg['donor_legs']; return np.clip((P[:,1]-y0)/(y1-y0),0,1)
+def missing_frac(S,bones,slot,idx=None):
+    """per vertex: share of the source weight on bones the 2K19 skeleton doesn't have (2K26 jiggle/volume helpers,
+    the rootless cloth 'vector'); ancestor fallback misplaces them (a thigh jiggle bone hangs off J_Hips)"""
+    miss=np.array([b['name'] not in slot for b in bones]); BI=S['BI'] if idx is None else S['BI'][idx]; BW=S['BW'] if idx is None else S['BW'][idx]
+    BW=BW.astype(float)/(255.0 if BW.dtype==np.uint8 else 1.0); return (miss[BI.astype(int)]*BW).sum(1)/np.maximum(BW.sum(1),1e-9)
 def source_weights(S,bones,slot,idx=None,drop_unmapped=False):
     """the mod's own skin weights (BI/BW, by its bone names) -> 2K19 palette slots; bones missing from the palette
     hand their weight to the nearest ancestor that exists. idx: subset of vertices."""
@@ -413,7 +453,17 @@ def build(cfg,outpath,PROP=None):
         for it in range(15): Hg[zone]=(A@Hg)[zone]
         HM[k]=Hg[inv]
     Sb,Tb=MB['M_Body']; Tb,nb=cap_small_holes(Tb,Sb['POSITION']); info['body_holes_capped']=nb
-    if cfg.get('weights')=='source': bsl,bw=source_weights(Sb,BM.bones,slot)
+    if cfg.get('weights')=='source':
+        bsl,bw=source_weights(Sb,BM.bones,slot,drop_unmapped=True)   # 2K26 rootless 'vector' (cloth) bone: drop it, don't hand it to J_Head
+        bad=bw.sum(1)<1e-6
+        if bad.any():
+            _,nn=cKDTree(Sb['POSITION'][~bad]).query(Sb['POSITION'][bad]); g_=np.where(~bad)[0][nn]; bsl[bad]=bsl[g_]; bw[bad]=bw[g_]
+        info['body_vector_dropped']=int(bad.sum())
+        if cfg.get('donor_for_missing',True):
+            mf=missing_frac(Sb,BM.bones,slot)*np.clip((Sb['POSITION'][:,1].astype(float)+125)/10,0,1)   # hips and legs only (upper-body helpers were fine in game)
+            if (mf>0.01).any(): dsl,dw=welded_weights(Sb['POSITION'],Tb,donor,slot); bsl,bw=blend_skin(bsl,bw,dsl,dw,mf); info['body_missing_to_donor']=int((mf>0.01).sum())
+        if cfg.get('donor_legs'):   # 2K26 hip/knee helper bones are driven differently in 2K19: take the donor's skin on hips and legs
+            a_=legs_ramp(Sb['POSITION'].astype(float),cfg); dsl,dw=welded_weights(Sb['POSITION'],Tb,donor,slot); bsl,bw=blend_skin(bsl,bw,dsl,dw,a_); info['donor_legs_body']=int((a_>0).sum())
     else: bsl,bw=welded_weights(Sb['POSITION'],Tb,donor,slot)
     dd,ii=cKDTree(Sb['POSITION']).query(PT); seam=dd<1e-3; HS[seam]=bsl[ii[seam]]; HW[seam]=bw[ii[seam]]; info['neck_seam']=int(seam.sum())
     headW=(PT.copy(),HS.copy(),HW.copy())
@@ -520,7 +570,10 @@ def build(cfg,outpath,PROP=None):
                 ho=jh.objs[0]; sk=jcheck.raw_skin(jh,ho); _,nn=cKDTree(ho['pos']).query(Gh['pos'])
                 put(mh,0,jh,Gh,donor,col=WHITE,hair=True)
                 vc=len(Gh['pos']); tan=np.zeros((vc,3),'f4'); tan[0::2]=(0,1,0); tan[1::2]=(1,0,1)
-                jbuild.set_object(mh,0,Gh['pos'],Gh['nrm'].astype('f4'),np.tile(np.array(WHITE,'u1'),(vc,1)),Gh['uv'].astype('f4'),tan,sk['i'][nn].astype(int),sk['w'][nn].astype('f4'),jbuild.tris_to_strip(Gh['tris']))
+                hsl,hw_=sk['i'][nn].astype(int),sk['w'][nn].astype('f4')
+                if cfg.get('hair_smooth'):   # smooth the chain weights along each strand card so one triangle doesn't span two chains (tears when the chains move apart)
+                    hsl,hw_=smooth_skin(hsl,hw_,Gh['tris'],len(jh.palette),cfg['hair_smooth']); info['hair_smooth']=cfg['hair_smooth']
+                jbuild.set_object(mh,0,Gh['pos'],Gh['nrm'].astype('f4'),np.tile(np.array(WHITE,'u1'),(vc,1)),Gh['uv'].astype('f4'),tan,hsl,hw_,jbuild.tris_to_strip(Gh['tris']))
             else: put(mh,0,jh,Gh,donor,col=WHITE,hair=True)
             hairtex[base]=stems
             info.setdefault('hair_verts',{})[hex(fid)]=sum(len(G['pos']) for G in parts)
@@ -549,10 +602,18 @@ def build(cfg,outpath,PROP=None):
         if cfg.get('weights')=='source' and src is not None:
             parts_=[source_weights(S_,AM.bones,palette_slot(ja),u_,drop_unmapped=True) for S_,u_ in src]
             sl,w=np.concatenate([p[0] for p in parts_]),np.concatenate([p[1] for p in parts_])
+            if cfg.get('donor_for_missing',True):
+                mf=np.concatenate([missing_frac(S_,AM.bones,palette_slot(ja),u_) for S_,u_ in src])*np.clip((G['pos'][:,1].astype(float)+125)/10,0,1)
+                if (mf>0.01).any():
+                    dsl,dw=welded_weights(G['pos'],G['tris'],donor,palette_slot(ja)); zero=w.sum(1)<1e-6; w[zero]=dw[zero]; sl[zero]=dsl[zero]
+                    sl,w=blend_skin(sl,w,dsl,dw,mf); info['attire_missing_to_donor']=info.get('attire_missing_to_donor',0)+int((mf>0.01).sum())
             bad=w.sum(1)<1e-6
             if bad.any() and (~bad).any():   # source vertices with no weight: take the nearest weighted vertex's skin
                 _,nn=cKDTree(G['pos'][~bad]).query(G['pos'][bad]); good=np.where(~bad)[0][nn]; sl[bad]=sl[good]; w[bad]=w[good]
                 info['attire_unweighted_fixed']=info.get('attire_unweighted_fixed',0)+int(bad.sum())
+            if cfg.get('donor_legs'):
+                a_=legs_ramp(G['pos'].astype(float),cfg)
+                if (a_>0).any(): dsl,dw=welded_weights(G['pos'],G['tris'],donor,palette_slot(ja)); sl,w=blend_skin(sl,w,dsl,dw,a_); info['donor_legs_attire']=info.get('donor_legs_attire',0)+int((a_>0).sum())
             return sl,w
         sl,w=welded_weights(G['pos'],G['tris'],donor,palette_slot(ja)); dh,ih=th.query(G['pos']); db,_=tb.query(G['pos']); onh=dh<db
         if onh.any():
@@ -721,7 +782,7 @@ RHEA_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43
 RHEA_ENT=dict(RHEA_RING,work='/home/claude/ext/rh2e',emd='00050604',cover=RHEA_RING['cover']+['M_Jacket'],
     attire={**RHEA_RING['attire'],(0x5602,1):('mesh','M_Jacket','jacket')})
 RQ_='/home/claude/pairs/RQ/927_Raquel_Rodriguez/'
-RAQUEL_RING=dict(template='female',lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100),
+RAQUEL_RING=dict(template='female',lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/rq',emd='00050602',
     base=RQ_+'BaseModel/baseModel.mcd',attire_model=RQ_+'927_Default_Attire/927_Attire.mcd',
     tex_base=RQ_+'BaseModel/Textures',tex_attire=RQ_+'927_Default_Attire/Textures',hpl=RQ_+'927_Default_Attire/927_Attire.mcd',
@@ -731,8 +792,8 @@ RAQUEL_RING=dict(template='female',lid_fit=True,eye_recess=0.15,hair_physics='ch
 RAQUEL_ENT=dict(RAQUEL_RING,work='/home/claude/ext/rqe',emd='00050604',
     attire={**RAQUEL_RING['attire'],(0x5601,0):('atlas',[('M_L_A_Acce','l_a_acce'),('M_Glasses','glasses')])})
 TP_='/home/claude/pairs/TP/1216_Tatum_Paxley/'
-TATUM_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100),
-    weights='source',hide='geom',donor_weights=['M_L_Kneepad','M_R_Kneepad'],eye_straighten_deg=0.5,work='/home/claude/ext/tp',emd='00050602',
+TATUM_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+    weights='source',hide='geom',donor_weights=['M_L_Kneepad','M_R_Kneepad','M_Socks'],eye_straighten_deg=0.5,work='/home/claude/ext/tp',emd='00050602',
     base=TP_+'BaseModel/baseModel.mcd',attire_model=TP_+'1216_Default_Attire/1216_Attire.mcd',
     tex_base=TP_+'BaseModel/Textures',tex_attire=TP_+'1216_Default_Attire/Textures',hpl=TP_+'1216_Default_Attire/1216_Attire.mcd',
     cover=['M_Brassiere','M_Underwear','M_Socks','M_Shoes','M_L_Kneepad','M_R_Kneepad'],hair={0x2715:('M_Hair','hair')},tint=(25,22,22),
