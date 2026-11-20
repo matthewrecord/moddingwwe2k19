@@ -504,7 +504,15 @@ def build(cfg,outpath,PROP=None):
     if cfg.get('hide','hpl')=='geom':
         # 2K26: attire HPL! lists index the game's generic body, not the character's own M_Body -> unusable.
         # Hide a body vertex when a cover mesh lies just outside it along its normal (within 'hide_depth' cm).
-        hid_v=geom_hidden(Sb['POSITION'][:,:3],Tb,[(MA[n][0],opaque_cover(MA[n][0],MA[n][1],cfg['tex_attire'],n[2:].lower())) for n in cfg['cover']],cfg.get('hide_depth',8.0),N=Sb['NORMAL']); info['geom_body_verts']=int(hid_v.sum())
+        hid_v=geom_hidden(Sb['POSITION'][:,:3],Tb,[(MA[n][0],opaque_cover(MA[n][0],MA[n][1],cfg['tex_attire'],n[2:].lower())) for n in cfg['cover']],cfg.get('hide_depth',8.0),N=Sb['NORMAL'])
+        # keep the skin drawn under see-through parts (lace, cut-outs): body verts within reach of a dropped (transparent) cover triangle
+        Ctr=[]
+        for n_ in cfg['cover']:
+            S_,T_=MA[n_]; T2_=opaque_cover(S_,T_,cfg['tex_attire'],n_[2:].lower()); k_=set(map(tuple,np.asarray(T2_)))
+            D_=np.array([t for t in np.asarray(T_) if tuple(t) not in k_])
+            if len(D_): Ctr.append(S_['POSITION'][:,:3].astype(float)[D_].mean(1))
+        if Ctr:
+            dC,_=cKDTree(np.concatenate(Ctr)).query(Sb['POSITION'][:,:3].astype(float)); seen=hid_v&(dC<cfg.get('seethrough_reach',3.0)); hid_v=hid_v&~seen; info['seethrough_unhidden']=int(seen.sum()); info['geom_body_verts']=int(hid_v.sum())
         hid_t=hid_v[Tb].all(1)
     else:
         H=hpl.parse(cfg['hpl']).get('M_Body',[[]])[0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True; info['hpl_body_verts']=len(H)
@@ -832,7 +840,7 @@ RAQUEL_ENT=dict(RAQUEL_RING,work='/home/claude/ext/rqe',emd='00050604',
     attire={**RAQUEL_RING['attire'],(0x5601,0):('atlas',[('M_L_A_Acce','l_a_acce'),('M_Glasses','glasses')])})
 TP_='/home/claude/pairs/TP/1216_Tatum_Paxley/'
 TATUM_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
-    weights='source',hide='geom',donor_weights=['M_L_Kneepad','M_R_Kneepad','M_Socks'],eye_straighten_deg=0.5,work='/home/claude/ext/tp',emd='00050602',
+    weights='source',hide='geom',donor_weights=[],eye_straighten_deg=0.5,work='/home/claude/ext/tp',emd='00050602',
     base=TP_+'BaseModel/baseModel.mcd',attire_model=TP_+'1216_Default_Attire/1216_Attire.mcd',
     tex_base=TP_+'BaseModel/Textures',tex_attire=TP_+'1216_Default_Attire/Textures',hpl=TP_+'1216_Default_Attire/1216_Attire.mcd',
     cover=['M_Brassiere','M_Underwear','M_Socks','M_Shoes','M_L_Kneepad','M_R_Kneepad'],hair={0x2715:('M_Hair','hair')},tint=(25,22,22),

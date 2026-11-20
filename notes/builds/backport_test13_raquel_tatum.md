@@ -116,3 +116,19 @@ Rhea v2 also has the J_Head-on-legs problem (built before this fix); rebuild it 
 - All six pass: preview, eyes, lids, morph, jaw, bodypose.
 - hairtear 1.18-1.27.
 - Rhea's tights show crotch-seam stretch (p99.9 ~6 at knee 120); the body itself has the same seam.
+
+## Raquel v4, Tatum v4, Rhea v5 (third in-game test)
+**Feedback:**
+- Raquel: black shows through the hip lace where skin should be.
+- Tatum: see-through spots on her leg.
+
+**Causes and fixes:**
+- **Raquel's lace:** `opaque_cover` dropped the lace triangles (456, 31-55% transparent texels, outer hips/thighs) from
+  the hide test. But the body triangles under the lace are bigger than the lace holes, and rays from their corners still
+  hit the opaque lace border, so the skin stayed hidden.
+  - Fix: body vertices within 3 cm (`seethrough_reach`) of a dropped see-through cover triangle are un-hidden. That frees
+    306 vertices on Raquel, 96 on Tatum's ring version, 617 on her entrance and 61 on Rhea.
+  - preview now shows skin through Raquel's lace.
+- **Tatum's legs:** her socks and kneepads were on donor weights (`donor_weights`), so they didn't take `tight_follow`
+  and drifted off the hidden skin. `donor_weights` is now empty, so they follow the body under them.
+  - legstress cross: 103/27/85/1087 → 34/0/0/578.
