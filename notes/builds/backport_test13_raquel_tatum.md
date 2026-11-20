@@ -87,3 +87,32 @@ Hair colours are guesses (2K26 hair colour comes from CAS data I haven't decoded
 | eyes, lids | unchanged, pass |
 
 Rhea v2 also has the J_Head-on-legs problem (built before this fix); rebuild it if Matthew sees it.
+
+## v3 (Raquel, Tatum) + Rhea v4, after the second in-game test
+**Feedback:**
+- Tatum: the hair stayed completely static through her entrance, then clipped through her mid-section in the ring.
+- Raquel: you can see through her skin at the sides of her hips.
+- Rhea: you can see through her mid-section during her entrance.
+
+### Causes and fixes
+- **See-through = hidden body showing through a gap.** The hide table removes body under cover gear. Where the gear's
+  skin differs from the body's, the gear drifts off and leaves a hole.
+  - `tight_follow` (default 1.5 cm): gear within 1.5-3 cm of the skin on hips and legs takes the skin of the body under
+    it, as a barycentric mix of the closest body triangle. Nearest-vertex copy left steps; smoothing those brought the
+    crossings back.
+  - legstress cross: Raquel 32/0/0/516 (v2 32/5/2/516); Rhea 66/1/0/1026 (v3 72/9/5/1029).
+- **Cut-outs and see-through panels in cover gear:** `opaque_cover` drops cover triangles with ≥10% transparent texels
+  (24 samples each) from the hide test. Raquel's hip lace panels are dropped, though that freed no body vertices.
+- **Rhea's open vest:** removed from the entrance cover list. It swings open, so the body under it must stay drawn.
+- **Tatum's entrance hair (static):** the whole M_Hair_Entrance sits within reach of the hoodie, so the body blend held
+  all of it.
+  - New `a_max` caps the body share. Entrance uses 0.7, so 30% physics always remains.
+  - Static twist test: 59 verts up to 8.7 cm; at 0.5 it was 49 verts up to 11.4 cm.
+- **Tatum's ring hair (mid-section clip):** the long back hair is now held further down the back (dfull 6, dzero 18 cm).
+  Remapping the pelvis bones to J_Spine2 for hair was tried and was worse (lean back 6.8 cm), so it's reverted.
+- `hairclip` gained "lean back" and "twist" poses.
+
+### Gates
+- All six pass: preview, eyes, lids, morph, jaw, bodypose.
+- hairtear 1.18-1.27.
+- Rhea's tights show crotch-seam stretch (p99.9 ~6 at knee 120); the body itself has the same seam.

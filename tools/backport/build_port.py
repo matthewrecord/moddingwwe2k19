@@ -174,7 +174,7 @@ def smooth_skin(sl,w,T,npal,iters,keep=None):
     for _ in range(iters): D=(A@D+D)/deg[:,None]
     o=np.argsort(-D,axis=1)[:,:ns]; ww=np.take_along_axis(D,o,1); ww[ww<1e-4]=0; ww/=np.maximum(ww.sum(1,keepdims=True),1e-9)
     sl2=np.where(ww>0,o,0xFFFF); return sl2.astype(int),ww.astype('f4')
-def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth=0,post_smooth=0):
+def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth=0,post_smooth=0,a_max=1.0):
     """Hair strands resting on the shoulders/chest: blend their skin toward the nearest body/attire vertex's bones, so the
     shoulders carry them instead of the head/physics chain (no clipping when the body moves under the hair).
     Appends the needed body bones to the hair JBOY's palette."""
@@ -203,6 +203,7 @@ def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth
         T_=jboy.strip_to_tris(jh.indices(o)[1]); E_=np.concatenate([T_[:,[0,1]],T_[:,[1,2]],T_[:,[2,0]]]); n_=len(P)
         A_=sp_.coo_matrix((np.ones(len(E_)*2),(np.r_[E_[:,0],E_[:,1]],np.r_[E_[:,1],E_[:,0]])),shape=(n_,n_)).tocsr(); deg=np.asarray(A_.sum(1)).ravel()+1
         for _ in range(smooth): a=(A_@a+a)/deg
+    a=np.minimum(a,a_max)   # keep some physics share (a fully body-held strand looks frozen)
     nb=0
     for v in np.where(a>0.01)[0]:
         acc={}
@@ -223,6 +224,18 @@ def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth
     pc=[c for c in m.order if m.name[c]=='pal'][0]; m.data[pc]=bytearray(st_.pack('>%dI'%len(pal),*pal))
     hc=[c for c in m.order if m.name[c]=='palhdr'][0]; st_.pack_into('>I',m.data[hc],0,len(pal))
     return m.build(),dict(blended=int(nb),full=int((a>0.99).sum()),pal_added=len(pal)-len(jh.palette))
+def closest_on_mesh(P,T,Q,k=12):
+    """closest point on triangle mesh (P,T) for each query: (triangle index, barycentrics (n,3))"""
+    tri=P[T]; C=tri.mean(1); _,cand=cKDTree(C).query(Q,k=min(k,len(T)))
+    best=np.full(len(Q),np.inf); bt=np.zeros(len(Q),int); bb=np.zeros((len(Q),3))
+    for c in range(cand.shape[1]):
+        t=cand[:,c]; A=tri[t,0];B_=tri[t,1];C_=tri[t,2]
+        e0=B_-A;e1=C_-A;v=Q-A; d00=(e0*e0).sum(1);d01=(e0*e1).sum(1);d11=(e1*e1).sum(1);d20=(v*e0).sum(1);d21=(v*e1).sum(1)
+        den=np.maximum(d00*d11-d01*d01,1e-12); bv=(d11*d20-d01*d21)/den; bw_=(d00*d21-d01*d20)/den
+        bv=np.clip(bv,0,1); bw_=np.clip(bw_,0,1); s_=bv+bw_; over=s_>1; bv[over]/=s_[over]; bw_[over]/=s_[over]; bu=1-bv-bw_
+        X=A*bu[:,None]+B_*bv[:,None]+C_*bw_[:,None]; d=np.linalg.norm(Q-X,axis=1); better=d<best
+        best[better]=d[better]; bt[better]=t[better]; bb[better]=np.stack([bu,bv,bw_],1)[better]
+    return bt,bb,best
 def blend_skin(sl1,w1,sl2,w2,a):
     """per-vertex mix of two skins (a=0 -> first, 1 -> second), 7 slots, weight-sorted then slot-ascending"""
     sl=sl1.copy(); w=w1.copy()
@@ -268,6 +281,16 @@ def vnormals(P,T):
     fn=np.cross(P[T[:,1]]-P[T[:,0]],P[T[:,2]]-P[T[:,0]]); N=np.zeros_like(P)
     for k in range(3): np.add.at(N,T[:,k],fn)
     return N/np.maximum(np.linalg.norm(N,axis=1,keepdims=True),1e-9)
+def opaque_cover(S,T,tex_dir,stem,thr=128,frac=0.1):
+    """drop cover triangles that sample transparent texels (cut-outs, mesh panels): the body under them shows in game"""
+    try: c,_=load_pair(tex_dir,stem)
+    except Exception: return T
+    if c.shape[2]<4: return T
+    uv=np.asarray(S['TEXCOORD'] if 'TEXCOORD' in S else S['UV'])[:,:2].astype(float); h,w=c.shape[:2]
+    def a(u): return c[np.clip((u[:,1]%1)*h,0,h-1).astype(int),np.clip((u[:,0]%1)*w,0,w-1).astype(int),3]
+    rng=np.random.default_rng(0); B_=rng.dirichlet((1,1,1),24); U=uv[T]   # 24 samples per triangle: lace/cut-out strips are thinner than the triangles
+    tr=np.mean([a((U*b_[None,:,None]).sum(1))<thr for b_ in B_],axis=0); keep=tr<frac
+    return T[keep]
 def geom_hidden(P,T,cover,depth=8.0,N=None):
     """body vertices whose outward normal ray hits a cover-mesh triangle within 'depth' cm (start 0.3 cm inside the skin)"""
     tri=np.concatenate([S_['POSITION'][:,:3].astype(float)[T_] for S_,T_ in cover]); C=tri.mean(1)
@@ -481,7 +504,7 @@ def build(cfg,outpath,PROP=None):
     if cfg.get('hide','hpl')=='geom':
         # 2K26: attire HPL! lists index the game's generic body, not the character's own M_Body -> unusable.
         # Hide a body vertex when a cover mesh lies just outside it along its normal (within 'hide_depth' cm).
-        hid_v=geom_hidden(Sb['POSITION'][:,:3],Tb,[MA[n] for n in cfg['cover']],cfg.get('hide_depth',8.0),N=Sb['NORMAL']); info['geom_body_verts']=int(hid_v.sum())
+        hid_v=geom_hidden(Sb['POSITION'][:,:3],Tb,[(MA[n][0],opaque_cover(MA[n][0],MA[n][1],cfg['tex_attire'],n[2:].lower())) for n in cfg['cover']],cfg.get('hide_depth',8.0),N=Sb['NORMAL']); info['geom_body_verts']=int(hid_v.sum())
         hid_t=hid_v[Tb].all(1)
     else:
         H=hpl.parse(cfg['hpl']).get('M_Body',[[]])[0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True; info['hpl_body_verts']=len(H)
@@ -611,6 +634,21 @@ def build(cfg,outpath,PROP=None):
             if bad.any() and (~bad).any():   # source vertices with no weight: take the nearest weighted vertex's skin
                 _,nn=cKDTree(G['pos'][~bad]).query(G['pos'][bad]); good=np.where(~bad)[0][nn]; sl[bad]=sl[good]; w[bad]=w[good]
                 info['attire_unweighted_fixed']=info.get('attire_unweighted_fixed',0)+int(bad.sum())
+            tf=cfg.get('tight_follow',1.5)
+            if tf:   # tight gear on hips/legs moves exactly with the skin under it (else the hidden skin shows through the gap)
+                Pb_=Sb['POSITION'][:,:3].astype(float); tB,bB,dB=closest_on_mesh(Pb_,np.asarray(Tb),G['pos'][:,:3].astype(float))
+                at=np.clip((2*tf-dB)/tf,0,1)*np.clip((G['pos'][:,1].astype(float)+125)/10,0,1)
+                if (at>0).any():
+                    mainp=[j.bones[b]['name'] for b in j.palette]; sl2=palette_slot(ja); fs=np.full(sl.shape,0xFFFF); fw=np.zeros(w.shape,'f4')
+                    Tb_=np.asarray(Tb)
+                    for v in np.where(at>0)[0]:
+                        acc={}
+                        for vv,bc in zip(Tb_[tB[v]],bB[v]):   # barycentric mix of the 3 body vertices' skins (continuous, no steps)
+                            for a_,b_ in zip(bsl[vv],bw[vv]):
+                                if b_>0 and a_<len(mainp) and sl2.get(mainp[a_]) is not None: acc[sl2[mainp[a_]]]=acc.get(sl2[mainp[a_]],0)+bc*b_
+                        row=sorted(acc.items(),key=lambda t:-t[1])[:7]; t_=sum(b_ for _,b_ in row) or 1
+                        for q,(a_,b_) in enumerate(row[:7]): fs[v,q]=a_; fw[v,q]=b_/t_
+                    ok_=fw.sum(1)>0; at=at*ok_; sl,w=blend_skin(sl,w,fs,fw,at); info['tight_follow']=info.get('tight_follow',0)+int((at>0).sum())
             if cfg.get('donor_legs'):
                 a_=legs_ramp(G['pos'].astype(float),cfg)
                 if (a_>0).any(): dsl,dw=welded_weights(G['pos'],G['tris'],donor,palette_slot(ja)); sl,w=blend_skin(sl,w,dsl,dw,a_); info['donor_legs_attire']=info.get('donor_legs_attire',0)+int((a_>0).sum())
@@ -779,7 +817,8 @@ RHEA_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43
             (0x5601,1):('mesh','M_L_Wrist','l_wrist'),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
             (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Brassiere','brassiere')})
-RHEA_ENT=dict(RHEA_RING,work='/home/claude/ext/rh2e',emd='00050604',cover=RHEA_RING['cover']+['M_Jacket'],
+RHEA_ENT=dict(RHEA_RING,work='/home/claude/ext/rh2e',emd='00050604',cover=RHEA_RING['cover'],   # open vest swings: body under it must stay drawn
+   
     attire={**RHEA_RING['attire'],(0x5602,1):('mesh','M_Jacket','jacket')})
 RQ_='/home/claude/pairs/RQ/927_Raquel_Rodriguez/'
 RAQUEL_RING=dict(template='female',lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
@@ -792,7 +831,7 @@ RAQUEL_RING=dict(template='female',lid_fit=True,eye_recess=0.15,hair_physics='ch
 RAQUEL_ENT=dict(RAQUEL_RING,work='/home/claude/ext/rqe',emd='00050604',
     attire={**RAQUEL_RING['attire'],(0x5601,0):('atlas',[('M_L_A_Acce','l_a_acce'),('M_Glasses','glasses')])})
 TP_='/home/claude/pairs/TP/1216_Tatum_Paxley/'
-TATUM_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+TATUM_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',donor_weights=['M_L_Kneepad','M_R_Kneepad','M_Socks'],eye_straighten_deg=0.5,work='/home/claude/ext/tp',emd='00050602',
     base=TP_+'BaseModel/baseModel.mcd',attire_model=TP_+'1216_Default_Attire/1216_Attire.mcd',
     tex_base=TP_+'BaseModel/Textures',tex_attire=TP_+'1216_Default_Attire/Textures',hpl=TP_+'1216_Default_Attire/1216_Attire.mcd',
@@ -800,7 +839,7 @@ TATUM_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch4
     attire={(0x5601,0):('atlas',[('M_U_Acce','u_acce')]),(0x5601,1):('mesh','M_Socks','socks'),
             (0x5601,3):('mesh','M_Underwear','underwear'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Brassiere','brassiere'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
-TATUM_ENT=dict(TATUM_RING,work='/home/claude/ext/tpe',emd='00050604',cover=TATUM_RING['cover']+['M_Jacket'],hair={0x2715:('M_Hair_Entrance','hair')},
+TATUM_ENT=dict(TATUM_RING,work='/home/claude/ext/tpe',emd='00050604',hair_body_blend=dict(TATUM_RING['hair_body_blend'],a_max=0.7),cover=TATUM_RING['cover']+['M_Jacket'],hair={0x2715:('M_Hair_Entrance','hair')},
     attire={**TATUM_RING['attire'],(0x5601,2):('mesh','M_Jacket','jacket')})
 CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA,'rhea_ring':RHEA_RING,'rhea_entrance':RHEA_ENT,'raquel_ring':RAQUEL_RING,'raquel_entrance':RAQUEL_ENT,'tatum_ring':TATUM_RING,'tatum_entrance':TATUM_ENT}
 

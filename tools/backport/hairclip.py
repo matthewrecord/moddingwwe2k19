@@ -2,7 +2,7 @@
 import sys,zlib,numpy as np;sys.path.insert(0,'/home/claude/moddingwwe2k19/tools/backport')
 import jboy,epkwrite,pose
 from scipy.spatial import cKDTree
-POSES=[('rest',{}),('arms down',{'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65)}),('arms down+shrug',{'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65),'J_Clavicle_L':([0,0,1],-15),'J_Clavicle_R':([0,0,1],15)}),('arms fwd',{'J_Shoulder_L':([0,1,0],80),'J_Shoulder_R':([0,1,0],-80)}),('lean',{'J_Spine2':([1,0,0],20),'J_Chest':([1,0,0],15)})]
+POSES=[('rest',{}),('arms down',{'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65)}),('arms down+shrug',{'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65),'J_Clavicle_L':([0,0,1],-15),'J_Clavicle_R':([0,0,1],15)}),('arms fwd',{'J_Shoulder_L':([0,1,0],80),'J_Shoulder_R':([0,1,0],-80)}),('lean',{'J_Spine2':([1,0,0],20),'J_Chest':([1,0,0],15)}),('lean back',{'J_Spine2':([1,0,0],-20),'J_Chest':([1,0,0],-15)}),('twist',{'J_Spine2':([0,1,0],25),'J_Chest':([0,1,0],20)})]
 def body(B,rots):
     bod=[]
     for fid in (0,0x5601,0x5602):
