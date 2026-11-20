@@ -119,6 +119,8 @@ from-scratch ports with no porter involved. Findings are in `writeup/Backport.md
 | `tight_follow` (1.5 cm): gear close to the skin on hips and legs takes the skin under it (barycentric, closest body triangle) | Gear with different weights drifts off the hidden skin, and you see through the body. Don't use nearest-vertex copy (steps) and don't smooth it afterwards (brings the crossings back). |
 | Don't put tight gear (socks, kneepads) in `donor_weights` | Donor-weighted gear skips `tight_follow` and leaves see-through spots (Tatum). |
 | `opaque_cover` + `seethrough_reach` (3 cm) | Lace and cut-outs: drop cover triangles with ≥10% transparent texels from the hide test, and keep body within 3 cm of them drawn (Raquel's hip lace showed black). |
+| `keep_alpha=[stems]` | 2K26 `_ALPHA` materials (lace, cut-outs): keep the colour alpha. `mats()` otherwise forces 255, and the holes render black (Raquel). Only for yCS_trans slots, and alpha-test in game is still unconfirmed. |
+| `sheer={stem:(rgb,tol,mix)}` | 2K26 sheer fabric comes from the shader (alpha 255, dark colour). Paint skin into those texels, or it reads as solid dark bands (Tatum's socks). |
 | Leave loose or open garments out of `cover` (open vests, jackets) | They swing off the body, and hidden skin shows (Rhea's entrance). |
 | `eye_recess` (0.05-0.15 cm) | When eyegaze pokes at 25°. |
 | `hair_physics='<stock id>'` | Pick the stock rig whose hair is closest to the source hair (`hairscan2.py` lists stock pacs with Hair_b rigs; Paige ch43402 fits long hair). |

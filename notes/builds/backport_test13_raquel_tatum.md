@@ -132,3 +132,21 @@ Rhea v2 also has the J_Head-on-legs problem (built before this fix); rebuild it 
 - **Tatum's legs:** her socks and kneepads were on donor weights (`donor_weights`), so they didn't take `tight_follow`
   and drifted off the hidden skin. `donor_weights` is now empty, so they follow the body under them.
   - legstress cross: 103/27/85/1087 → 34/0/0/578.
+
+## Raquel v5, Tatum v5 (fourth test: v4 looked identical to v3)
+Matthew: no visible difference at all between v3 and v4. That was right: v4 changed only the hide table, and neither
+problem was a hiding problem.
+- **Raquel's black lace:** M_Outfit has two materials in 2K26, `outfit` and `outfit_ALPHA`, and the lace holes are
+  alpha 0. `mats()` forced colour alpha to 255 on every gear texture, so the holes rendered as their RGB, near-black
+  (21,20,21). Un-hiding the skin under it changed nothing visible.
+  - Fix: new `keep_alpha=[stems]` keeps the colour alpha (Raquel: `outfit`, 4.3% transparent texels) in the 0x5602,0
+    yCS_trans slot.
+  - **Untested:** it isn't confirmed that yCS_trans alpha-tests in game; no stock texture I found shows it. If the lace
+    is still black in game, that shader ignores alpha, and the lace needs a mesh cut (`alpha_cut` at texel level) or
+    the hair-shader slot.
+- **Tatum's "see-through" sock:** the socks texture is all alpha 255. The dark brown vertical stripes (51% of texels,
+  ~(66,36,30)) are sheer fabric in 2K26, made by the shader. In 2K19 they render as solid dark bands that read like
+  holes.
+  - Fix: new `sheer={stem:(rgb,tol,mix)}` paints 60% of the body's median skin colour into those texels.
+- **Lesson:** check textures and material splits (`_ALPHA` materials, sheer shader params) before hide or weights when
+  something "shows through".

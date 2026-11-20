@@ -23,11 +23,12 @@ def open_model(path,cache):
         i=b.find(b'MDL!MDL!'); assert i>=0, 'no MDL! chunk in '+path
         open(cache,'wb').write(b[i+4:]); path=cache
     return mdlfmt.MDL(path)
-def mats(C,N,skin=False,kyle_nrm=None):
+def mats(C,N,skin=False,kyle_nrm=None,keep_alpha=False):
     """color/nrm arrays -> 2K19 (<mat>, _mr, _n) DXT5 by the 2K24 rules; optional blue-channel match to Kyle"""
     N=N.copy()
     if kyle_nrm is not None and N[...,2].std()>1: N[...,2]=hist_match(N[...,2],texconv.load(kyle_nrm)[...,2])   # constant (2K26) gloss: keep, rank-matching a flat channel makes noise
-    N=N.astype(np.int32); col=C.copy(); col[...,3]=255
+    N=N.astype(np.int32); col=C.copy()
+    if not keep_alpha: col[...,3]=255
     n=np.stack([255-N[...,0],255-N[...,1],np.full(N.shape[:2],255),np.full(N.shape[:2],255)],-1).astype('u1')
     mr=np.stack([np.zeros(N.shape[:2],int) if skin else N[...,3],N[...,2],255-N[...,2],np.full(N.shape[:2],255)],-1).astype('u1')
     return {'':texconv.dds_dxt5(col),'_mr':texconv.dds_dxt5(mr),'_n':texconv.dds_dxt5(n)}
@@ -626,7 +627,7 @@ def build(cfg,outpath,PROP=None):
             V=np.zeros(vc_,dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]); V['p']=Ml[n-1]; ml.data[ml.chunk(0,f'vset{n}')]=bytearray(V.tobytes())
         J[TP['lash']]=ml.build(); info['lash']=(vc_,round(float(dl.max()),2))
     # ---------------- attire slots (single mesh, split by side, or 2x2 atlas) ----------------
-    tex={}
+    tex={}; texstem={}
     hp,hs,hw=headW; th=cKDTree(hp); tb=cKDTree(Sb['POSITION'])
     def att_w(G,ja,src=None):
         """attire weights: the mod's own (cfg weights='source'), else body donor with head-nearest points taking the head's weights"""
@@ -686,7 +687,7 @@ def build(cfg,outpath,PROP=None):
                     smp=np.concatenate([UV[T],UV[T].mean(1,keepdims=True)],1)
                     av=A[np.clip((smp[...,1]*h_).astype(int),0,h_-1),np.clip((smp[...,0]*w_).astype(int),0,w_-1)]
                     keep=av.max(1)>=128; info.setdefault('alpha_cut',{})[name]=int((msk&~keep).sum()); msk&=keep
-                G=mesh_obj(S,T,msk); put(ma,k_,ja,G,donor,weights=att_w(G,ja,None if name in cfg.get('donor_weights',()) else [(S,np.unique(T[msk]))])); tex[texname]=load_pair(TA,stem)   # donor_weights: 2K19 body skin (legs)
+                G=mesh_obj(S,T,msk); put(ma,k_,ja,G,donor,weights=att_w(G,ja,None if name in cfg.get('donor_weights',()) else [(S,np.unique(T[msk]))])); tex[texname]=load_pair(TA,stem); texstem[texname]=stem   # donor_weights: 2K19 body skin (legs)
             else:   # ('atlas', [(mesh, stem), ...])
                 Cc,Nn,pos=atlas(TA,[st for _,st in spec[1]]); parts=[]; srcs=[(MA[n_][0],np.unique(MA[n_][1])) for n_,_ in spec[1]]
                 for name,st in spec[1]:
@@ -703,8 +704,8 @@ def build(cfg,outpath,PROP=None):
     info['hide']={k_:hide_n.get(k_,0) for k_ in TP['hide_objs']}
     # ---------------- textures ----------------
     hd,E=texconv.read_pack(B[0xa]); E=dict(E)
-    def setm(base,C,N,skin=False,nname=None,kyle=None):
-        r=mats(C,N,skin,kyle); E[base]=r['']; E[base+'_mr']=r['_mr']; E[nname or base+'_n']=r['_n']
+    def setm(base,C,N,skin=False,nname=None,kyle=None,keep_alpha=False):
+        r=mats(C,N,skin,kyle,keep_alpha); E[base]=r['']; E[base+'_mr']=r['_mr']; E[nname or base+'_n']=r['_n']
     c,n=load_pair(TB,'body'); setm('all_color',c,n,True,'all_n',ci(TP['ref']+'/Textures/body_nrm.dds'))
     c,n=load_pair(TB,'head')
     if cfg.get('undereye_lighten'): c=lighten_undereye(c,MB,cfg['undereye_lighten']); info['undereye_lighten']=cfg['undereye_lighten']
@@ -712,7 +713,14 @@ def build(cfg,outpath,PROP=None):
     c=texconv.load(ci(TB+'/eye_color.dds')); w,h=texconv.target_size(c.shape[1],c.shape[0]); col=texconv.resize(c,w,h).copy(); col[...,3]=255; E['eye']=texconv.dds_dxt5(col)
     # eye_n / eye_mr are NOT converted: the 2K19 eye shader needs the container's masks (eye_n alpha = iris mask for
     # g_fEyePa iris depth; eye_mr = cornea/sclera gloss mask). Source eye maps are flat -> 'dead' eyes. Colour only.
-    for name,(C,N) in tex.items(): setm(name,C,N)
+    sheer=cfg.get('sheer',{}); ka=set(cfg.get('keep_alpha',()))
+    skin_rgb=np.median(load_pair(TB,'body')[0][...,:3].reshape(-1,3),axis=0)
+    for name,(C,N) in tex.items():
+        st_=texstem.get(name,name)
+        if st_ in sheer:   # 2K26 sheer fabric (shader opacity, colour alone reads as solid dark): paint skin through it
+            C=C.copy(); col_,tol_,mix_=sheer[st_]; d_=np.abs(C[...,:3].astype(int)-np.array(col_)).max(-1)<tol_
+            C[...,:3][d_]=(mix_*skin_rgb+(1-mix_)*C[...,:3][d_].astype(float)).astype('u1'); info.setdefault('sheer',{})[st_]=int(d_.sum())
+        setm(name,C,N,keep_alpha=st_ in ka)
     for base,stems in hairtex.items():
         if len(stems)==1 and not ci(f"{TA}/{stems[0]}_rai.dds") and ci(f"{TA}/{stems[0]}_color.dds"):
             r=texconv.hair_color(ci(f"{TA}/{stems[0]}_color.dds"))   # 2K26 mask/wig: real colour + alpha on the head-locked hair slot
@@ -829,7 +837,7 @@ RHEA_ENT=dict(RHEA_RING,work='/home/claude/ext/rh2e',emd='00050604',cover=RHEA_R
    
     attire={**RHEA_RING['attire'],(0x5602,1):('mesh','M_Jacket','jacket')})
 RQ_='/home/claude/pairs/RQ/927_Raquel_Rodriguez/'
-RAQUEL_RING=dict(template='female',lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+RAQUEL_RING=dict(template='female',keep_alpha=['outfit'],lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/rq',emd='00050602',
     base=RQ_+'BaseModel/baseModel.mcd',attire_model=RQ_+'927_Default_Attire/927_Attire.mcd',
     tex_base=RQ_+'BaseModel/Textures',tex_attire=RQ_+'927_Default_Attire/Textures',hpl=RQ_+'927_Default_Attire/927_Attire.mcd',
@@ -839,7 +847,7 @@ RAQUEL_RING=dict(template='female',lid_fit=True,eye_recess=0.15,hair_physics='ch
 RAQUEL_ENT=dict(RAQUEL_RING,work='/home/claude/ext/rqe',emd='00050604',
     attire={**RAQUEL_RING['attire'],(0x5601,0):('atlas',[('M_L_A_Acce','l_a_acce'),('M_Glasses','glasses')])})
 TP_='/home/claude/pairs/TP/1216_Tatum_Paxley/'
-TATUM_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
+TATUM_RING=dict(template='female',sheer={'socks':((70,40,30),45,0.6)},lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',donor_weights=[],eye_straighten_deg=0.5,work='/home/claude/ext/tp',emd='00050602',
     base=TP_+'BaseModel/baseModel.mcd',attire_model=TP_+'1216_Default_Attire/1216_Attire.mcd',
     tex_base=TP_+'BaseModel/Textures',tex_attire=TP_+'1216_Default_Attire/Textures',hpl=TP_+'1216_Default_Attire/1216_Attire.mcd',
