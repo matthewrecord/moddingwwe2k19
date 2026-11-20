@@ -1,5 +1,7 @@
 # Current state (one screen; read this first, then writeup/Status.md)
 
+
+**2026-11-20:** Rhea Ripley (2K26 1163) v1 delivered: `Downloads\rhea_v1_ch50602.pac` (EMD 50602). All bench gates pass. Waiting on the in-game check. Notes: `notes/builds/backport_test11_rhea.md` (branch `claude/2k26-port`).
 > Adding a match-up screen (card) to an arena: `notes/matchup_screens.md`.
 > Arena work lives on branch `claude/slots50-gfx` (not merged yet). Arena slots Matthew allows to be overwritten (named unwanted + reserve list, current): `notes/arena_slots.md`.
 

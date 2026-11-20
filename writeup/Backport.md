@@ -596,3 +596,12 @@ Sources come from Matthew's own 2K26 copy (handoff 020, `writeup/Cak_2k26.md` on
 - Psycho Clown split into ring (no jacket, ch50602) and entrance (jacket, ch50604) builds.
 - (§29 add) `hair_from=<2K19 pac>` copies a proven physics hair whole (model, 0x2580, textures) and fits it to the new scalp. That beats
   re-skinning new strands to another rig's bones (Jevon v2 with Seth's rig looked wrong in game). Mod hair may use a skin-slot layout the bench can't pose.
+
+## 30. Rhea Ripley (2K26), first 2K26 female (2026-11-20)
+- Config `rhea`: female template, source weights, geom hide. The tops slot gets M_Tops, and the atlas holds the choker,
+  piercings and elbow pad. Notes: `notes/builds/backport_test11_rhea.md`.
+- **Physics hair for long hair:** `hair_physics='<stock id>'` on a stock female rig that fits the hair shape. Rhea uses
+  Paige ch43402 (nn median 1.1 cm). Stock rigs were found by scanning all 253 stock `ch*02` pacs for `Hair_b` bones.
+- **`lid_fit`** (new, per config): scales eye-closing morph travel per eye until the remaining lid gap matches the donor.
+  Use it when lidcheck shows a source eye opening that closes short.
+- **`eye_recess`** (cm, per config): pushes the eyeballs back a little when eyegaze shows a small poke at the 25° turns.
