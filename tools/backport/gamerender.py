@@ -7,6 +7,7 @@ import os,sys,io,zlib,struct,argparse,numpy as np;sys.path.insert(0,os.path.dirn
 import jboy,epkwrite,hidetable,texconv,pose
 from PIL import Image
 CULL=True
+TBIAS=0.0   # cm: pull cut-out (trans/hair) layers toward the camera, like a game depth bias
 VIEWS={'front':(0,0),'back':(180,0),'left':(90,0),'right':(-90,0),'q3':(35,0),'q3r':(-35,0),'q3b':(145,0)}
 def load(pac):
     hdr,bl=epkwrite.raw_blocks(pac); B={f:(zlib.decompress(b[16:]) if b[:4]==b'ZLIB' else b) for f,b in bl}
@@ -44,7 +45,7 @@ def render(objs,view,box,px,ids=None):
     img=np.zeros((H,W,3)); img[:]=(1,0,1); Z=np.full((H,W),np.inf)
     if ids is not None: ids.resize((H,W,2),refcheck=False); ids[:]=-1
     for oi,(P,UV,T,tex,cut,Nn) in enumerate(objs):
-        Q=P@R.T; X=(Q[:,0]-x0)/(x1-x0)*W; Y=(Q[:,1]-y0)/(y1-y0)*H; Zc=Q[:,2]   # +z = away from camera (front faces -z)
+        Q=P@R.T; X=(Q[:,0]-x0)/(x1-x0)*W; Y=(Q[:,1]-y0)/(y1-y0)*H; Zc=Q[:,2]-(TBIAS if cut else 0.0)   # +z = away from camera (front faces -z)
         Nr=-(Nn@R.T) if Nn is not None else None   # 2K19 stores normals negated (stock bodies too)
         for ti,t in enumerate(T):
             if CULL and Nr is not None and Nr[t,2].mean()>0.05: continue   # back-facing (normal points away from the camera): the game culls it

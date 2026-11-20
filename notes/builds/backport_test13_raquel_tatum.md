@@ -195,3 +195,8 @@ reproduce both glitches offline.
 - Reproduced offline with gamerender (view q2, ID buffer → outfit tris ~4049-4086).
 - Fix: `lace_clear={'outfit':(12,45)}` clears near-black texels within 12 px of existing holes (91k texels), plus `seethrough_reach=6.0` so the body under the widened holes is drawn.
 - Gates on v6: preview ok, legstress 0 spikes.
+
+## v6 in game: dark patch at rear of hip lace (user screenshot, side-rear view; stays identical as she moves)
+Not reproduced offline. Ruled out: lighting/shadow (user), LOD (pac has none), hide-table object offset (both readings show skin),
+double-sided outfit (CULL off: no change), depth bias on trans layers (gamerender TBIAS 0.5-2 cm: no change).
+Next: DIAG2 (v6 + green body paint) decides between "body drawn but dark" and "body not drawn there by the game".
