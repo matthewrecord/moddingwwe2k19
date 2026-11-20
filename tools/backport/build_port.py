@@ -769,7 +769,7 @@ RHEA=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',
             (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Tops','tops'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
 R2_='/home/claude/pairs/RH2/816_Rhea_Ripley_2019/'
-RHEA_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100),
+RHEA_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/rh2',emd='00050602',
     base=R2_+'BaseModel/BaseModel.mcd',attire_model=R2_+'816_Default_Attire/816_Attire.mcd',
     tex_base=R2_+'BaseModel/Textures',tex_attire=R2_+'816_Default_Attire/Textures',hpl=R2_+'816_Default_Attire/816_Attire.mcd',

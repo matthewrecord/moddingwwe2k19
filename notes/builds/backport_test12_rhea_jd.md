@@ -50,3 +50,17 @@ Hair: M_Hair 10,932 v on Paige ch43402's rig (nn median 1.0 cm, p90 2.3). lid_fi
 - Magenta in the previews is Paige's untextured yDefault physics proxy. v1's in-game screenshot shows it isn't drawn.
 
 Renders: `notes/builds/renders/rhea_v2/`.
+
+## v3 (2026-11-20): Raquel/Tatum v2 fixes applied to Rhea
+- `vector` bone dropped on the body. v2 had up to 0.3 J_Head weight on hips and legs.
+- Donor skin blended in for the 2K26 helper bones 2K19 lacks (hips and legs only).
+- Hair skin smoothed (`post_smooth=60`); m### helpers mapped to the nearest J_ bone in the hair-to-body blend.
+
+| Gate | v2 → v3 |
+|---|---|
+| legstress cross (bend / split / knee / kick) | 281/398/123/1235 → 72/9/5/1029 |
+| legstress stretch | unchanged |
+| hairtear | p99.9 4.7 → 1.26 |
+| hairclip, ring | arms down 16 (1.3 cm), shrug 50 (1.6), fwd 20 (2.8), lean 5 (0.3); slightly more than v2's 5-16 verts |
+| hairclip, entrance (vest) | 79-147 verts, ≤3.2 cm |
+| eyes, lids | pass |
