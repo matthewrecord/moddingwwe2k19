@@ -150,3 +150,29 @@ problem was a hiding problem.
   - Fix: new `sheer={stem:(rgb,tol,mix)}` paints 60% of the body's median skin colour into those texels.
 - **Lesson:** check textures and material splits (`_ALPHA` materials, sheer shader params) before hide or weights when
   something "shows through".
+
+## Replication attempt (after v5): not reproduced
+Matthew: possibly fixed in the ring attire, definitely not in the entrance attire, and no more in-game tests until I can
+reproduce both glitches offline.
+
+**New tool:** `gamerender.py`, a per-pixel rasteriser that uses the pac's own textures.
+- It applies the hide table, alpha-tests yCS_trans/yCS_hair (`--trans-opaque` to turn that off), and culls back faces.
+- 2K19 stores normals negated, stock bodies included, so back-facing = (-N)·view > 0.
+
+**Findings:**
+- Raquel: the lace is real geometry (strings), and the gaps between them show the body in every build (v3 to v5),
+  with or without alpha-test.
+  - The 0xCE hide table is identical in the ring and entrance pacs, and the body under the lace is not hidden in either.
+  - So the offline model predicts skin, while the game shows black in the entrance. The mechanism is not reproduced.
+- Tatum v5 entrance: no holes on the thigh sock offline.
+- Ruled out:
+  - 0xCE differences between ring and entrance (identical).
+  - Outfit alpha in the entrance pac (kept, 4.3%).
+  - Dark baked body texture under the lace (median skin colour).
+  - Vertex colours (constant).
+- Still open:
+  - The game hides or darkens the body by something the bench doesn't model: an entrance LOD, self-shadow/AO in
+    entrance lighting, or a different reading of the hide spans.
+  - Whether the entrance pac in the game is the v5 file.
+- Proposed next step: a diagnostic pac (body under the lace painted bright green, socks' sheer texels painted bright
+  cyan) to tell "body hidden" from "body drawn but dark". Waiting on Matthew.
