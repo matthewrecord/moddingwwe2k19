@@ -11,7 +11,7 @@ for fid,b in bl:
         raw=zlib.decompress(b[16:]) if b[:4]==b'ZLIB' else b; head,E=texconv.read_pack(raw); NE=[]
         for n,d in E:
             if n in COL:
-                a=np.asarray(Image.open(io.BytesIO(d)).convert('RGBA')).copy(); a[...,:3]=COL[n]; d=texconv.dds_dxt5(a)
+                a=np.asarray(Image.open(io.BytesIO(d)).convert('RGBA')).copy(); a[...,:3]=COL[n]; n2=texconv.dds_dxt5(a); assert len(n2)==len(d); d=d[:128]+n2[128:]   # keep the original DDS header byte-for-byte (a rewritten header hung the game)
             NE.append((n,d))
         nb=texconv.write_pack(NE,head); b=epkwrite.zblock(nb,struct.unpack_from('<I',b,4)[0]) if b[:4]==b'ZLIB' else nb
     out.append((fid,b))

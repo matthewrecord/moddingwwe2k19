@@ -207,3 +207,7 @@ window's top edge, with the camera low and looking up. So an object is drawn ove
 gamerender bug found: rot() ignored elevation, so every render was at hip height. Fixed. Still not reproduced in rest, walk or bend poses.
 Body maps (mr, n) are flat in the lace zone. The hair yDefault mesh ends at y -119, above the lace.
 Next: COLORID (tools/backport/colorid.py, every diffuse a flat colour, alpha kept) names the object drawing the wedge.
+
+## COLORID v1 hung the game
+It rewrote the DDS headers of 5 textures (flags 0x80207 vs the original 0xA1007, mip field 0 vs 1). COLORID2 keeps every DDS header byte-for-byte and swaps only pixel data. The pac header differs only in its size fields.
+Rule: never rewrite a DDS header the game already accepted.
