@@ -96,3 +96,4 @@ exist in 2K19 to the closest equivalent and slots by role, with a report of ever
   - Wall.mp4, 512×512: whichever candidate panel scores lowest on edges and text (top_right, top_mid, top_left_lower, bottom_strip_mid), with dark or flat panels penalised.
   - `_choices.json` (scores and flags) and `_contact_sheet.png`.
 - 94 folders done, 17 flagged. From the contact sheet, some walls still contain lettering (e.g. Trick Williams, Bron Breakker, Lyra, Andre Chase, Usos '17), and a few tag-team atlases may use a different layout.
+- Also scaled copies of the Titantron (1024×512) and Apron (512×256) videos into `Videos (2K19 Derived)` (96 and 91 files), so `tools/cak26/tobink1.exe` (built from `tobink1.c`; it replaced `to_bink1.bat`) converts them to Bink 1 `.bk2` along with the minitrons and walls.
