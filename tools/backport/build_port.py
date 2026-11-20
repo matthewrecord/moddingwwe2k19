@@ -143,6 +143,26 @@ def eye_loops(P,T):
     import loops
     L=[l for l in loops.boundary_loops(T,P) if 20<=len(l)<=60 and abs(P[l,1].mean()+181)<4 and 2<abs(P[l,0].mean())<6]
     return sorted(L,key=lambda l:-P[l,0].mean())   # [left (+x), right]
+def lid_gaps(P,T,M):
+    """per side: (rest gap, [gap under each morph]) at the eye centre (as lidcheck.py)"""
+    out={}
+    for side,l in zip('LR',eye_loops(P,T)):
+        Q=P[l]; x0=Q[:,0].mean(); hw=np.abs(Q[:,0]-x0).max(); c=np.abs(Q[:,0]-x0)<0.3*hw; ymid=Q[:,1].mean()
+        up=np.array(l)[c&(Q[:,1]<ymid)]; lo=np.array(l)[c&(Q[:,1]>=ymid)]
+        g=lambda X:(X[lo,1].mean()-X[up,1].mean()); out[side]=(g(P),np.array([g(P+M[n]) for n in range(M.shape[0])]),Q.mean(0),hw)
+    return out
+def lid_fit(P,T,HM,DP,DT,DM,thr=0.4,iters=3):
+    """scale eye-closing morph travel around each eye so the remaining lid gap matches the donor's (bigger source eye openings close short)"""
+    D=lid_gaps(DP,DT,DM); log={}
+    for _ in range(iters):
+        O=lid_gaps(P,T,HM)
+        for side in 'LR':
+            g0,gm,_,_=D[side]; o0,om,ctr,hw=O[side]; rd=gm/g0; ro=om/o0
+            w=np.clip(1-np.linalg.norm(P-ctr,axis=1)/(1.6*hw),0,1)**0.5
+            for n in np.where(rd<thr)[0]:
+                k=float(np.clip((1-rd[n])/max(1-ro[n],1e-3),0.85,1.25)); HM[n]*=(1+(k-1)*w)[:,None]
+                log[f'{side}{n+1}']=(round(100*rd[n]),round(100*ro[n]))
+    O=lid_gaps(P,T,HM); return HM,{k_:(v[0],v[1],round(100*O[k_[0]][1][int(k_[1:])-1]/O[k_[0]][0])) for k_,v in log.items()}
 def source_weights(S,bones,slot,idx=None,drop_unmapped=False):
     """the mod's own skin weights (BI/BW, by its bone names) -> 2K19 palette slots; bones missing from the palette
     hand their weight to the nearest ancestor that exists. idx: subset of vertices."""
@@ -361,6 +381,7 @@ def build(cfg,outpath,PROP=None):
     if cfg.get('mask'):   # head-locked mask: morphs move only the head, so keep covered skin behind the mask
         eyez=cKDTree(MB['M_EYE'][0]['POSITION'][:,:3]).query(G['pos'])[0]<cfg.get('mask_eye_keep',1.5)   # lids stay put
         G['pos'],HM,nc=mask_clamp(G['pos'].astype(float),G['tris'],MA[cfg['mask']],HM,cfg.get('mask_recess',0.3),keep=eyez); G['pos'],HM,_=mask_clamp(G['pos'],G['tris'],MA[cfg['mask']],HM,0.0,0.15,keep=eyez); G['pos']=G['pos'].astype('f4'); info['mask_covered_head_verts']=nc
+    if cfg.get('lid_fit'): HM,info['lid_fit']=lid_fit(G['pos'].astype(float),G['tris'],np.asarray(HM,float),np.asarray(so['pos'],float),ST,MDa)
     jbuild.set_object(m,0,G['pos'],G['nrm'].astype('f4'),np.tile(np.array(RED,'u1'),(vc,1)),G['uv'].astype('f4'),np.zeros((vc,3),'f4'),HS,HW,jbuild.tris_to_strip(G['tris']))
     for n in range(1,120):
         V=np.zeros(vc,dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]); V['p']=HM[n-1]; m.data[m.chunk(0,f'vset{n}')]=bytearray(V.tobytes())
@@ -400,6 +421,7 @@ def build(cfg,outpath,PROP=None):
                 Pe=(Pe-c_)@R_.T+c_; Nn=Nn@R_.T
             Ge['pos']=Pe.astype('f4'); Ge['nrm']=Nn.astype('f4')
             info.setdefault('eye_straightened_deg',[]).append(round(float(np.degrees(ang0)),1))
+        if cfg.get('eye_recess'): Ge['pos']=(Ge['pos'].astype(float)+[0,0,cfg['eye_recess']]).astype('f4'); info['eye_recess']=cfg['eye_recess']   # +z = back into the socket
         put(m,k_,j,Ge,donor,weights=(esl,ew))
     KM=meshes(mdlfmt.MDL(TP['ref']+'/baseModel.mdl'))
     ctr=lambda D,n:D[n][0]['POSITION'].mean(0)
@@ -629,7 +651,17 @@ PSYCHO_RING=dict(PSYCHO,emd='00050602',cover=['M_Tops','M_Bottoms','M_Shoes'],al
     attire={k:v for k,v in PSYCHO['attire'].items() if k!=(0x5602,0)})   # wrestles without the fringe jacket
 JEVON_RING=dict(JEVON,emd='00050602',cover=[c for c in JEVON['cover'] if c!='M_Tops'],
     attire={k:v for k,v in JEVON['attire'].items() if k!=(0x5602,0)})   # wrestles without the tank top
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING}
+RH_='/home/claude/pairs/RH/1163_Rhea_Ripley/'
+RHEA=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',weights='source',hide='geom',donor_weights=['M_L_Kneepad','M_R_Kneepad'],eye_straighten_deg=0.5,work='/home/claude/ext/rh',emd='00050602',
+    base=RH_+'BaseModel/baseModel.mcd',attire_model=RH_+'1163_Deluxe_Edition/1163_Attire.mcd',
+    tex_base=RH_+'BaseModel/Textures',tex_attire=RH_+'1163_Deluxe_Edition/Textures',hpl=RH_+'1163_Deluxe_Edition/1163_Attire.mcd',
+    cover=['M_Tops','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist','M_R_Elbowpad'],
+    hair={0x2715:('M_Hair','hair')},tint=(20,18,18),
+    attire={(0x5601,0):('atlas',[('M_U_Acce','u_acce'),('M_Pierce','pierce'),('M_Pierce1','pierce1'),('M_R_Elbowpad','r_elbowpad')]),
+            (0x5601,1):('mesh','M_L_Wrist','l_wrist'),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
+            (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5602,0):('mesh','M_Tops','tops'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))
