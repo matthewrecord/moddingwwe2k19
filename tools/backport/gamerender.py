@@ -70,7 +70,8 @@ def render(objs,view,box,px,ids=None):
             yy,xx,zz,col=yy[keep],xx[keep],zz[keep],col[keep]
             Z[mny+yy,mnx+xx]=zz; img[mny+yy,mnx+xx]=col
             if ids is not None: ids[mny+yy,mnx+xx]=(oi,ti)
-    return (img*255).astype('u1')
+    global LASTZ; LASTZ=Z
+    return (img*255).astype("u1")
 POSES={'rest':None,'arms down':{'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65)},
        'walk':{'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65),'J_Leg_L':([1,0,0],-25),'J_Leg_R':([1,0,0],15),'J_Knee_L':([1,0,0],30)},
        'bend over':{'J_Leg_L':([1,0,0],-80),'J_Leg_R':([1,0,0],-80),'J_Shoulder_L':([0,0,1],65),'J_Shoulder_R':([0,0,1],-65)}}

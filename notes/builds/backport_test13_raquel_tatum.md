@@ -211,3 +211,12 @@ Next: COLORID (tools/backport/colorid.py, every diffuse a flat colour, alpha kep
 ## COLORID v1 hung the game
 It rewrote the DDS headers of 5 textures (flags 0x80207 vs the original 0xA1007, mip field 0 vs 1). COLORID2 keeps every DDS header byte-for-byte and swaps only pixel data. The pac header differs only in its size fields.
 Rule: never rewrite a DDS header the game already accepted.
+
+## COLORID2 result: the wedge is the main outfit (red)
+- In game, the wedge under the top edge of each lace opening is red, so it's the outfit mesh (0x5602 obj0). The bra piece (cyan), which also sits behind the openings, never shows.
+- Offline, with the body removed, a solid outfit layer sits behind the openings: within 0.5 / 1 / 2 / 3 cm of the skin for 6.5 / 13.5 / 29 / 44% of window pixels.
+- 128 outfit triangles sit just behind the skin there. They are rim triangles, also visible elsewhere (so they can't simply be dropped), and their UVs are shared.
+- In game, her skin there sits slightly differently from my rest-pose maths, so they come through.
+- Failed fix 1, `skin_lift` (raise the skin under the openings 1 cm): the skin pokes through the tight outfit just below the openings. Rejected.
+- Failed fix 2, `sink_under_lace` (push outfit verts that are under the skin deeper): moves 2257 verts but the measured gap doesn't change, so it isn't hitting the right surface. Disabled. Code left in, off.
+- gamerender now exposes LASTZ (depth) for gap measurements.

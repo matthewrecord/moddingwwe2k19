@@ -502,6 +502,7 @@ def build(cfg,outpath,PROP=None):
         V=np.zeros(vc,dtype=[('p','>f4',3),('n','>f4',3),('c','u1',4)]); V['p']=HM[n-1]; m.data[m.chunk(0,f'vset{n}')]=bytearray(V.tobytes())
     # ---------------- body: hidden-first triangle order so each hide range is one block ----------------
     att=np.concatenate([MA[n][0]['POSITION'] for n in cfg['cover']]); near_att=cKDTree(att).query(Sb['POSITION'])[0]<1.0
+    seen_pts_=[]
     if cfg.get('hide','hpl')=='geom':
         # 2K26: attire HPL! lists index the game's generic body, not the character's own M_Body -> unusable.
         # Hide a body vertex when a cover mesh lies just outside it along its normal (within 'hide_depth' cm).
@@ -513,7 +514,13 @@ def build(cfg,outpath,PROP=None):
             D_=np.array([t for t in np.asarray(T_) if tuple(t) not in k_])
             if len(D_): Ctr.append(S_['POSITION'][:,:3].astype(float)[D_].mean(1))
         if Ctr:
-            dC,_=cKDTree(np.concatenate(Ctr)).query(Sb['POSITION'][:,:3].astype(float)); seen=hid_v&(dC<cfg.get('seethrough_reach',3.0)); hid_v=hid_v&~seen; info['seethrough_unhidden']=int(seen.sum()); info['geom_body_verts']=int(hid_v.sum())
+            dC,_=cKDTree(np.concatenate(Ctr)).query(Sb['POSITION'][:,:3].astype(float)); seen=hid_v&(dC<cfg.get('seethrough_reach',3.0)); hid_v=hid_v&~seen; info['seethrough_unhidden']=int(seen.sum()); info['geom_body_verts']=int(hid_v.sum()); seen_pts_[:]=[Sb['POSITION'][seen,:3].astype(float)]
+            lf=cfg.get('skin_lift',0.0)
+            if lf:   # skin seen through lace: lift it outward so gear edges just under it can't poke through in game
+                Nl=Sb['NORMAL'][:,:3].astype(float); Nl/=np.linalg.norm(Nl,axis=1,keepdims=True)+1e-9
+                ramp=np.clip((cfg.get('seethrough_reach',3.0)-dC)/2.0,0,1)*seen
+                ly_=cfg.get('skin_lift_y'); ramp=ramp*((Sb['POSITION'][:,1]>=ly_[0])&(Sb['POSITION'][:,1]<=ly_[1])) if ly_ else ramp
+                Sb['POSITION']=np.array(Sb['POSITION'],copy=True); Sb['POSITION'][:,:3]=Sb['POSITION'][:,:3]+(lf*ramp)[:,None]*Nl; info['skin_lift']=int((ramp>0).sum())
         hid_t=hid_v[Tb].all(1)
     else:
         H=hpl.parse(cfg['hpl']).get('M_Body',[[]])[0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True; info['hpl_body_verts']=len(H)
@@ -658,6 +665,15 @@ def build(cfg,outpath,PROP=None):
                         row=sorted(acc.items(),key=lambda t:-t[1])[:7]; t_=sum(b_ for _,b_ in row) or 1
                         for q,(a_,b_) in enumerate(row[:7]): fs[v,q]=a_; fw[v,q]=b_/t_
                     ok_=fw.sum(1)>0; at=at*ok_; sl,w=blend_skin(sl,w,fs,fw,at); info['tight_follow']=info.get('tight_follow',0)+int((at>0).sum())
+            sk_=cfg.get('sink_under_lace')
+            if sk_ and seen_pts_:   # gear edges lying just UNDER the skin seen through lace: push them deeper so the game's slightly different
+                Pb_=Sb['POSITION'][:,:3].astype(float); Tb_=np.asarray(Tb); Pg=G['pos'][:,:3].astype(float)   # deformation can't bring them through
+                tB,bB,dB=closest_on_mesh(Pb_,Tb_,Pg); q=(Pb_[Tb_[tB]]*bB[...,None]).sum(1)
+                Nb=Sb['NORMAL'][:,:3].astype(float); nq=(Nb[Tb_[tB]]*bB[...,None]).sum(1); nq/=np.linalg.norm(nq,axis=1,keepdims=True)+1e-9; nq*=cfg.get('body_normal_sign',1.0)
+                sd=((Pg-q)*nq).sum(1); dW,_=cKDTree(seen_pts_[0]).query(Pg)
+                mv=(sd<0.05)&(sd>-sk_[1])&(dW<sk_[2])
+                if mv.any():
+                    P2=np.array(G['pos'],copy=True); P2[mv,:3]-= (sk_[0]*nq[mv]).astype(P2.dtype); G['pos']=P2; info['sink_under_lace']=info.get('sink_under_lace',0)+int(mv.sum())
             if cfg.get('donor_legs'):
                 a_=legs_ramp(G['pos'].astype(float),cfg)
                 if (a_>0).any(): dsl,dw=welded_weights(G['pos'],G['tris'],donor,palette_slot(ja)); sl,w=blend_skin(sl,w,dsl,dw,a_); info['donor_legs_attire']=info.get('donor_legs_attire',0)+int((a_>0).sum())
