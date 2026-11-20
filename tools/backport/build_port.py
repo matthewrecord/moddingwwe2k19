@@ -720,7 +720,28 @@ RHEA_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43
             (0x5602,0):('mesh','M_Brassiere','brassiere')})
 RHEA_ENT=dict(RHEA_RING,work='/home/claude/ext/rh2e',emd='00050604',cover=RHEA_RING['cover']+['M_Jacket'],
     attire={**RHEA_RING['attire'],(0x5602,1):('mesh','M_Jacket','jacket')})
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA,'rhea_ring':RHEA_RING,'rhea_entrance':RHEA_ENT}
+RQ_='/home/claude/pairs/RQ/927_Raquel_Rodriguez/'
+RAQUEL_RING=dict(template='female',lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100),
+    weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/rq',emd='00050602',
+    base=RQ_+'BaseModel/baseModel.mcd',attire_model=RQ_+'927_Default_Attire/927_Attire.mcd',
+    tex_base=RQ_+'BaseModel/Textures',tex_attire=RQ_+'927_Default_Attire/Textures',hpl=RQ_+'927_Default_Attire/927_Attire.mcd',
+    cover=['M_Outfit','M_Shoes','M_R_Wrist'],hair={0x2715:('M_Hair','hair')},tint=(38,26,20),
+    attire={(0x5601,0):('atlas',[('M_L_A_Acce','l_a_acce')]),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
+            (0x5601,4):('mesh','M_Shoes','shoes'),(0x5602,0):('mesh','M_Outfit','outfit')})
+RAQUEL_ENT=dict(RAQUEL_RING,work='/home/claude/ext/rqe',emd='00050604',
+    attire={**RAQUEL_RING['attire'],(0x5601,0):('atlas',[('M_L_A_Acce','l_a_acce'),('M_Glasses','glasses')])})
+TP_='/home/claude/pairs/TP/1216_Tatum_Paxley/'
+TATUM_RING=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100),
+    weights='source',hide='geom',donor_weights=['M_L_Kneepad','M_R_Kneepad'],eye_straighten_deg=0.5,work='/home/claude/ext/tp',emd='00050602',
+    base=TP_+'BaseModel/baseModel.mcd',attire_model=TP_+'1216_Default_Attire/1216_Attire.mcd',
+    tex_base=TP_+'BaseModel/Textures',tex_attire=TP_+'1216_Default_Attire/Textures',hpl=TP_+'1216_Default_Attire/1216_Attire.mcd',
+    cover=['M_Brassiere','M_Underwear','M_Socks','M_Shoes','M_L_Kneepad','M_R_Kneepad'],hair={0x2715:('M_Hair','hair')},tint=(25,22,22),
+    attire={(0x5601,0):('atlas',[('M_U_Acce','u_acce')]),(0x5601,1):('mesh','M_Socks','socks'),
+            (0x5601,3):('mesh','M_Underwear','underwear'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5602,0):('mesh','M_Brassiere','brassiere'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
+TATUM_ENT=dict(TATUM_RING,work='/home/claude/ext/tpe',emd='00050604',cover=TATUM_RING['cover']+['M_Jacket'],hair={0x2715:('M_Hair_Entrance','hair')},
+    attire={**TATUM_RING['attire'],(0x5601,2):('mesh','M_Jacket','jacket')})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA,'rhea_ring':RHEA_RING,'rhea_entrance':RHEA_ENT,'raquel_ring':RAQUEL_RING,'raquel_entrance':RAQUEL_ENT,'tatum_ring':TATUM_RING,'tatum_entrance':TATUM_ENT}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))

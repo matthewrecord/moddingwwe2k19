@@ -1,6 +1,8 @@
 # Current state (one screen; read this first, then writeup/Status.md)
 
 
+**2026-11-20:** Raquel Rodriguez + Tatum Paxley v1 (ring 50602 + entrance 50604) delivered to Downloads; gates pass. Notes: `notes/builds/backport_test13_raquel_tatum.md`.
+
 **2026-11-20:** Rhea Ripley Judgment Day (2K26 816) v2 delivered: `Downloads\rhea_v2_ch50602.pac` (ring) + `ch50604` (entrance, vest). Fixes the hair clipping with `hair_body_blend`; all gates pass. v1 (1163) was the wrong look. Notes: `notes/builds/backport_test12_rhea_jd.md`.
 > Adding a match-up screen (card) to an arena: `notes/matchup_screens.md`.
 > Arena work lives on branch `claude/slots50-gfx` (not merged yet). Arena slots Matthew allows to be overwritten (named unwanted + reserve list, current): `notes/arena_slots.md`.
