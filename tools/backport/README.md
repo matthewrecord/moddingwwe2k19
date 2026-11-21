@@ -200,3 +200,8 @@ the lace strings above hide the skin and leave holes.
 Diagnosis route that found it: green body paint showed the body was drawn; per-material flat colours (`colorid.py`, which keeps the
 DDS headers byte-for-byte; rewriting them hung the game) showed the outfit drew the wedge; and a gamerender depth/ID buffer
 pinned it to specific triangles.
+
+### Gate: `zfight.py PAC` (required on every build)
+Gear within 5 mm behind visible skin (36 angles, including from below). My renderer always lets the skin win these near-ties; 2K19 may not.
+FAIL above 3% of visible-skin pixels. Then find the triangles with the gamerender ID buffer (`render(...,ids=...)`) and depth (`LASTZ`).
+First response to any in-game visual artifact: `colorid.py IN OUT` (flat colour per material) to name the object before theorising.

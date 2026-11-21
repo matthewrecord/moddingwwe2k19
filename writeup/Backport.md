@@ -625,3 +625,37 @@ default, and listed in `tools/backport/README.md` ("2K26 sources: the weight rul
 - **New gates:** lidcheck (formalised), hairclip, hairstretch, hairtear, legstress. `pose_fk` now moves the donor's
   rootless m### helpers with the nearest J_ bone.
 - Build notes: `notes/builds/backport_test12_rhea_jd.md` and `notes/builds/backport_test13_raquel_tatum.md`.
+
+## 32. Retrospective: Raquel's lace wedges (v4 to v7), and process changes
+
+It took six in-game test rounds to fix one visual bug. The cause turned out to be simple: a matte black backing panel lying on the
+skin, which 2K19 sometimes draws in front of it.
+
+**What went wrong**
+1. **I trusted an unvalidated renderer.** gamerender had three bugs (Y sign, camera height silently ignored, normal sign). It also
+   has a built-in bias: perfect depth precision, so surfaces within millimetres of each other always resolve the same way. The
+   game resolves them differently, so "it looks fine offline" meant nothing for this class of bug.
+2. **I fixed symptoms before identifying the object.** The question that mattered was which part draws the wedge. The flat-colour
+   test answered it in one round; it was the fifth diagnostic instead of the first.
+3. **The diagnostics weren't designed to decide anything.** DIAG2 couldn't separate the remaining hypotheses. COLORID v1 hung the game
+   because it rewrote DDS headers.
+4. **I said "fixed" when it was only fixed offline.**
+5. **I ignored early clues and source data.** The inner black panel was noted in the first investigation and set aside. The 2K26
+   per-triangle material split was never parsed.
+
+**Process changes (in force now)**
+- **First response to any in-game visual artifact** is `colorid.py` (each material a flat colour). Name the object before theorising.
+  It keeps DDS headers byte-for-byte; never rewrite a header the game accepted.
+- **Every diagnostic states its outcomes in advance:** "if X, then cause A, and next is Y". If two outcomes lead to the same next
+  step, don't send that test.
+- **New gate, `zfight.py`:** flags gear within 5 mm behind visible skin, from 36 angles including below. It fails Raquel v6 (3.0%)
+  and passes v7 (0.9%), so it would have caught this before any in-game test. It runs with the other gates on every build.
+- **Renderer self-tests:** any renderer change must reproduce a known in-game screenshot (the Raquel v6 wedge views) before its output
+  counts as evidence.
+- **Wording:** "fixed offline" and "confirmed in game" are different claims; reports say which.
+- **Parse the source fully:** per-triangle materials (`mdlfmt.lod0_materials`). *_ALPHA vs normal materials carry meaning; don't merge
+  them blind.
+- **Delivery:** check which tools can write to Matthew's PC before promising a file is in Downloads; otherwise attach it.
+
+**Open lead from the new gate:** Rhea v5 entrance passes overall, but one view (from behind, slightly above) has 35% of visible skin
+with gear within 5 mm. Check it with the ID buffer before her next build.
