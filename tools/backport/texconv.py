@@ -68,3 +68,20 @@ def write_pack(entries,head=None):
     for nm,d in entries:
         recs+=nm.encode()[:15].ljust(16,b'\0')+b'dds\0'+struct.pack('<3I',len(d),off+len(data),0); data+=d
     return bytes(out+recs+data)
+
+def hair_rai(rai_path,root=(60,45,35),tip=(60,45,35),var=0.18,thick=1.2,gain=1.8,size=None):
+    """2K26 hair_rai -> 2K19 hair maps in the layout of an in-game-proven port (Willow): colour = real colour, _n = (128, 98, strand shade, alpha).
+    2K26 rai: R = root(0)->tip(255) gradient, G = strand coverage, B = per-strand random id. 2K26 tints in its shader; 2K19 needs it baked.
+    The 2K26 coverage is hair-thin lines; cut out as-is it breaks into speckle ("brillo"), so it is blurred by `thick` px and boosted by `gain`
+    into solid locks like 2K19 hair."""
+    from scipy.ndimage import gaussian_filter
+    R=load(rai_path)
+    if size: R=resize(R,*size)
+    t=R[...,0].astype(float)/255; idv=R[...,2].astype(float)/255-0.5; cov=R[...,1].astype(float)/255
+    a=np.clip(gaussian_filter(cov,thick)*gain,0,1)
+    a=np.maximum(a,cov)
+    col=(np.array(root,float)[None,None]*(1-t[...,None])+np.array(tip,float)[None,None]*t[...,None])*(1+var*2*idv[...,None])
+    h,w=t.shape; C=np.zeros((h,w,4),'u1'); C[...,:3]=np.clip(col,0,255); C[...,3]=(a*255).astype('u1')
+    n=np.zeros((h,w,4),'u1'); n[...,0]=128; n[...,1]=98; n[...,2]=np.clip(200+110*idv,140,255); n[...,3]=C[...,3]
+    mr=np.zeros((h,w,4),'u1'); mr[...]=(0,174,0,255)
+    return {'':dds_dxt5(C),'_n':dds_dxt5(n),'_mr':dds_dxt5(mr)},C

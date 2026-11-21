@@ -805,6 +805,8 @@ def build(cfg,outpath,PROP=None):
     for base,stems in hairtex.items():
         if len(stems)==1 and not ci(f"{TA}/{stems[0]}_rai.dds") and ci(f"{TA}/{stems[0]}_color.dds"):
             r=texconv.hair_color(ci(f"{TA}/{stems[0]}_color.dds"))   # 2K26 mask/wig: real colour + alpha on the head-locked hair slot
+        elif len(stems)==1 and cfg.get('hair_colors'):   # baked root->tip colour, thickened locks, Willow-layout _n
+            hc_=cfg['hair_colors']; r,_=texconv.hair_rai(ci(f"{TA}/{stems[0]}_rai.dds"),hc_['root'],hc_['tip'],hc_.get('var',0.18),hc_.get('thick',1.2),hc_.get('gain',1.8))
         elif len(stems)==1: r=texconv.hair(None,ci(f"{TA}/{stems[0]}_rai.dds"),cfg.get('tint',(45,35,30)))
         else:
             Rr=np.zeros((2048,2048,4),'u1')
@@ -942,29 +944,29 @@ RAQUEL_DIAG=dict(RAQUEL_ENT,work='/home/claude/ext/rqd',diag_paint=[((0,32,-112,
 TATUM_DIAG=dict(TATUM_ENT,work='/home/claude/ext/tpd',diag_paint=[((2,20,-82,-45),(0,255,0))],sheer={'socks':((70,40,30),45,1.0)},diag_sheer_rgb=(0,255,255))
 SR_='/home/claude/pairs/SR/1059_Sol_Ruca/'
 SOL=dict(template='female',keep_alpha=['tights','brassiere'],
-    lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+    lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/sr',emd='00050602',
     base=SR_+'BaseModel/basemodel.mcd',attire_model=SR_+'1059_Default_Attire/1059_Attire.mcd',
     tex_base=SR_+'BaseModel/Textures',tex_attire=SR_+'1059_Default_Attire/Textures',hpl=SR_+'1059_Default_Attire/1059_Attire.mcd',
-    cover=['M_Brassiere','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],hair={0x2715:('M_Hair','hair')},tint=(205,170,115),
+    cover=['M_Brassiere','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],hair={0x2715:('M_Hair','hair')},tint=(205,170,115),hair_colors=dict(root=(110,80,52),tip=(222,192,140)),
     attire={(0x5601,0):('atlas',[('M_U_Acce','u_acce'),('M_U_Acce1','u_acce1'),('M_Pierce','pierce'),('M_Pierce1','pierce1'),('M_Pierce2','pierce2')]),
             (0x5601,1):('mesh','M_L_Wrist','l_wrist'),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
             (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Brassiere','brassiere'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
 LV_='/home/claude/pairs/LV/1211_Lola_Vice/'
-LOLA=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+LOLA=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/lv',emd='00050602',
     base=LV_+'BaseModel/baseModel.mcd',attire_model=LV_+'1211_Default_Attire/1211_Attire.mcd',
     tex_base=LV_+'BaseModel/Textures',tex_attire=LV_+'1211_Default_Attire/Textures',hpl=LV_+'1211_Default_Attire/1211_Attire.mcd',
-    cover=['M_Brassiere','M_Tights','M_Shoes','M_L_A_Acce','M_R_A_Acce'],hair={0x2715:('M_Hair','hair')},tint=(40,28,22),
+    cover=['M_Brassiere','M_Tights','M_Shoes','M_L_A_Acce','M_R_A_Acce'],hair={0x2715:('M_Hair','hair')},tint=(40,28,22),hair_colors=dict(root=(42,30,24),tip=(186,146,100)),
     attire={(0x5601,1):('mesh','M_L_A_Acce','l_a_acce'),(0x5601,2):('mesh','M_R_A_Acce','r_a_acce'),
             (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),(0x5602,0):('mesh','M_Brassiere','brassiere')})
 KJ_='/home/claude/pairs/KJ/1212_Kelani_Jordan/'
-KELANI=dict(template='female',lid_fit=True,eye_recess=0.3,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+KELANI=dict(template='female',lid_fit=True,eye_recess=0.3,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/kj',emd='00050602',
     base=KJ_+'BaseModel/baseModel.mcd',attire_model=KJ_+'1212_Default_Attire/1212_Attire.mcd',
     tex_base=KJ_+'BaseModel/Textures',tex_attire=KJ_+'1212_Default_Attire/Textures',hpl=KJ_+'1212_Default_Attire/1212_Attire.mcd',
-    cover=['M_Outfit','M_Shoes','M_Kickpads','M_L_A_Acce','M_R_A_Acce'],hair={0x2715:('M_Hair','hair')},tint=(22,19,19),
+    cover=['M_Outfit','M_Shoes','M_Kickpads','M_L_A_Acce','M_R_A_Acce'],hair={0x2715:('M_Hair','hair')},tint=(22,19,19),hair_colors=dict(root=(18,15,14),tip=(30,24,21),var=0.25),
     attire={(0x5601,0):('atlas',[('M_U_Acce','u_acce'),('M_L_A_Acce1','l_a_acce1'),('M_R_A_Acce1','r_a_acce1'),('M_Pierce','pierce'),('M_Pierce1','pierce1'),('M_Pierce2','pierce2')]),
             (0x5601,1):('mesh','M_L_A_Acce','l_a_acce'),(0x5601,2):('mesh','M_R_A_Acce','r_a_acce'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Outfit','outfit'),(0x5602,1):('mesh','M_Kickpads','kickpads')})

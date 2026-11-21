@@ -31,3 +31,14 @@ Matthew picks the slots.
 - The magenta sheets in previews are the donor physics proxy (yDefault). It's in every physics-hair build, Raquel's included, and the game doesn't draw it.
 - Bodypose and morphgrid were viewed for all three: clean.
 - Watch in game: Sol's fishnet (flicker over skin?), Lola's and Sol's hair stretch on head turns (a bit above Raquel), and hair colours.
+
+## v2 (in-game feedback on v1: brillo hair, wrong hair look on Lola/Sol, grey roots on Kelani, some hair clipping)
+- Cause of the hair look: 2K26 `hair_rai` holds masks, not colour. R = root->tip, G = strand coverage, B = per-strand id; 2K26 tints in its shader.
+  We used one flat colour plus G cut out at 128. G is hair-thin lines, so it broke up into speckle.
+  Our `_n` (123,0,140) also doesn't match an in-game-proven port: Willow's is (128, 98, strand shade, alpha). The 2K19 colour texture is the real colour; there's no colour parameter.
+- Fix: `texconv.hair_rai` + cfg `hair_colors={root,tip,var,thick,gain}`. It bakes root->tip colour with per-strand variation,
+  thickens coverage (gaussian 1.2 px × 1.8), and writes the Willow-layout `_n`. Colours are set from references:
+  Sol root (110,80,52) / tip (222,192,140); Lola (42,30,24) / (186,146,100), dark roots with blonde lengths per Matthew's reference; Kelani near-black.
+- Clipping: hair_body_blend raised to dfull 6 / dzero 18 for all three. Lola's lean-back hairclip goes 3.7 → 2.4 cm.
+  The rest is physics swing, which the bench can't simulate.
+- Kelani's afro: shoulders rise into its lower edge (hairclip 3.2 cm). Moving the blend zone off didn't help (5.1); left as is.
