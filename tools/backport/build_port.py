@@ -40,11 +40,11 @@ def load_pair(tdir,stem,cap=2048):
         n=n.copy(); n[...,2]=NRM2K26_GLOSS; n[...,3]=0
     w,h=texconv.target_size(c.shape[1],c.shape[0],cap); return texconv.resize(c,w,h),texconv.resize(n,w,h)
 def atlas(tdir,stems,size=2048):
-    """2x2 atlas (tile i at col i%2,row i//2); returns color, nrm arrays and per-stem (col,row)"""
-    t=size//2; C=np.zeros((size,size,4),'u1'); N=np.zeros((size,size,4),'u1'); N[...,:3]=128; pos={}
+    """g x g atlas (g=2 for up to 4 stems, 3 for up to 9; tile i at col i%g,row i//g); returns color, nrm, per-stem (col,row,g)"""
+    g=max(2,int(np.ceil(np.sqrt(len(stems))))); t=size//g; C=np.zeros((size,size,4),'u1'); N=np.zeros((size,size,4),'u1'); N[...,:3]=128; pos={}
     for i,st in enumerate(stems):
-        c,n=load_pair(tdir,st); cx,ry=i%2,i//2
-        C[ry*t:(ry+1)*t,cx*t:(cx+1)*t]=texconv.resize(c,t,t); N[ry*t:(ry+1)*t,cx*t:(cx+1)*t]=texconv.resize(n,t,t); pos[st]=(cx,ry)
+        c,n=load_pair(tdir,st); cx,ry=i%g,i//g
+        C[ry*t:(ry+1)*t,cx*t:(cx+1)*t]=texconv.resize(c,t,t); N[ry*t:(ry+1)*t,cx*t:(cx+1)*t]=texconv.resize(n,t,t); pos[st]=(cx,ry,g)
     return C,N,pos
 def concat(objs):
     P=[];N=[];UV=[];T=[];o=0
@@ -675,6 +675,7 @@ def build(cfg,outpath,PROP=None):
     # ---------------- attire slots (single mesh, split by side, or 2x2 atlas) ----------------
     tex={}; texstem={}
     hp,hs,hw=headW; th=cKDTree(hp); tb=cKDTree(Sb['POSITION'])
+    cur_stem_=[]
     def att_w(G,ja,src=None):
         """attire weights: the mod's own (cfg weights='source'), else body donor with head-nearest points taking the head's weights"""
         if cfg.get('weights')=='source' and src is not None:
@@ -704,6 +705,14 @@ def build(cfg,outpath,PROP=None):
                         row=sorted(acc.items(),key=lambda t:-t[1])[:7]; t_=sum(b_ for _,b_ in row) or 1
                         for q,(a_,b_) in enumerate(row[:7]): fs[v,q]=a_; fw[v,q]=b_/t_
                     ok_=fw.sum(1)>0; at=at*ok_; sl,w=blend_skin(sl,w,fs,fw,at); info['tight_follow']=info.get('tight_follow',0)+int((at>0).sum())
+            lg_=cfg.get('lift_gear',{}).get(cur_stem_[0]) if cur_stem_ else None
+            if lg_:   # see-through gear (fishnet) lying on/under drawn skin: float it lg_ cm off the skin so it can't depth-fight in game
+                Pb_=Sb['POSITION'][:,:3].astype(float); Tb_=np.asarray(Tb); Pg=G['pos'][:,:3].astype(float)
+                tB,bB,dB=closest_on_mesh(Pb_,Tb_,Pg); q=(Pb_[Tb_[tB]]*bB[...,None]).sum(1)
+                nq=(Sb['NORMAL'][:,:3].astype(float)[Tb_[tB]]*bB[...,None]).sum(1); nq/=np.linalg.norm(nq,axis=1,keepdims=True)+1e-9; nq*=cfg.get('body_normal_sign',1.0)
+                sd=((Pg-q)*nq).sum(1); mv=(sd<lg_)&(dB<1.5)
+                if mv.any():
+                    P2=np.array(G['pos'],copy=True); P2[mv,:3]+=((lg_-sd[mv])[:,None]*nq[mv]).astype(P2.dtype); G['pos']=P2; info.setdefault('lift_gear',{})[cur_stem_[0]]=int(mv.sum())
             sk_=cfg.get('sink_under_lace')
             if sk_ and seen_pts_:   # gear edges lying just UNDER the skin seen through lace: push them deeper so the game's slightly different
                 Pb_=Sb['POSITION'][:,:3].astype(float); Tb_=np.asarray(Tb); Pg=G['pos'][:,:3].astype(float)   # deformation can't bring them through
@@ -744,12 +753,14 @@ def build(cfg,outpath,PROP=None):
                     smp=np.concatenate([UV[T],UV[T].mean(1,keepdims=True)],1)
                     av=A[np.clip((smp[...,1]*h_).astype(int),0,h_-1),np.clip((smp[...,0]*w_).astype(int),0,w_-1)]
                     keep=av.max(1)>=128; info.setdefault('alpha_cut',{})[name]=int((msk&~keep).sum()); msk&=keep
+                cur_stem_[:]=[stem]
                 G=mesh_obj(S,T,msk); put(ma,k_,ja,G,donor,weights=att_w(G,ja,None if name in cfg.get('donor_weights',()) else [(S,np.unique(T[msk]))])); tex[texname]=load_pair(TA,stem); texstem[texname]=stem   # donor_weights: 2K19 body skin (legs)
             else:   # ('atlas', [(mesh, stem), ...])
                 Cc,Nn,pos=atlas(TA,[st for _,st in spec[1]]); parts=[]; srcs=[(MA[n_][0],np.unique(MA[n_][1])) for n_,_ in spec[1]]
                 for name,st in spec[1]:
                     G=whole(MA,name); u=G['uv'].astype(float); info.setdefault('uv_out',{})[name]=round(float(((u<-0.01)|(u>1.01)).any(1).mean()),3)
-                    cx_,ry=pos[st]; e=8/1024; G['uv']=(((np.clip(u,0,1)*(1-2*e)+e)+[cx_,ry])/2).astype('f4'); parts.append(G)
+                    cx_,ry,g_=pos[st]; e=8/1024; G['uv']=(((np.clip(u,0,1)*(1-2*e)+e)+[cx_,ry])/g_).astype('f4'); parts.append(G)
+                cur_stem_[:]=[]
                 G=concat(parts); put(ma,k_,ja,G,donor,weights=att_w(G,ja,srcs)); tex[texname]=(Cc,Nn)
         J[fid]=ma.build()
     # ---------------- hide table: one hidden span per template hide object ----------------
@@ -929,7 +940,35 @@ TATUM_ENT=dict(TATUM_RING,work='/home/claude/ext/tpe',emd='00050604',hair_body_b
     attire={**TATUM_RING['attire'],(0x5601,2):('mesh','M_Jacket','jacket')})
 RAQUEL_DIAG=dict(RAQUEL_ENT,work='/home/claude/ext/rqd',diag_paint=[((0,32,-112,-55),(0,255,0))])
 TATUM_DIAG=dict(TATUM_ENT,work='/home/claude/ext/tpd',diag_paint=[((2,20,-82,-45),(0,255,0))],sheer={'socks':((70,40,30),45,1.0)},diag_sheer_rgb=(0,255,255))
-CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA,'rhea_ring':RHEA_RING,'rhea_entrance':RHEA_ENT,'raquel_ring':RAQUEL_RING,'raquel_entrance':RAQUEL_ENT,'tatum_ring':TATUM_RING,'tatum_entrance':TATUM_ENT,'raquel_diag':RAQUEL_DIAG,'tatum_diag':TATUM_DIAG}
+SR_='/home/claude/pairs/SR/1059_Sol_Ruca/'
+SOL=dict(template='female',keep_alpha=['tights','brassiere'],
+    lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+    weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/sr',emd='00050602',
+    base=SR_+'BaseModel/basemodel.mcd',attire_model=SR_+'1059_Default_Attire/1059_Attire.mcd',
+    tex_base=SR_+'BaseModel/Textures',tex_attire=SR_+'1059_Default_Attire/Textures',hpl=SR_+'1059_Default_Attire/1059_Attire.mcd',
+    cover=['M_Brassiere','M_Tights','M_Shoes','M_L_Kneepad','M_R_Kneepad','M_L_Wrist','M_R_Wrist'],hair={0x2715:('M_Hair','hair')},tint=(205,170,115),
+    attire={(0x5601,0):('atlas',[('M_U_Acce','u_acce'),('M_U_Acce1','u_acce1'),('M_Pierce','pierce'),('M_Pierce1','pierce1'),('M_Pierce2','pierce2')]),
+            (0x5601,1):('mesh','M_L_Wrist','l_wrist'),(0x5601,2):('mesh','M_R_Wrist','r_wrist'),
+            (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5602,0):('mesh','M_Brassiere','brassiere'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
+LV_='/home/claude/pairs/LV/1211_Lola_Vice/'
+LOLA=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+    weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/lv',emd='00050602',
+    base=LV_+'BaseModel/baseModel.mcd',attire_model=LV_+'1211_Default_Attire/1211_Attire.mcd',
+    tex_base=LV_+'BaseModel/Textures',tex_attire=LV_+'1211_Default_Attire/Textures',hpl=LV_+'1211_Default_Attire/1211_Attire.mcd',
+    cover=['M_Brassiere','M_Tights','M_Shoes','M_L_A_Acce','M_R_A_Acce'],hair={0x2715:('M_Hair','hair')},tint=(40,28,22),
+    attire={(0x5601,1):('mesh','M_L_A_Acce','l_a_acce'),(0x5601,2):('mesh','M_R_A_Acce','r_a_acce'),
+            (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),(0x5602,0):('mesh','M_Brassiere','brassiere')})
+KJ_='/home/claude/pairs/KJ/1212_Kelani_Jordan/'
+KELANI=dict(template='female',lid_fit=True,eye_recess=0.3,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+    weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/kj',emd='00050602',
+    base=KJ_+'BaseModel/baseModel.mcd',attire_model=KJ_+'1212_Default_Attire/1212_Attire.mcd',
+    tex_base=KJ_+'BaseModel/Textures',tex_attire=KJ_+'1212_Default_Attire/Textures',hpl=KJ_+'1212_Default_Attire/1212_Attire.mcd',
+    cover=['M_Outfit','M_Shoes','M_Kickpads','M_L_A_Acce','M_R_A_Acce'],hair={0x2715:('M_Hair','hair')},tint=(22,19,19),
+    attire={(0x5601,0):('atlas',[('M_U_Acce','u_acce'),('M_L_A_Acce1','l_a_acce1'),('M_R_A_Acce1','r_a_acce1'),('M_Pierce','pierce'),('M_Pierce1','pierce1'),('M_Pierce2','pierce2')]),
+            (0x5601,1):('mesh','M_L_A_Acce','l_a_acce'),(0x5601,2):('mesh','M_R_A_Acce','r_a_acce'),(0x5601,4):('mesh','M_Shoes','shoes'),
+            (0x5602,0):('mesh','M_Outfit','outfit'),(0x5602,1):('mesh','M_Kickpads','kickpads')})
+CONFIGS={'briscoe':BRISCOE,'flash':FLASH,'toni':TONI,'keith':KEITH,'keith_ring':KEITH_RING,'keith_entrance':KEITH_ENT,'jevon':JEVON,'jevon_ring':JEVON_RING,'jevon_entrance':dict(JEVON,emd='00050604'),'psycho_clown':PSYCHO,'psycho_clown_entrance':dict(PSYCHO,emd='00050604'),'psycho_clown_ring':PSYCHO_RING,'rhea':RHEA,'rhea_ring':RHEA_RING,'rhea_entrance':RHEA_ENT,'raquel_ring':RAQUEL_RING,'raquel_entrance':RAQUEL_ENT,'tatum_ring':TATUM_RING,'tatum_entrance':TATUM_ENT,'raquel_diag':RAQUEL_DIAG,'tatum_diag':TATUM_DIAG,'sol_ring':SOL,'sol_entrance':dict(SOL,work='/home/claude/ext/sre',emd='00050604'),'lola_ring':LOLA,'lola_entrance':dict(LOLA,work='/home/claude/ext/lve',emd='00050604'),'kelani_ring':KELANI,'kelani_entrance':dict(KELANI,work='/home/claude/ext/kje',emd='00050604')}
 
 if __name__=='__main__':
     print(build(CONFIGS[sys.argv[1]],sys.argv[2]))

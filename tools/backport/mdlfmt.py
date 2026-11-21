@@ -70,8 +70,15 @@ def lod0_materials(M):
     lo,ls,nl,nm=M.lodraw; o=lo+8; out={}
     for m in range(nm):
         z,n=struct.unpack_from('<HI',b,o); o+=6; vc=M.meshes[m]['vc']; e=o+n*(2 if vc<65536 else 4)
-        _,k=struct.unpack_from('<HI',b,e); per=np.empty(n//3,object)
-        for r in range(k):
-            mat,st,cnt,_=struct.unpack_from('<4I',b,e+6+16*r); per[st//3:(st+cnt)//3]=mats[mat] if mat<len(mats) else str(mat)
-        out[M.meshes[m]['name']]=per; o=b.index(b'ENDM',e)+8
+        per=None
+        for pad in (2,0,1,3):   # alignment pad before the count varies; keep the layout whose ranges add up to n
+            try:
+                k,=struct.unpack_from('<I',b,e+pad); recs=[struct.unpack_from('<4I',b,e+pad+4+16*r) for r in range(k)] if 0<k<64 else []
+            except struct.error: continue
+            if recs and sum(r[2] for r in recs)==n and recs[0][1]==0:
+                per=np.empty(n//3,object)
+                for mat,st,cnt,_ in recs: per[st//3:(st+cnt)//3]=mats[mat] if mat<len(mats) else str(mat)
+                break
+        if per is not None: out[M.meshes[m]['name']]=per
+        o=b.index(b'ENDM',e)+8
     return out
