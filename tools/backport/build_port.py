@@ -944,7 +944,7 @@ RAQUEL_DIAG=dict(RAQUEL_ENT,work='/home/claude/ext/rqd',diag_paint=[((0,32,-112,
 TATUM_DIAG=dict(TATUM_ENT,work='/home/claude/ext/tpd',diag_paint=[((2,20,-82,-45),(0,255,0))],sheer={'socks':((70,40,30),45,1.0)},diag_sheer_rgb=(0,255,255))
 SR_='/home/claude/pairs/SR/1059_Sol_Ruca/'
 SOL=dict(template='female',keep_alpha=['tights','brassiere'],
-    lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
+    lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=4.5,dzero=15.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/sr',emd='00050602',
     base=SR_+'BaseModel/basemodel.mcd',attire_model=SR_+'1059_Default_Attire/1059_Attire.mcd',
     tex_base=SR_+'BaseModel/Textures',tex_attire=SR_+'1059_Default_Attire/Textures',hpl=SR_+'1059_Default_Attire/1059_Attire.mcd',
@@ -954,7 +954,7 @@ SOL=dict(template='female',keep_alpha=['tights','brassiere'],
             (0x5601,3):('mesh','M_Tights','tights'),(0x5601,4):('mesh','M_Shoes','shoes'),
             (0x5602,0):('mesh','M_Brassiere','brassiere'),(0x5602,1):('mesh','M_L_Kneepad','l_kneepad'),(0x5602,2):('mesh','M_R_Kneepad','r_kneepad')})
 LV_='/home/claude/pairs/LV/1211_Lola_Vice/'
-LOLA=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=6.0,dzero=18.0,smooth=100,post_smooth=60),
+LOLA=dict(template='female',lid_fit=True,eye_recess=0.05,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=4.5,dzero=15.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/lv',emd='00050602',
     base=LV_+'BaseModel/baseModel.mcd',attire_model=LV_+'1211_Default_Attire/1211_Attire.mcd',
     tex_base=LV_+'BaseModel/Textures',tex_attire=LV_+'1211_Default_Attire/Textures',hpl=LV_+'1211_Default_Attire/1211_Attire.mcd',

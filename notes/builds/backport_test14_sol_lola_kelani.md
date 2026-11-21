@@ -42,3 +42,8 @@ Matthew picks the slots.
 - Clipping: hair_body_blend raised to dfull 6 / dzero 18 for all three. Lola's lean-back hairclip goes 3.7 → 2.4 cm.
   The rest is physics swing, which the bench can't simulate.
 - Kelani's afro: shoulders rise into its lower edge (hairclip 3.2 cm). Moving the blend zone off didn't help (5.1); left as is.
+
+## v3 (Sol, Lola): hair "a little heavy" in movement
+- hair_body_blend dfull 6/18 -> 4.5/15: less of the lower hair pinned to the body, so it swings more. Hair texture unchanged from v2.
+- hairclip is unchanged from v2: Lola worst 2.4 cm, Sol 1.8.
+- If it still feels heavy, the next step is 3/12 (v1 movement, with v1 clipping 3.7 cm).
