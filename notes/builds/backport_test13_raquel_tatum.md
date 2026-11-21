@@ -220,3 +220,10 @@ Rule: never rewrite a DDS header the game already accepted.
 - Failed fix 1, `skin_lift` (raise the skin under the openings 1 cm): the skin pokes through the tight outfit just below the openings. Rejected.
 - Failed fix 2, `sink_under_lace` (push outfit verts that are under the skin deeper): moves 2257 verts but the measured gap doesn't change, so it isn't hitting the right surface. Disabled. Code left in, off.
 - gamerender now exposes LASTZ (depth) for gap measurements.
+
+## v7 (Raquel): lace wedge fixed offline
+- Cause: a matte black backing panel (outfit:skinned material) lying 0 to 0.4 cm on the skin under each lace opening.
+- Fix: `drop_backing` (229 triangles), plus the skin under the panel kept drawn.
+- In the openings, outfit within 1 cm behind the visible skin went from 15% to 1.6%. No new holes; the pre-existing front-corner holes are gone. Thigh band untouched.
+- Gates: preview ok, legstress 0.
+- Also: the mdlfmt material table is decoded (`lod0_materials`), and gamerender elevation is fixed (e>0 = camera above).

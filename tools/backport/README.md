@@ -186,3 +186,17 @@ Flash: alignment mod 16, per-channel texture resize. Briscoe: topological lip sp
 - Older builds (Flash, Briscoe) use donor weights; a rebuild with `weights='source'` may improve them (untested in game).
 - Keith v3 and the old-Keith eye patch await in-game confirmation.
 - Next: a simple app for Matthew (preview, flagged problems, simple fixes, export).
+
+### Dark backing panels under lace (`drop_backing`)
+2K26 outfits can carry a matte near-black panel lying flat on the skin under lace or cut-outs. 2K26 draws the skin over it.
+In 2K19 it depth-fights the skin and wins in patches, which shows as black wedges in the openings. It only shows in game, and only
+from some angles. `drop_backing={stem:(None,dark_thr,reach_cm)}` (Raquel: `(None,40,0.5)`) drops triangles that meet all of these:
+- every texel near-black, opaque and matte (nrm blue < `backing_gloss_max`=80; leather is glossy, ~220)
+- within reach of a see-through triangle of the same mesh, judged on the texture as shipped (after `lace_clear`)
+- not in a `*_ALPHA` material. Per-triangle materials come from `mdlfmt.lod0_materials`.
+
+The dropped panel also stops counting as cover, and body verts within `backing_unhide`=2 cm of it are kept drawn. Without that,
+the lace strings above hide the skin and leave holes.
+Diagnosis route that found it: green body paint showed the body was drawn; per-material flat colours (`colorid.py`, which keeps the
+DDS headers byte-for-byte; rewriting them hung the game) showed the outfit drew the wedge; and a gamerender depth/ID buffer
+pinned it to specific triangles.

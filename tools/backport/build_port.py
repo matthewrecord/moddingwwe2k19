@@ -225,6 +225,30 @@ def hair_body_blend(Jh,Jbody_list,y0=-160.0,y1=-150.0,dfull=2.0,dzero=8.0,smooth
     pc=[c for c in m.order if m.name[c]=='pal'][0]; m.data[pc]=bytearray(st_.pack('>%dI'%len(pal),*pal))
     hc=[c for c in m.order if m.name[c]=='palhdr'][0]; st_.pack_into('>I',m.data[hc],0,len(pal))
     return m.build(),dict(blended=int(nb),full=int((a>0.99).sum()),pal_added=len(pal)-len(jh.palette))
+def backing_mask(S,T,stem,cfg,TA,Sb,Tb,mat=None):
+    """2K26 dark matte backing panel lying under lace / cut-outs. 2K26 draws the skin over it; in 2K19 it depth-fights the skin
+    and wins in patches (black wedges in the openings). True for triangles whose texels are all near-black, opaque and matte
+    (low gloss in the 2K26 nrm blue channel: leather is glossy) and that run within 'reach' cm of a see-through triangle of the
+    same mesh (openings as shipped, i.e. after lace_clear). Triangles of a blended *_ALPHA material are never dropped and don't
+    count as openings (their see-through bits are a different pattern, e.g. a thigh band)."""
+    T=np.asarray(T); _,thr_,reach_=cfg['drop_backing'][stem]
+    C_=texconv.load(ci(f"{TA}/{stem}_color.dds")); h_,w_=C_.shape[:2]; UV=S['TEXCOORD'][:,:2].astype(float)%1.0
+    if stem in cfg.get('lace_clear',{}):
+        from scipy.ndimage import binary_dilation
+        r2_,t2_=cfg['lace_clear'][stem]; C_=C_.copy(); z_=binary_dilation(C_[...,3]<128,iterations=r2_); C_[...,3][z_&(C_[...,:3].max(-1)<t2_)]=0
+    alpha_mat=np.array([m_ is not None and 'ALPHA' in str(m_) for m_ in mat]) if mat is not None and len(mat)==len(T) else np.zeros(len(T),bool)
+    bco_=np.array([(x,y,1-x-y) for x in np.linspace(0,1,6) for y in np.linspace(0,1,6) if x+y<=1.0001])
+    uvo_=np.einsum('sk,tkd->tsd',bco_,UV[T]); ao_=C_[np.clip((uvo_[...,1]*h_).astype(int),0,h_-1),np.clip((uvo_[...,0]*w_).astype(int),0,w_-1),3]
+    Q_=np.einsum('sk,tkd->tsd',bco_,S['POSITION'][T][...,:3].astype(float))
+    tro_=((ao_<128).mean(1)>=0.1)&~alpha_mat
+    if not tro_.any(): return np.zeros(len(T),bool)
+    smp=np.concatenate([UV[T],UV[T].mean(1,keepdims=True),(UV[T]+UV[T].mean(1,keepdims=True))/2],1)
+    cv=C_[np.clip((smp[...,1]*h_).astype(int),0,h_-1),np.clip((smp[...,0]*w_).astype(int),0,w_-1)]
+    dark=(cv[...,:3].max(-1)<thr_).all(1)&(cv[...,3]>=128).all(1)
+    N_=texconv.load(ci(f"{TA}/{stem}_nrm.dds")); hn,wn=N_.shape[:2]
+    gv=N_[np.clip((smp[...,1]*hn).astype(int),0,hn-1),np.clip((smp[...,0]*wn).astype(int),0,wn-1)][...,2].mean(1); dark&=gv<cfg.get('backing_gloss_max',80)
+    dW=cKDTree(Q_[tro_].reshape(-1,3)).query(Q_.reshape(-1,3))[0].reshape(len(T),-1).min(1)
+    return dark&(dW<reach_)&~alpha_mat
 def closest_on_mesh(P,T,Q,k=12):
     """closest point on triangle mesh (P,T) for each query: (triangle index, barycentrics (n,3))"""
     tri=P[T]; C=tri.mean(1); _,cand=cKDTree(C).query(Q,k=min(k,len(T)))
@@ -412,7 +436,7 @@ def cap_small_holes(T,P,maxlen=8):
     return (np.concatenate([T,np.array(add,int)]) if add else T),len(add)
 def build(cfg,outpath,PROP=None):
     W_=cfg['work']; os.makedirs(W_,exist_ok=True)
-    BM=open_model(cfg['base'],W_+'/base.mdl'); AM=open_model(cfg['attire_model'],W_+'/attire.mdl'); MB=meshes(BM); MA=meshes(AM)
+    BM=open_model(cfg['base'],W_+'/base.mdl'); AM=open_model(cfg['attire_model'],W_+'/attire.mdl'); MB=meshes(BM); MA=meshes(AM); MATS_=mdlfmt.lod0_materials(AM)
     TB,TA=cfg['tex_base'],cfg['tex_attire']
     TP=TEMPLATES[cfg.get('template','male')]
     s=jboy.JBOY(oodl.blocks(open(U+TP['donor']+'.pac','rb').read())[0][1])
@@ -506,21 +530,36 @@ def build(cfg,outpath,PROP=None):
     if cfg.get('hide','hpl')=='geom':
         # 2K26: attire HPL! lists index the game's generic body, not the character's own M_Body -> unusable.
         # Hide a body vertex when a cover mesh lies just outside it along its normal (within 'hide_depth' cm).
-        hid_v=geom_hidden(Sb['POSITION'][:,:3],Tb,[(MA[n][0],opaque_cover(MA[n][0],MA[n][1],cfg['tex_attire'],n[2:].lower())) for n in cfg['cover']],cfg.get('hide_depth',8.0),N=Sb['NORMAL'])
+        backing_pts_=[]
+        def cover_tris(n_):   # opaque cover triangles, minus a backing panel that will be dropped (the skin under it must stay drawn)
+            T2_=np.asarray(opaque_cover(MA[n_][0],MA[n_][1],cfg['tex_attire'],n_[2:].lower())); st_=n_[2:].lower()
+            if st_ in cfg.get('drop_backing',{}):
+                bm_=backing_mask(MA[n_][0],MA[n_][1],st_,cfg,TA,Sb,Tb,MATS_.get(n_)); drop_={tuple(t) for t in np.asarray(MA[n_][1])[bm_]}
+                T2_=np.array([t for t in T2_ if tuple(t) not in drop_]).reshape(-1,3); info['backing_not_cover']=info.get('backing_not_cover',0)+len(drop_)
+                if bm_.any():   # the skin under a dropped panel must stay drawn (strings above it would otherwise hide it)
+                    bcs_=np.array([(x,y,1-x-y) for x in np.linspace(0,1,5) for y in np.linspace(0,1,5) if x+y<=1.0001])
+                    backing_pts_.append(np.einsum('sk,tkd->tsd',bcs_,MA[n_][0]['POSITION'][:,:3].astype(float)[np.asarray(MA[n_][1])[bm_]]).reshape(-1,3))
+            return T2_
+        hid_v=geom_hidden(Sb['POSITION'][:,:3],Tb,[(MA[n][0],cover_tris(n)) for n in cfg['cover']],cfg.get('hide_depth',8.0),N=Sb['NORMAL'])
         # keep the skin drawn under see-through parts (lace, cut-outs): body verts within reach of a dropped (transparent) cover triangle
-        Ctr=[]
+        Ctr=[]; Csm_=[]
         for n_ in cfg['cover']:
             S_,T_=MA[n_]; T2_=opaque_cover(S_,T_,cfg['tex_attire'],n_[2:].lower()); k_=set(map(tuple,np.asarray(T2_)))
             D_=np.array([t for t in np.asarray(T_) if tuple(t) not in k_])
             if len(D_): Ctr.append(S_['POSITION'][:,:3].astype(float)[D_].mean(1))
+            if len(D_):   # sampled points over each see-through triangle (lace strips are long and thin)
+                bcs_=np.array([(a,b,1-a-b) for a in np.linspace(0,1,5) for b in np.linspace(0,1,5) if a+b<=1.0001])
+                Csm_.append(np.einsum('sk,tkd->tsd',bcs_,S_['POSITION'][:,:3].astype(float)[D_]).reshape(-1,3))
         if Ctr:
-            dC,_=cKDTree(np.concatenate(Ctr)).query(Sb['POSITION'][:,:3].astype(float)); seen=hid_v&(dC<cfg.get('seethrough_reach',3.0)); hid_v=hid_v&~seen; info['seethrough_unhidden']=int(seen.sum()); info['geom_body_verts']=int(hid_v.sum()); seen_pts_[:]=[Sb['POSITION'][seen,:3].astype(float)]
+            dC,_=cKDTree(np.concatenate(Ctr)).query(Sb['POSITION'][:,:3].astype(float)); seen=hid_v&(dC<cfg.get('seethrough_reach',3.0)); hid_v=hid_v&~seen; info['seethrough_unhidden']=int(seen.sum()); info['geom_body_verts']=int(hid_v.sum()); seen_pts_[:]=[np.concatenate(Csm_)]
             lf=cfg.get('skin_lift',0.0)
             if lf:   # skin seen through lace: lift it outward so gear edges just under it can't poke through in game
                 Nl=Sb['NORMAL'][:,:3].astype(float); Nl/=np.linalg.norm(Nl,axis=1,keepdims=True)+1e-9
                 ramp=np.clip((cfg.get('seethrough_reach',3.0)-dC)/2.0,0,1)*seen
                 ly_=cfg.get('skin_lift_y'); ramp=ramp*((Sb['POSITION'][:,1]>=ly_[0])&(Sb['POSITION'][:,1]<=ly_[1])) if ly_ else ramp
                 Sb['POSITION']=np.array(Sb['POSITION'],copy=True); Sb['POSITION'][:,:3]=Sb['POSITION'][:,:3]+(lf*ramp)[:,None]*Nl; info['skin_lift']=int((ramp>0).sum())
+        if backing_pts_:
+            dK,_=cKDTree(np.concatenate(backing_pts_)).query(Sb['POSITION'][:,:3].astype(float)); un_=hid_v&(dK<cfg.get('backing_unhide',2.0)); hid_v=hid_v&~un_; info['backing_unhidden']=int(un_.sum())
         hid_t=hid_v[Tb].all(1)
     else:
         H=hpl.parse(cfg['hpl']).get('M_Body',[[]])[0]; hid_v=np.zeros(len(Sb['POSITION']),bool); hid_v[H]=True; info['hpl_body_verts']=len(H)
@@ -698,6 +737,8 @@ def build(cfg,outpath,PROP=None):
             if kind=='mesh':
                 _,name,stem=spec[:3]; S,T=MA[name]; msk=np.ones(len(T),bool)
                 if len(spec)>3: cxs=S['POSITION'][T].mean(1)[:,0]; msk=cxs>0 if spec[3]=='L' else cxs<=0
+                if stem in cfg.get('drop_backing',()):
+                    dr=msk&backing_mask(S,T,stem,cfg,TA,Sb,Tb,MATS_.get(name)); info.setdefault('drop_backing',{})[name]=int(dr.sum()); msk&=~dr
                 if stem in cfg.get('alpha_cut',()):   # 2K19 gear shader is opaque: drop triangles in transparent texture areas (fringe)
                     A=texconv.load(ci(f"{TA}/{stem}_color.dds"))[...,3]; h_,w_=A.shape; UV=S['TEXCOORD'][:,:2].astype(float)%1.0
                     smp=np.concatenate([UV[T],UV[T].mean(1,keepdims=True)],1)
@@ -866,7 +907,7 @@ RHEA_ENT=dict(RHEA_RING,work='/home/claude/ext/rh2e',emd='00050604',cover=RHEA_R
    
     attire={**RHEA_RING['attire'],(0x5602,1):('mesh','M_Jacket','jacket')})
 RQ_='/home/claude/pairs/RQ/927_Raquel_Rodriguez/'
-RAQUEL_RING=dict(template='female',keep_alpha=['outfit'],lace_clear={'outfit':(12,45)},seethrough_reach=6.0,lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
+RAQUEL_RING=dict(template='female',keep_alpha=['outfit'],lace_clear={'outfit':(12,45)},seethrough_reach=6.0,drop_backing={'outfit':(None,40,0.5)},lid_fit=True,eye_recess=0.15,hair_physics='ch43402',hair_body_blend=dict(y0=-180.0,y1=-160.0,dfull=3.0,dzero=12.0,smooth=100,post_smooth=60),
     weights='source',hide='geom',eye_straighten_deg=0.5,work='/home/claude/ext/rq',emd='00050602',
     base=RQ_+'BaseModel/baseModel.mcd',attire_model=RQ_+'927_Default_Attire/927_Attire.mcd',
     tex_base=RQ_+'BaseModel/Textures',tex_attire=RQ_+'927_Default_Attire/Textures',hpl=RQ_+'927_Default_Attire/927_Attire.mcd',

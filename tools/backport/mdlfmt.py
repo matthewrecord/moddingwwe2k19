@@ -61,3 +61,17 @@ class MDL:
             out.append(L)
         if verbose: print('consumed',o-lo,'of',ls)
         return out
+
+def lod0_materials(M):
+    """LOD0 per-mesh material ranges -> {mesh name: per-triangle material name}. Tail after each mesh's index data:
+    u16 0, u32 n, then n x (u32 mat, u32 start_index, u32 index_count, u32 max_vertex), u32 0 -- mat indexes MTL! entries
+    (u16 string index + u32 hash each)."""
+    b=M.b; mo,ms=M.ch[b'MTL!']; nmat,=struct.unpack_from('<I',b,mo); mats=[M.S[struct.unpack_from('<H',b,mo+4+6*i)[0]] for i in range(nmat)]
+    lo,ls,nl,nm=M.lodraw; o=lo+8; out={}
+    for m in range(nm):
+        z,n=struct.unpack_from('<HI',b,o); o+=6; vc=M.meshes[m]['vc']; e=o+n*(2 if vc<65536 else 4)
+        _,k=struct.unpack_from('<HI',b,e); per=np.empty(n//3,object)
+        for r in range(k):
+            mat,st,cnt,_=struct.unpack_from('<4I',b,e+6+16*r); per[st//3:(st+cnt)//3]=mats[mat] if mat<len(mats) else str(mat)
+        out[M.meshes[m]['name']]=per; o=b.index(b'ENDM',e)+8
+    return out
